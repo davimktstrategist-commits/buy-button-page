@@ -1769,7 +1769,8 @@
                 </div>
                 <button id="open-history-button" class="profile-button">Histórico</button>
                 <button id="open-affiliate-button" class="profile-button">Afiliado</button>
-                                <button id="logout-button" class="profile-button">Sair</button>
+                <button id="open-withdraw-button" class="profile-button">Sacar</button>
+                <button id="logout-button" class="profile-button">Sair</button>
             </div>
         </div>
 
@@ -3840,6 +3841,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (DOMElements.openWithdrawButton) {
                 DOMElements.openWithdrawButton.addEventListener('click', () => {
                     DOMElements.profileModalOverlay.classList.remove('show');
+                    if (typeof openWithdrawModal === 'function') {
+                        openWithdrawModal(state.saldo, false);
+                    }
                 });
             }
             
