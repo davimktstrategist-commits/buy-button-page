@@ -88,7 +88,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json({ success: false, message: 'Email ou senha incorretos' });
         }
         
-        res.json({ success: true, message: 'Login realizado com sucesso!' });
+        // Retorna dados do usuário para o frontend
+        res.json({ 
+          success: true, 
+          message: 'Login realizado com sucesso!',
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            balance: user.balance,
+            profileImageUrl: user.profileImageUrl
+          }
+        });
       } else {
         res.json({ success: false, message: 'Ação inválida' });
       }

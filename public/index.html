@@ -3597,8 +3597,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) {
                     if (action === 'register') {
                         sessionStorage.setItem('openDepositAfterRegister', 'true');
+                        window.location.reload();
+                    } else if (action === 'login' && result.user) {
+                        // Salvar dados do usuário no localStorage
+                        localStorage.setItem('loggedUser', JSON.stringify(result.user));
+                        // Fechar modal
+                        DOMElements.authModalOverlay.classList.remove('show');
+                        // Atualizar UI
+                        updateUserUI(result.user);
+                        showNotification('Login realizado com sucesso!', false);
                     }
-                    window.location.reload();
                 } else {
                     showNotification(result.message, true);
                 }
@@ -3708,11 +3716,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             DOMElements.closeProfileButton.addEventListener('click', () => DOMElements.profileModalOverlay.classList.remove('show'));
             
-            DOMElements.logoutButton.addEventListener('click', async () => {
-                const formData = new FormData();
-                formData.append('action', 'logout');
-                const response = await fetch('', { method: 'POST', body: formData });
-                if ((await response.json()).success) window.location.reload();
+            DOMElements.logoutButton.addEventListener('click', () => {
+                handleLogout();
             });
             
             if (DOMElements.rulesBtn) {
@@ -3796,7 +3801,46 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const updateUserUI = (user) => {
+            state.isLoggedIn = true;
+            state.saldo = parseFloat(user.balance) || 0;
+            
+            // Atualizar nome do usuário no perfil
+            const userName = `${user.firstName} ${user.lastName}`.trim();
+            const userNameElement = document.getElementById('username-display');
+            if (userNameElement) {
+                userNameElement.textContent = userName || user.email;
+            }
+            
+            // Habilitar botões de aposta
+            DOMElements.plusButton.disabled = false;
+            DOMElements.minusButton.disabled = false;
+            
+            updateDisplay();
+        };
+
+        const checkUserSession = () => {
+            const loggedUser = localStorage.getItem('loggedUser');
+            if (loggedUser) {
+                try {
+                    const user = JSON.parse(loggedUser);
+                    updateUserUI(user);
+                } catch (error) {
+                    console.error('Erro ao recuperar dados do usuário:', error);
+                    localStorage.removeItem('loggedUser');
+                }
+            }
+        };
+
+        const handleLogout = () => {
+            localStorage.removeItem('loggedUser');
+            state.isLoggedIn = false;
+            state.saldo = 0;
+            window.location.reload();
+        };
+
         const init = () => {
+            checkUserSession();
             updateDisplay();
             initEventListeners();
             createLabels('roleta1-labels', state.roleta1Map.length, 35);
