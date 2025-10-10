@@ -98,7 +98,7 @@ export default function Game() {
       <div id="game-container" className="relative flex flex-col">
         {/* Lista de Vencedores Recentes - Topo Esquerdo */}
         <div className="absolute top-4 left-4 z-[25] flex flex-col gap-2" data-testid="winners-list">
-          {gameHistory.slice(0, 4).map((game, idx) => (
+          {Array.isArray(gameHistory) && gameHistory.slice(0, 4).map((game, idx) => (
             <div 
               key={game.id} 
               className="bg-black/40 backdrop-blur-sm border border-green-600/30 rounded-lg px-3 py-1 flex items-center gap-2"
