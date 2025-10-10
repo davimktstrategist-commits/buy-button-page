@@ -4,18 +4,18 @@
 Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPIX para depósitos/saques via PIX. **Site totalmente público (sem login)** - usa sessões anônimas via localStorage.
 
 ## Status do Projeto
-✅ **MVP Completo e Público** - Frontend redesenhado, backend com sessões anônimas, e integração BRPIX funcionando
+✅ **MVP Completo e Público** - Frontend HTML original integrado, backend Node.js/Express com rotas PHP-compatíveis, sistema de sessões anônimas via localStorage funcionando perfeitamente
 
 ## Arquitetura
 
-### Frontend (React + TypeScript)
-- **Framework**: React 18 com Vite
-- **Roteamento**: Wouter
-- **UI**: Shadcn UI + Tailwind CSS
-- **Tema**: Verde escuro de cassino com escamas de dragão (backgrounds reais aplicados)
-- **Autenticação**: REMOVIDA - Sistema totalmente público com sessionId anônimo
-- **State Management**: TanStack Query v5
-- **Design**: Imagens reais do jogo (fundo.png, roleta1.png, roleta2.png, cima.png, ceta.png, baixo.png)
+### Frontend (HTML/CSS/JavaScript Original)
+- **Arquivos estáticos**: HTML, CSS, JS servidos da pasta `public/`
+- **UI**: Bootstrap 5 + CSS customizado
+- **Tema**: Verde escuro de cassino com imagens originais
+- **Autenticação**: Sistema totalmente público com sessionId anônimo via localStorage
+- **SessionID**: UUID v4 gerado automaticamente, armazenado em localStorage
+- **Interceptor fetch()**: Adiciona sessionId em todas as requisições para `/ajax/` e `/api/`
+- **Design**: Imagens originais do jogo (fundo.png, roleta1.png, roleta2.png, cima.png, ceta.png, baixo.png)
 
 ### Backend (Express + TypeScript)
 - **Framework**: Express.js
@@ -24,6 +24,7 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - **Autenticação**: REMOVIDA - Todas as rotas são públicas com sessionId
 - **Pagamentos**: BRPIX PIX Gateway
 - **Sessão**: Auto-criação de usuário anônimo quando sessionId não existe
+- **Rotas PHP-compatíveis**: Endpoints `/ajax/*.php` e `/api/*.php` para compatibilidade com frontend original
 
 ## Funcionalidades Principais
 
@@ -131,20 +132,33 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 
 ## Endpoints da API
 
-### Autenticação
-- `GET /api/login` - Iniciar login
-- `GET /api/logout` - Fazer logout
-- `GET /api/callback` - Callback OAuth
-- `GET /api/auth/user` - Dados do usuário logado
+### Rotas PHP-Compatíveis (Frontend HTML Original)
 
-### Usuário
-- `GET /api/user/balance` - Saldo do usuário
+#### AJAX - Jogo
+- `GET /ajax/winners.php` - Lista de ganhadores recentes (formato: `{success: true, winners: [...]}`)
+- `GET /ajax/get_saldo.php?sessionId=...` - Obter saldo do usuário
+- `GET /ajax/get_history.php?sessionId=...` - Histórico de jogos do usuário
+- `POST /ajax/start_spin.php` - Iniciar giro/aposta (body: `{sessionId, betAmount}`)
+- `POST /ajax/finish_spin.php` - Finalizar giro (apenas confirmação)
+- `GET /ajax/get_affiliate_data.php?sessionId=...` - Dados de afiliado
+
+#### API - Pagamentos e Saques
+- `POST /api/payment.php` - Criar pagamento PIX (body: `{sessionId, amount}`)
+- `GET /api/check_payment_status.php?transactionId=...` - Verificar status do pagamento
+- `POST /api/withdraw.php` - Solicitar saque (body: `{sessionId, amount, pixKeyType, pixKey}`)
+- `GET /api/check_rollover.php?sessionId=...` - Verificar rollover
+
+### Rotas Legacy (API JSON)
+
+#### Usuário
+- `GET /api/user/balance` - Saldo do usuário (com autenticação)
 - `GET /api/games/history` - Histórico de jogos
 - `POST /api/games/play` - Jogar roleta
 - `POST /api/deposits` - Criar depósito PIX
 - `POST /api/deposits/:id/confirm` - Confirmar depósito
+- `POST /api/withdrawals` - Criar solicitação de saque
 
-### Admin (requer autenticação + role admin)
+#### Admin (requer autenticação + role admin)
 - `GET /api/admin/stats` - Estatísticas do dashboard
 - `GET /api/admin/users` - Lista de usuários
 - `GET /api/admin/transactions` - Todas as transações
@@ -153,6 +167,8 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - `POST /api/admin/withdrawals/:id/reject` - Rejeitar saque
 - `GET /api/admin/roulette-config` - Configurações da roleta
 - `PUT /api/admin/roulette-config/:id` - Atualizar probabilidade
+
+**Nota**: Todas as rotas PHP-compatíveis aceitam `sessionId` via query param, header `X-Session-Id` ou body.
 
 ## Scripts Disponíveis
 
@@ -195,27 +211,27 @@ npx tsx server/seed.ts  # Popular configurações iniciais da roleta
 
 ## Fluxos Principais
 
-### 1. Novo Usuário
-1. Acessa landing page
-2. Clica em "Entrar/Cadastrar"
-3. Autentica via Replit Auth
-4. Vê popup de boas-vindas
-5. Pode fazer depósito PIX
-6. Joga roleta
+### 1. Novo Usuário (Sistema Público - Sem Login)
+1. Acessa a página do jogo
+2. Sistema gera automaticamente um `sessionId` UUID v4
+3. SessionId é armazenado no localStorage
+4. Usuário anônimo é criado automaticamente no backend
+5. Pode fazer depósito PIX para adicionar saldo
+6. Joga roleta normalmente
 
 ### 2. Fazer Depósito
 1. Usuário clica em "Depositar"
 2. Escolhe valor (ou usa sugeridos)
-3. Gera QR Code PIX
-4. Paga via app bancário
+3. Sistema gera QR Code PIX via BRPIX
+4. Usuário paga via app bancário
 5. Sistema verifica pagamento (polling)
 6. Saldo é creditado automaticamente
-7. 10,5% vai para conta de split
+7. 10,5% vai para conta de split (comissão)
 
 ### 3. Jogar Roleta
 1. Usuário seleciona valor da aposta
 2. Clica em "Girar"
-3. Sistema verifica saldo
+3. Sistema verifica saldo via sessionId
 4. Calcula resultado baseado em probabilidades
 5. Roda animação (3 segundos)
 6. Mostra resultado com animação
