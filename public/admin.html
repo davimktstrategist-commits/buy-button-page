@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Roleta do Tigre</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-green: #2d5016;
+            --dark-green: #0a1409;
+            --accent-gold: #e8a800;
+            --success-green: #34c759;
+            --danger-red: #ef4444;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-green) 0%, #1a2e15 100%);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #1f3d10 100%);
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border-bottom: 3px solid var(--accent-gold);
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            color: var(--accent-gold);
+            font-weight: 700;
+            font-size: 2rem;
+        }
+
+        .admin-nav {
+            background: rgba(45, 80, 22, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .nav-pills .nav-link {
+            color: #ffffff;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-pills .nav-link:hover {
+            background: rgba(45, 80, 22, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #d19700 100%);
+            color: var(--dark-green);
+            font-weight: 600;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.4) 0%, rgba(31, 61, 16, 0.4) 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 2px solid rgba(232, 168, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(232, 168, 0, 0.2);
+            border-color: var(--accent-gold);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            color: var(--accent-gold);
+            opacity: 0.8;
+        }
+
+        .data-table {
+            background: rgba(45, 80, 22, 0.3);
+            border-radius: 15px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .table {
+            color: #ffffff;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, var(--primary-green) 0%, #1f3d10 100%);
+            border-bottom: 2px solid var(--accent-gold);
+        }
+
+        .table thead th {
+            color: var(--accent-gold);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 1rem;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid rgba(232, 168, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(45, 80, 22, 0.3);
+        }
+
+        .table tbody td {
+            border: none;
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .badge {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            border-radius: 20px;
+        }
+
+        .badge-pending {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+        }
+
+        .badge-completed {
+            background: linear-gradient(135deg, var(--success-green) 0%, #2ba84a 100%);
+        }
+
+        .badge-failed {
+            background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+        }
+
+        .badge-deposit {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .badge-withdrawal {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .badge-bet {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .badge-win {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-gold {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #d19700 100%);
+            border: none;
+            color: var(--dark-green);
+            font-weight: 600;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(232, 168, 0, 0.4);
+            color: var(--dark-green);
+        }
+
+        .btn-success-custom {
+            background: linear-gradient(135deg, var(--success-green) 0%, #2ba84a 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-danger-custom {
+            background: linear-gradient(135deg, var(--danger-red) 0%, #dc2626 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .config-slider {
+            width: 100%;
+            margin: 1rem 0;
+        }
+
+        .config-item {
+            background: rgba(45, 80, 22, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(232, 168, 0, 0.2);
+        }
+
+        .split-info {
+            background: linear-gradient(135deg, rgba(232, 168, 0, 0.2) 0%, rgba(209, 151, 0, 0.2) 100%);
+            border-radius: 10px;
+            padding: 1rem;
+            border: 2px solid var(--accent-gold);
+            margin: 1rem 0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner-border {
+            color: var(--accent-gold);
+        }
+
+        .section-title {
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--accent-gold);
+            padding-bottom: 0.5rem;
+        }
+
+        .login-container {
+            max-width: 500px;
+            margin: 5rem auto;
+            background: linear-gradient(135deg, rgba(45, 80, 22, 0.6) 0%, rgba(31, 61, 16, 0.6) 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 2px solid var(--accent-gold);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(232, 168, 0, 0.3);
+            color: white;
+            border-radius: 8px;
+            padding: 0.75rem;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--accent-gold);
+            color: white;
+            box-shadow: 0 0 0 0.2rem rgba(232, 168, 0, 0.25);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-lock-fill" style="font-size: 4rem; color: var(--accent-gold);"></i>
+            <h2 class="mt-3" style="color: var(--accent-gold);">Acesso Administrativo</h2>
+            <p class="text-white-50">Digite a senha de administrador</p>
+        </div>
+        <form id="loginForm">
+            <div class="mb-3">
+                <input type="password" class="form-control" id="adminPassword" placeholder="Senha de administrador" required>
+            </div>
+            <button type="submit" class="btn btn-gold w-100">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Entrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Admin Panel (hidden by default) -->
+    <div id="adminPanel" style="display: none;">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1><i class="bi bi-speedometer2 me-2"></i>Painel Administrativo</h1>
+                        <p class="mb-0 text-white-50">Roleta do Tigre - Gestão Completa</p>
+                    </div>
+                    <button class="btn btn-outline-light" onclick="logout()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Sair
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="container-fluid">
+            <div class="admin-nav">
+                <ul class="nav nav-pills" id="adminTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#dashboard" type="button">
+                            <i class="bi bi-graph-up me-2"></i>Dashboard
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#users" type="button">
+                            <i class="bi bi-people me-2"></i>Usuários
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#transactions" type="button">
+                            <i class="bi bi-cash-stack me-2"></i>Transações
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#withdrawals" type="button">
+                            <i class="bi bi-currency-dollar me-2"></i>Saques
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#roulette" type="button">
+                            <i class="bi bi-gear-fill me-2"></i>Configuração da Roleta
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="adminTabsContent">
+                <!-- Dashboard Tab -->
+                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Lucro da Plataforma</div>
+                                        <div class="stat-value" id="statProfit">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-graph-up-arrow stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Total Apostado</div>
+                                        <div class="stat-value" id="statBets">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-coin stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Prêmios Pagos</div>
+                                        <div class="stat-value" id="statWins">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-trophy stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Usuários</div>
+                                        <div class="stat-value" id="statUsers">0</div>
+                                    </div>
+                                    <i class="bi bi-people-fill stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Saques Pendentes</div>
+                                        <div class="stat-value" id="statPendingWithdrawals">0</div>
+                                    </div>
+                                    <i class="bi bi-hourglass-split stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Saldo Total em Contas</div>
+                                        <div class="stat-value" id="statTotalBalance">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-wallet2 stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Total Depositado</div>
+                                        <div class="stat-value" id="statTotalDeposited">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-arrow-down-circle stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="stat-label">Comissão (Split 10.5%)</div>
+                                        <div class="stat-value" id="statSplit">R$ 0,00</div>
+                                    </div>
+                                    <i class="bi bi-percent stat-icon"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Tab -->
+                <div class="tab-pane fade" id="users" role="tabpanel">
+                    <h3 class="section-title"><i class="bi bi-people me-2"></i>Gestão de Usuários</h3>
+                    <div class="data-table">
+                        <div class="loading" id="usersLoading">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-2">Carregando usuários...</p>
+                        </div>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Nome</th>
+                                    <th>Saldo</th>
+                                    <th>Total Depositado</th>
+                                    <th>Total Apostado</th>
+                                    <th>Total Ganho</th>
+                                    <th>Criado em</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Transactions Tab -->
+                <div class="tab-pane fade" id="transactions" role="tabpanel">
+                    <h3 class="section-title"><i class="bi bi-cash-stack me-2"></i>Histórico de Transações</h3>
+                    
+                    <div class="split-info mb-4">
+                        <h5 class="text-white mb-2"><i class="bi bi-info-circle me-2"></i>Informação sobre Split BRPIX</h5>
+                        <p class="mb-1 text-white-50">Todas as transações de depósito têm um split automático de <strong class="text-white">10,5%</strong> para a conta de comissão.</p>
+                        <p class="mb-0 text-white-50">O valor do split é calculado e processado automaticamente pelo sistema BRPIX.</p>
+                    </div>
+
+                    <div class="data-table">
+                        <div class="loading" id="transactionsLoading">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-2">Carregando transações...</p>
+                        </div>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuário</th>
+                                    <th>Tipo</th>
+                                    <th>Valor</th>
+                                    <th>Split (10.5%)</th>
+                                    <th>Status</th>
+                                    <th>BRPIX ID</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Withdrawals Tab -->
+                <div class="tab-pane fade" id="withdrawals" role="tabpanel">
+                    <h3 class="section-title"><i class="bi bi-currency-dollar me-2"></i>Gestão de Saques</h3>
+                    <div class="data-table">
+                        <div class="loading" id="withdrawalsLoading">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-2">Carregando saques...</p>
+                        </div>
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuário</th>
+                                    <th>Valor</th>
+                                    <th>Tipo de Chave</th>
+                                    <th>Chave PIX</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Roulette Config Tab -->
+                <div class="tab-pane fade" id="roulette" role="tabpanel">
+                    <h3 class="section-title"><i class="bi bi-gear-fill me-2"></i>Configuração da Roleta</h3>
+                    
+                    <div class="alert" style="background: rgba(232, 168, 0, 0.2); border: 2px solid var(--accent-gold); color: white;">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Atenção:</strong> A soma de todas as probabilidades deve ser igual a 100%
+                    </div>
+
+                    <div id="rouletteConfigContainer">
+                        <div class="loading" id="rouletteLoading">
+                            <div class="spinner-border" role="status"></div>
+                            <p class="mt-2">Carregando configurações...</p>
+                        </div>
+                        <div id="rouletteConfigList"></div>
+                        
+                        <div class="mt-4 p-3" style="background: rgba(45, 80, 22, 0.3); border-radius: 10px;">
+                            <h5 class="text-white">Soma Total: <span id="totalProbability" class="text-warning">0%</span></h5>
+                        </div>
+
+                        <button class="btn btn-gold mt-3" onclick="saveRouletteConfig()">
+                            <i class="bi bi-save me-2"></i>Salvar Configurações
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Admin authentication
+        const ADMIN_PASSWORD = 'admin123'; // Change this to a secure password
+        let adminToken = localStorage.getItem('adminToken');
+
+        // Check if already logged in
+        if (adminToken === ADMIN_PASSWORD) {
+            showAdminPanel();
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === ADMIN_PASSWORD) {
+                localStorage.setItem('adminToken', password);
+                showAdminPanel();
+                loadDashboard();
+            } else {
+                alert('Senha incorreta!');
+            }
+        });
+
+        function showAdminPanel() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            loadDashboard();
+        }
+
+        function logout() {
+            localStorage.removeItem('adminToken');
+            location.reload();
+        }
+
+        // Load dashboard stats
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                const stats = await response.json();
+                
+                document.getElementById('statProfit').textContent = formatMoney(stats.profit || 0);
+                document.getElementById('statBets').textContent = formatMoney(stats.totalBet || 0);
+                document.getElementById('statWins').textContent = formatMoney(stats.totalWon || 0);
+                document.getElementById('statUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('statPendingWithdrawals').textContent = stats.pendingWithdrawals || 0;
+                document.getElementById('statTotalBalance').textContent = formatMoney(stats.totalBalance || 0);
+                document.getElementById('statTotalDeposited').textContent = formatMoney(stats.totalDeposited || 0);
+                
+                // Calculate split (10.5% of total deposited)
+                const splitAmount = (stats.totalDeposited || 0) * 0.105;
+                document.getElementById('statSplit').textContent = formatMoney(splitAmount);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        // Load users
+        async function loadUsers() {
+            const loadingEl = document.getElementById('usersLoading');
+            const tbody = document.getElementById('usersTableBody');
+            
+            loadingEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/users');
+                const users = await response.json();
+                
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td><code class="text-warning">${user.id.substring(0, 8)}...</code></td>
+                        <td>${user.email || '<span class="text-muted">Anônimo</span>'}</td>
+                        <td>${user.firstName || '-'} ${user.lastName || ''}</td>
+                        <td><strong class="text-success">${formatMoney(user.balance)}</strong></td>
+                        <td>${formatMoney(user.totalDeposited)}</td>
+                        <td>${formatMoney(user.totalBet)}</td>
+                        <td>${formatMoney(user.totalWon)}</td>
+                        <td>${formatDate(user.createdAt)}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading users:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erro ao carregar usuários</td></tr>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Load transactions
+        async function loadTransactions() {
+            const loadingEl = document.getElementById('transactionsLoading');
+            const tbody = document.getElementById('transactionsTableBody');
+            
+            loadingEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/transactions');
+                const transactions = await response.json();
+                
+                tbody.innerHTML = transactions.map(tx => {
+                    const splitAmount = tx.splitAmount ? parseFloat(tx.splitAmount) : 0;
+                    return `
+                    <tr>
+                        <td><code class="text-warning">${tx.id.substring(0, 8)}...</code></td>
+                        <td><code class="text-info">${tx.userId.substring(0, 8)}...</code></td>
+                        <td><span class="badge badge-${tx.type}">${getTransactionTypeLabel(tx.type)}</span></td>
+                        <td><strong>${formatMoney(tx.amount)}</strong></td>
+                        <td>${tx.type === 'deposit' ? `<span class="text-warning">${formatMoney(splitAmount)}</span>` : '-'}</td>
+                        <td><span class="badge badge-${tx.status}">${getStatusLabel(tx.status)}</span></td>
+                        <td>${tx.brpixTransactionId ? `<code class="text-success">${tx.brpixTransactionId.substring(0, 12)}...</code>` : '-'}</td>
+                        <td>${formatDate(tx.createdAt)}</td>
+                    </tr>
+                `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erro ao carregar transações</td></tr>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Load withdrawals
+        async function loadWithdrawals() {
+            const loadingEl = document.getElementById('withdrawalsLoading');
+            const tbody = document.getElementById('withdrawalsTableBody');
+            
+            loadingEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/withdrawals');
+                const withdrawals = await response.json();
+                
+                tbody.innerHTML = withdrawals.map(w => `
+                    <tr>
+                        <td><code class="text-warning">${w.id.substring(0, 8)}...</code></td>
+                        <td><code class="text-info">${w.userId.substring(0, 8)}...</code></td>
+                        <td><strong class="text-danger">${formatMoney(w.amount)}</strong></td>
+                        <td>${w.pixKeyType}</td>
+                        <td><code>${w.pixKey}</code></td>
+                        <td><span class="badge badge-${w.status}">${getStatusLabel(w.status)}</span></td>
+                        <td>${formatDate(w.createdAt)}</td>
+                        <td>
+                            ${w.status === 'pending' ? `
+                                <button class="btn btn-sm btn-success-custom me-1" onclick="approveWithdrawal('${w.id}')">
+                                    <i class="bi bi-check-lg"></i> Aprovar
+                                </button>
+                                <button class="btn btn-sm btn-danger-custom" onclick="rejectWithdrawal('${w.id}')">
+                                    <i class="bi bi-x-lg"></i> Rejeitar
+                                </button>
+                            ` : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading withdrawals:', error);
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Erro ao carregar saques</td></tr>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Load roulette config
+        async function loadRouletteConfig() {
+            const loadingEl = document.getElementById('rouletteLoading');
+            const container = document.getElementById('rouletteConfigList');
+            
+            loadingEl.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/admin/roulette-config');
+                const configs = await response.json();
+                
+                container.innerHTML = configs.map(config => `
+                    <div class="config-item">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <h5 class="text-warning mb-0">${config.multiplier}x</h5>
+                                <small class="text-white-50">${config.type === 'main' ? 'Principal' : 'Bônus'}</small>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label text-white">Probabilidade: <strong id="prob-value-${config.id}">${config.probability}%</strong></label>
+                                <input type="range" class="form-range config-slider" 
+                                       id="prob-${config.id}" 
+                                       min="0" max="100" step="0.1" 
+                                       value="${config.probability}"
+                                       oninput="updateProbabilityValue('${config.id}', this.value)">
+                            </div>
+                            <div class="col-md-2">
+                                <span class="badge ${config.isActive ? 'badge-completed' : 'badge-failed'}">
+                                    ${config.isActive ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                updateTotalProbability();
+            } catch (error) {
+                console.error('Error loading roulette config:', error);
+                container.innerHTML = '<p class="text-danger">Erro ao carregar configurações</p>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        function updateProbabilityValue(id, value) {
+            document.getElementById(`prob-value-${id}`).textContent = parseFloat(value).toFixed(1) + '%';
+            updateTotalProbability();
+        }
+
+        function updateTotalProbability() {
+            const sliders = document.querySelectorAll('.config-slider');
+            let total = 0;
+            sliders.forEach(slider => {
+                total += parseFloat(slider.value);
+            });
+            
+            const totalEl = document.getElementById('totalProbability');
+            totalEl.textContent = total.toFixed(1) + '%';
+            
+            if (Math.abs(total - 100) < 0.1) {
+                totalEl.className = 'text-success';
+            } else {
+                totalEl.className = 'text-danger';
+            }
+        }
+
+        async function saveRouletteConfig() {
+            const sliders = document.querySelectorAll('.config-slider');
+            const configs = [];
+            
+            sliders.forEach(slider => {
+                const id = slider.id.replace('prob-', '');
+                configs.push({
+                    id,
+                    probability: parseFloat(slider.value)
+                });
+            });
+            
+            // Validate total
+            const total = configs.reduce((sum, c) => sum + c.probability, 0);
+            if (Math.abs(total - 100) > 0.1) {
+                alert('A soma das probabilidades deve ser 100%!');
+                return;
+            }
+            
+            try {
+                for (const config of configs) {
+                    await fetch(`/api/admin/roulette-config/${config.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ probability: config.probability })
+                    });
+                }
+                
+                alert('Configurações salvas com sucesso!');
+                loadRouletteConfig();
+            } catch (error) {
+                console.error('Error saving config:', error);
+                alert('Erro ao salvar configurações!');
+            }
+        }
+
+        async function approveWithdrawal(id) {
+            if (!confirm('Aprovar este saque?')) return;
+            
+            try {
+                const response = await fetch(`/api/admin/withdrawals/${id}/approve`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Saque aprovado com sucesso!');
+                    loadWithdrawals();
+                    loadDashboard();
+                } else {
+                    alert('Erro ao aprovar saque!');
+                }
+            } catch (error) {
+                console.error('Error approving withdrawal:', error);
+                alert('Erro ao aprovar saque!');
+            }
+        }
+
+        async function rejectWithdrawal(id) {
+            const reason = prompt('Motivo da rejeição:');
+            if (!reason) return;
+            
+            try {
+                const response = await fetch(`/api/admin/withdrawals/${id}/reject`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason })
+                });
+                
+                if (response.ok) {
+                    alert('Saque rejeitado!');
+                    loadWithdrawals();
+                    loadDashboard();
+                } else {
+                    alert('Erro ao rejeitar saque!');
+                }
+            } catch (error) {
+                console.error('Error rejecting withdrawal:', error);
+                alert('Erro ao rejeitar saque!');
+            }
+        }
+
+        // Tab change handlers
+        document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function(e) {
+                const target = e.target.getAttribute('data-bs-target');
+                
+                if (target === '#dashboard') loadDashboard();
+                else if (target === '#users') loadUsers();
+                else if (target === '#transactions') loadTransactions();
+                else if (target === '#withdrawals') loadWithdrawals();
+                else if (target === '#roulette') loadRouletteConfig();
+            });
+        });
+
+        // Utility functions
+        function formatMoney(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(parseFloat(value) || 0);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleString('pt-BR');
+        }
+
+        function getTransactionTypeLabel(type) {
+            const labels = {
+                'deposit': 'Depósito',
+                'withdrawal': 'Saque',
+                'bet': 'Aposta',
+                'win': 'Ganho'
+            };
+            return labels[type] || type;
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'pending': 'Pendente',
+                'processing': 'Processando',
+                'completed': 'Concluído',
+                'failed': 'Falhou',
+                'cancelled': 'Cancelado',
+                'approved': 'Aprovado',
+                'rejected': 'Rejeitado'
+            };
+            return labels[status] || status;
+        }
+    </script>
+</body>
+</html>
