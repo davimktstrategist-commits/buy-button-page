@@ -1532,7 +1532,7 @@
                             <p class="value" id="giro-value">R$ 0,50</p>
                         </div>
                         
-                        <div class="giro-display">
+                        <div class="giro-display" id="saldo-display-bottom" style="display: none;">
                             <p class="label">Saldo</p>
                             <p class="value" id="saldo-value">R$ 0,00</p>
                         </div>
@@ -3456,6 +3456,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 DOMElements.saldoValueSmall.textContent = saldoFormatado;
             }
             DOMElements.giroValue.textContent = formatCurrency(state.aposta);
+            
+            // Mostrar/esconder display de saldo baseado no login
+            const saldoDisplayBottom = document.getElementById('saldo-display-bottom');
+            if (saldoDisplayBottom) {
+                saldoDisplayBottom.style.display = state.isLoggedIn ? 'flex' : 'none';
+            }
             
             // Alternar entre botão START e botão de ação da roleta
             const startButton = document.getElementById('start-button');
