@@ -41,7 +41,8 @@ export default function Game() {
     queryKey: ['/api/games/history', sessionId],
     queryFn: async () => {
       if (!sessionId) return [];
-      return await apiRequest("GET", `/api/games/history?sessionId=${sessionId}`) as GameType[];
+      const response = await apiRequest("GET", `/api/games/history?sessionId=${sessionId}`);
+      return response as GameType[];
     },
     enabled: !!sessionId,
   });
@@ -163,63 +164,78 @@ export default function Game() {
         </div>
 
         {/* Center - Roulette */}
-        <div className="flex flex-col items-center justify-center min-h-screen pt-20">
+        <div className="flex flex-col items-center justify-center min-h-screen pt-20 pb-8">
           <RouletteWheel
             isSpinning={isSpinning}
             finalMultiplier={finalMultiplier}
             onSpinComplete={handleSpinComplete}
           />
 
-          {/* Start/Continue Button */}
-          <div className="mt-8">
-            <Button
+          {/* Start Button - Azul brilhante como na imagem */}
+          <div className="mt-12 mb-8">
+            <button
               onClick={handleSpin}
               disabled={isSpinning || playGameMutation.isPending}
-              className="px-16 py-6 text-xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-full shadow-2xl shadow-blue-500/50 border-2 border-blue-400/50"
               data-testid="button-spin"
+              className="relative group"
             >
-              {isSpinning ? "Girando..." : balance > 0 ? "Start" : "Continue"}
-            </Button>
+              <div className="absolute inset-0 bg-[#1ca3ec] rounded-[28px] blur-xl opacity-60 group-hover:opacity-80 transition-opacity" />
+              <div className="relative px-24 py-4 bg-gradient-to-b from-[#5ec5ff] to-[#1ca3ec] rounded-[28px] shadow-2xl border-t-4 border-white/30">
+                <span className="text-white text-3xl font-black tracking-wider drop-shadow-lg">
+                  {isSpinning ? "Girando..." : "Start"}
+                </span>
+              </div>
+            </button>
           </div>
 
-          {/* Bottom Controls - Dragon Scale Design */}
-          <div className="mt-8 relative">
-            {/* Dragon Scale Background */}
-            <div className="relative w-[600px] h-32 bg-gradient-to-b from-green-900/80 to-green-950/80 rounded-3xl border-4 border-green-700/50 shadow-2xl">
-              {/* Scale Pattern Overlay */}
-              <div className="absolute inset-0 opacity-20" style={{
-                backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(34, 197, 94, 0.3) 10px, rgba(34, 197, 94, 0.3) 20px)`
-              }} />
+          {/* Bottom Controls - Com escamas de dragão */}
+          <div className="relative w-full max-w-md px-4">
+            {/* Background de escamas (usando a mesma textura do fundo) */}
+            <div className="relative bg-cover bg-center rounded-3xl overflow-hidden shadow-2xl border-4 border-green-900/50" style={{
+              backgroundImage: 'url("/casino-bg-2.png")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'bottom'
+            }}>
+              {/* Overlay escuro */}
+              <div className="absolute inset-0 bg-gradient-to-b from-green-950/80 to-green-950/90" />
               
-              {/* Giro Label */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 text-green-400/70 text-sm font-medium">
-                GIRO
-              </div>
-              
-              {/* Bet Amount Display */}
-              <div className="absolute top-10 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                <button 
-                  onClick={() => setBetAmount(Math.max(0.10, betAmount - 0.10))}
-                  className="w-8 h-8 rounded-full bg-green-800/50 border border-green-600/50 flex items-center justify-center text-green-300 hover:bg-green-700/50"
-                >
-                  -
-                </button>
-                <div className="text-2xl font-bold text-green-300 min-w-[120px] text-center">
-                  R$ {betAmount.toFixed(2)}
+              <div className="relative py-6 px-8">
+                {/* GIRO com valor e controles */}
+                <div className="mb-4">
+                  <div className="text-green-400/70 text-sm font-medium text-center mb-2">
+                    GIRO
+                  </div>
+                  <div className="bg-green-900/40 rounded-2xl py-3 px-6 flex items-center justify-between border-2 border-green-700/30">
+                    <button 
+                      onClick={() => setBetAmount(Math.max(0.10, betAmount - 0.10))}
+                      className="w-12 h-12 rounded-full bg-green-800/60 border-2 border-green-600/40 flex items-center justify-center text-white text-2xl hover:bg-green-700/60 transition-all"
+                      data-testid="button-decrease-bet"
+                    >
+                      -
+                    </button>
+                    <div className="text-2xl font-bold text-white">
+                      R$ {betAmount.toFixed(2)}
+                    </div>
+                    <button 
+                      onClick={() => setBetAmount(betAmount + 0.10)}
+                      className="w-12 h-12 rounded-full bg-green-800/60 border-2 border-green-600/40 flex items-center justify-center text-white text-2xl hover:bg-green-700/60 transition-all"
+                      data-testid="button-increase-bet"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setBetAmount(betAmount + 0.10)}
-                  className="w-8 h-8 rounded-full bg-green-800/50 border border-green-600/50 flex items-center justify-center text-green-300 hover:bg-green-700/50"
-                >
-                  +
-                </button>
-              </div>
 
-              {/* Saldo Label and Value */}
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
-                <div className="text-green-400/70 text-xs mb-1">💰 SALDO</div>
-                <div className="text-lg font-bold text-green-300">
-                  R$ {balance.toFixed(2)}
+                {/* SALDO */}
+                <div>
+                  <div className="text-green-400/70 text-sm font-medium text-center mb-2">
+                    💰 SALDO
+                  </div>
+                  <div className="bg-green-900/40 rounded-2xl py-3 px-6 text-center border-2 border-green-700/30">
+                    <div className="text-2xl font-bold text-white">
+                      R$ {balance.toFixed(2)}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
