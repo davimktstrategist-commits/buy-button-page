@@ -260,50 +260,40 @@
           cursor: pointer;
           transition: transform 0.2s;
           filter: drop-shadow(0 10px 20px rgba(138, 43, 226, 0.7));
-          background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-          border: 4px solid #a78bfa;
-          border-radius: 20px;
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
       }
 
       #play-button.disabled {
           cursor: not-allowed;
           filter: grayscale(70%) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
-          opacity: 0.6;
       }
 
       #play-button:active:not(.disabled) {
           transform: scale(0.92);
       }
 
-      .start-text {
-          font-size: 48px;
+      .start-game-button {
+          width: 223px;
+          height: 70px;
+          background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+          color: #fff;
+          border: none;
+          border-radius: 12px;
+          padding: 16px;
           font-weight: 900;
-          color: white;
-          text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-          letter-spacing: 4px;
+          font-size: 1.8rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 6px 20px rgba(22, 163, 74, 0.5);
+          letter-spacing: 2px;
       }
 
-      .spins-badge {
-          position: absolute;
-          top: -10px;
-          right: -10px;
-          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-          color: white;
-          font-size: 18px;
-          font-weight: 900;
-          padding: 8px 14px;
-          border-radius: 50%;
-          min-width: 45px;
-          height: 45px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 3px solid white;
-          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.6);
+      .start-game-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(22, 163, 74, 0.6);
+      }
+
+      .start-game-button:active {
+          transform: translateY(0px) scale(0.98);
       }
 
       /* Controles centralizados */
@@ -1527,10 +1517,8 @@
         <div class="bottom-game-controls">
             <!-- Botão PLAY -->
             <div class="play-button-container">
-                <button id="play-button" class="start-button">
-                    <span class="start-text">START</span>
-                    <span id="spins-badge" class="spins-badge">0</span>
-                </button>
+                <button id="start-button" class="start-game-button">START</button>
+                <lottie-player id="play-button" src="https://lottie.host/580bbfbc-05ae-4ba9-a829-3208237b9ba3/A4QHqPhCT6.json" background="transparent.html" speed="1" loop="" autoplay="" style="display: none;"></lottie-player>
             </div>
 
             <!-- Controles Centralizados -->
@@ -3458,14 +3446,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             DOMElements.giroValue.textContent = formatCurrency(state.aposta);
             
-            // Atualizar badge de giros disponíveis
-            const spinsBadge = document.getElementById('spins-badge');
-            if (spinsBadge && state.isLoggedIn) {
-                const girosDisponiveis = Math.floor(state.saldo / state.aposta);
-                spinsBadge.textContent = girosDisponiveis;
-                spinsBadge.style.display = 'flex';
-            } else if (spinsBadge) {
-                spinsBadge.style.display = 'none';
+            // Alternar entre botão START e botão de ação da roleta
+            const startButton = document.getElementById('start-button');
+            const playButton = document.getElementById('play-button');
+            
+            if (state.isLoggedIn && state.saldo >= state.aposta) {
+                // Logado com saldo: mostrar botão de ação (lottie)
+                if (startButton) startButton.style.display = 'none';
+                if (playButton) playButton.style.display = 'block';
+            } else {
+                // Deslogado ou sem saldo: mostrar botão START
+                if (startButton) startButton.style.display = 'block';
+                if (playButton) playButton.style.display = 'none';
             }
         };
 
@@ -3824,7 +3816,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const initEventListeners = () => {
-            if(DOMElements.playButton) DOMElements.playButton.addEventListener('click', handlePlay); 
+            if(DOMElements.playButton) DOMElements.playButton.addEventListener('click', handlePlay);
+            
+            // Event listener para o botão START
+            const startButton = document.getElementById('start-button');
+            if(startButton) {
+                startButton.addEventListener('click', () => {
+                    unlockAllAudio();
+                    if (!state.isLoggedIn) {
+                        showAuthModal('register');
+                    } else if (state.saldo < state.aposta) {
+                        if (typeof openDepositModal === 'function') {
+                            openDepositModal();
+                        } else {
+                            showNotification('Saldo insuficiente. Por favor, faça um depósito.', true);
+                        }
+                    }
+                });
+            } 
             
             DOMElements.plusButton.addEventListener('click', () => { 
                 if (!state.isSpinning) { 
