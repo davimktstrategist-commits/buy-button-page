@@ -16,12 +16,14 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+
+// Admin components
 import { RouletteSettings } from "@/components/admin/RouletteSettings";
 import { UsersManagement } from "@/components/admin/UsersManagement";
 import { TransactionsManagement } from "@/components/admin/TransactionsManagement";
 import { WithdrawalsManagement } from "@/components/admin/WithdrawalsManagement";
 import { AffiliatesManagement } from "@/components/admin/AffiliatesManagement";
-import { cn } from "@/lib/utils";
 import { DepositsChart } from "@/components/admin/DepositsChart";
 import { TopBalancesChart } from "@/components/admin/TopBalancesChart";
 
