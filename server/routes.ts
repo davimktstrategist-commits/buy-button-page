@@ -1096,6 +1096,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Depósitos dos últimos 7 dias (gráfico)
+  app.get('/ajax/admin_deposits_7days.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const data = await storage.getDeposits7Days();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching deposits 7 days:", error);
+      res.status(500).json({ error: "Erro ao buscar depósitos" });
+    }
+  });
+
+  // Maiores saldos de usuários (gráfico)
+  app.get('/ajax/admin_top_balances.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const data = await storage.getTopBalances();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching top balances:", error);
+      res.status(500).json({ error: "Erro ao buscar saldos" });
+    }
+  });
+
+  // Configuração do gateway
+  app.get('/ajax/admin_gateway_config.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const config = await storage.getGatewayConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching gateway config:", error);
+      res.status(500).json({ error: "Erro ao buscar configuração do gateway" });
+    }
+  });
+
+  // Salvar configuração do gateway
+  app.post('/ajax/admin_save_gateway.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      const { publicKey, privateKey } = req.body;
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      if (!publicKey || !privateKey) {
+        return res.status(400).json({ error: "Preencha todos os campos" });
+      }
+
+      await storage.saveGatewayConfig(publicKey, privateKey);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error saving gateway config:", error);
+      res.status(500).json({ error: "Erro ao salvar configuração" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
