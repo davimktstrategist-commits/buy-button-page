@@ -5,6 +5,9 @@ import { apiRequest } from "@/lib/queryClient";
 import { RouletteWheel } from "@/components/RouletteWheel";
 import { DepositModal } from "@/components/DepositModal";
 import { WithdrawalModal } from "@/components/WithdrawalModal";
+import { AuthModal } from "@/components/AuthModal";
+import { ProfileModal } from "@/components/ProfileModal";
+import { RulesModal } from "@/components/RulesModal";
 import { WinAnimation } from "@/components/WinAnimation";
 import { useToast } from "@/hooks/use-toast";
 import { User, Volume2, HelpCircle, DollarSign } from "lucide-react";
@@ -12,6 +15,9 @@ import type { Game as GameType } from "@shared/schema";
 
 export default function Game() {
   const { sessionId } = useSession();
+  const [showAuth, setShowAuth] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdrawal, setShowWithdrawal] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
@@ -89,6 +95,11 @@ export default function Game() {
     }, 3000);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('sessionId');
+    window.location.reload();
+  };
+
   if (!sessionId) {
     return null;
   }
@@ -118,6 +129,7 @@ export default function Game() {
         {/* Ícones do Topo Direito - Grid 2x2 */}
         <div className="absolute top-4 right-4 grid grid-cols-2 gap-3 z-[25]">
           <button 
+            onClick={() => setShowProfile(true)}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
             data-testid="button-profile"
           >
@@ -130,6 +142,7 @@ export default function Game() {
             <Volume2 className="w-5 h-5" />
           </button>
           <button 
+            onClick={() => setShowRules(true)}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
             data-testid="button-help"
           >
@@ -157,15 +170,15 @@ export default function Game() {
 
         {/* Controles Inferiores */}
         <div className="pb-8 px-4 flex flex-col items-center gap-4 z-[20]">
-          {/* Botão START Grande e Azul */}
+          {/* Botão START Grande e Roxo/Azul */}
           <button
             onClick={handleSpin}
             disabled={isSpinning || playGameMutation.isPending}
             className="relative group disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="button-spin"
           >
-            <div className="absolute inset-0 bg-blue-600 rounded-[28px] blur-xl opacity-70" />
-            <div className="relative px-24 py-3.5 bg-gradient-to-b from-blue-500 to-blue-600 rounded-[28px] shadow-2xl border-2 border-blue-400">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[28px] blur-xl opacity-70" />
+            <div className="relative px-24 py-3.5 bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 rounded-[28px] shadow-2xl border-2 border-purple-400">
               <span className="text-white text-2xl font-black tracking-wider uppercase">
                 {isSpinning ? "Girando..." : "Start"}
               </span>
@@ -220,6 +233,28 @@ export default function Game() {
       </div>
 
       {/* Modals */}
+      <AuthModal
+        open={showAuth}
+        onClose={() => setShowAuth(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['/api/balance', sessionId] });
+        }}
+      />
+
+      <ProfileModal
+        open={showProfile}
+        onClose={() => setShowProfile(false)}
+        balance={balance}
+        username={sessionId.substring(0, 8)}
+        onWithdraw={() => setShowWithdrawal(true)}
+        onLogout={handleLogout}
+      />
+
+      <RulesModal
+        open={showRules}
+        onClose={() => setShowRules(false)}
+      />
+
       <DepositModal
         open={showDeposit}
         onClose={() => setShowDeposit(false)}
