@@ -3166,10 +3166,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         function generateRandomWinner() {
-            const prefixes = ['Jogador', 'Player', 'User', 'Tiger', 'Lucky', 'Winner'];
-            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-            const number = Math.floor(Math.random() * 9999);
-            const username = `${prefix}${number}`;
+            const firstNames = ['João', 'Maria', 'Pedro', 'Ana', 'Carlos', 'Juliana', 'Rafael', 'Fernanda', 'Lucas', 'Beatriz', 'Gustavo', 'Camila', 'Bruno', 'Larissa', 'Felipe', 'Amanda', 'Diego', 'Patricia'];
+            const lastNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Costa', 'Pereira', 'Rodrigues', 'Almeida', 'Nascimento', 'Lima', 'Araujo', 'Fernandes', 'Carvalho', 'Gomes', 'Martins', 'Rocha'];
+            
+            const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+            const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+            const randomSuffix = Math.floor(Math.random() * 99);
+            const username = `${firstName} ${lastName.charAt(0)}.${randomSuffix}`;
             
             const multipliers = [2, 3, 4, 5, 10, 15, 20, 30, 50, 100];
             const multiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
@@ -3204,6 +3207,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (nextWinner) {
                 addWinnerToList(nextWinner);
             }
+            
+            // Velocidade variável: às vezes rápido (2-3s), às vezes normal (4-7s)
+            const quickInterval = Math.random() < 0.3; // 30% de chance de ser rápido
+            const nextInterval = quickInterval 
+                ? Math.random() * 1000 + 2000  // 2-3 segundos (rápido)
+                : Math.random() * 3000 + 4000; // 4-7 segundos (normal)
+            
+            setTimeout(cycleWinner, nextInterval);
         }
         
         async function init() {
@@ -3212,7 +3223,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const winner = winnersQueue.shift();
                 if (winner) addWinnerToList(winner);
             }
-            setInterval(cycleWinner, 5000); 
+            // Inicia o ciclo com intervalo variável
+            const firstInterval = Math.random() * 3000 + 4000;
+            setTimeout(cycleWinner, firstInterval); 
         }
         init();
     }
