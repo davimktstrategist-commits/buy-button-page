@@ -173,6 +173,10 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - `POST /ajax/admin_reject_withdrawal.php` - Rejeitar saque (header: `Authorization: Bearer {token}`, body: `{withdrawalId, reason}`)
 - `GET /ajax/admin_roulette_config.php` - Configurações da roleta (header: `Authorization: Bearer {token}`)
 - `POST /ajax/admin_update_roulette.php` - Atualizar probabilidade (header: `Authorization: Bearer {token}`, body: `{configId, probability}`)
+- `GET /ajax/admin_deposits_7days.php` - Dados do gráfico de Depósitos (Últimos 7 dias) (header: `Authorization: Bearer {token}`)
+- `GET /ajax/admin_top_balances.php` - Dados do gráfico de Maiores Saldos (Top 5) (header: `Authorization: Bearer {token}`)
+- `GET /ajax/admin_gateway_config.php` - Configuração do gateway BRPIX (header: `Authorization: Bearer {token}`)
+- `POST /ajax/admin_save_gateway.php` - Salvar credenciais BRPIX (header: `Authorization: Bearer {token}`, body: `{publicKey, privateKey}`)
 
 ### Rotas Legacy (API JSON)
 

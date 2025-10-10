@@ -17,6 +17,7 @@ import { RouletteSettings } from "@/components/admin/RouletteSettings";
 import { UsersManagement } from "@/components/admin/UsersManagement";
 import { TransactionsManagement } from "@/components/admin/TransactionsManagement";
 import { WithdrawalsManagement } from "@/components/admin/WithdrawalsManagement";
+import { GatewaySettings } from "@/components/admin/GatewaySettings";
 
 interface DashboardStats {
   totalUsers: number;
@@ -172,7 +173,7 @@ export default function AdminDashboard() {
 
         {/* Management Tabs */}
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="users" data-testid="tab-users">
               <Users className="h-4 w-4 mr-2" />
               Usuários
@@ -188,6 +189,10 @@ export default function AdminDashboard() {
             <TabsTrigger value="roulette" data-testid="tab-roulette">
               <SettingsIcon className="h-4 w-4 mr-2" />
               Roleta
+            </TabsTrigger>
+            <TabsTrigger value="gateway" data-testid="tab-gateway">
+              <SettingsIcon className="h-4 w-4 mr-2" />
+              Gateway
             </TabsTrigger>
           </TabsList>
 
@@ -205,6 +210,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="roulette">
             <RouletteSettings />
+          </TabsContent>
+
+          <TabsContent value="gateway">
+            <GatewaySettings />
           </TabsContent>
         </Tabs>
       </main>
