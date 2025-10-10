@@ -3595,12 +3595,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 const result = await response.json();
                 if (result.success) {
-                    if (action === 'register') {
+                    if (action === 'register' && result.user) {
+                        // Salvar dados do usuário no localStorage
+                        localStorage.setItem('loggedUser', JSON.stringify(result.user));
+                        // Substituir sessionId pelo userId do usuário registrado
+                        localStorage.setItem('sessionId', result.user.id);
+                        window.APP_SESSION_ID = result.user.id;
                         sessionStorage.setItem('openDepositAfterRegister', 'true');
                         window.location.reload();
                     } else if (action === 'login' && result.user) {
                         // Salvar dados do usuário no localStorage
                         localStorage.setItem('loggedUser', JSON.stringify(result.user));
+                        // Substituir sessionId pelo userId do usuário logado
+                        localStorage.setItem('sessionId', result.user.id);
+                        window.APP_SESSION_ID = result.user.id;
                         // Fechar modal
                         DOMElements.authModalOverlay.classList.remove('show');
                         // Atualizar UI

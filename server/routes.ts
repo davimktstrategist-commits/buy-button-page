@@ -68,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const lastName = nameParts.slice(1).join(' ') || '';
         
         // Criar usuário
-        await storage.createUser({
+        const newUser = await storage.createUser({
           email,
           firstName,
           lastName,
@@ -76,7 +76,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password: senha, // Em produção, usar hash
         });
         
-        res.json({ success: true, message: 'Conta criada com sucesso!' });
+        res.json({ 
+          success: true, 
+          message: 'Conta criada com sucesso!',
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            firstName: newUser.firstName,
+            lastName: newUser.lastName,
+            phone: newUser.phone,
+            balance: newUser.balance,
+            profileImageUrl: newUser.profileImageUrl
+          }
+        });
       } else if (action === 'login') {
         // Login
         if (!email || !senha) {
