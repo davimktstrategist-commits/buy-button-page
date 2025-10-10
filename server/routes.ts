@@ -880,6 +880,172 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ROTAS ADMIN PHP-COMPATÍVEIS (SEM REPLIT AUTH) =====
+  
+  const ADMIN_PASSWORD = 'admin123'; // Senha de admin
+  
+  // Verificar se é admin
+  function isAdminSession(sessionId: string | undefined): boolean {
+    return sessionId === ADMIN_PASSWORD;
+  }
+
+  // Estatísticas do dashboard admin
+  app.get('/ajax/admin_stats.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ error: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // Lista de usuários admin
+  app.get('/ajax/admin_users.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ error: "Erro ao buscar usuários" });
+    }
+  });
+
+  // Lista de transações admin
+  app.get('/ajax/admin_transactions.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const transactions = await storage.getAllTransactions();
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ error: "Erro ao buscar transações" });
+    }
+  });
+
+  // Lista de saques admin
+  app.get('/ajax/admin_withdrawals.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const withdrawals = await storage.getAllWithdrawals();
+      res.json(withdrawals);
+    } catch (error) {
+      console.error("Error fetching withdrawals:", error);
+      res.status(500).json({ error: "Erro ao buscar saques" });
+    }
+  });
+
+  // Aprovar saque admin
+  app.post('/ajax/admin_approve_withdrawal.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const withdrawalId = req.body.withdrawalId;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      if (!withdrawalId) {
+        return res.status(400).json({ error: "ID do saque é obrigatório" });
+      }
+
+      const withdrawal = await storage.approveWithdrawal(withdrawalId);
+      res.json({ success: true, withdrawal });
+    } catch (error) {
+      console.error("Error approving withdrawal:", error);
+      res.status(500).json({ error: "Erro ao aprovar saque" });
+    }
+  });
+
+  // Rejeitar saque admin
+  app.post('/ajax/admin_reject_withdrawal.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const withdrawalId = req.body.withdrawalId;
+      const reason = req.body.reason;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      if (!withdrawalId) {
+        return res.status(400).json({ error: "ID do saque é obrigatório" });
+      }
+
+      const withdrawal = await storage.rejectWithdrawal(withdrawalId, reason || 'Rejeitado pelo administrador');
+      res.json({ success: true, withdrawal });
+    } catch (error) {
+      console.error("Error rejecting withdrawal:", error);
+      res.status(500).json({ error: "Erro ao rejeitar saque" });
+    }
+  });
+
+  // Configuração da roleta admin
+  app.get('/ajax/admin_roulette_config.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const configs = await storage.getRouletteConfigs();
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching roulette config:", error);
+      res.status(500).json({ error: "Erro ao buscar configuração da roleta" });
+    }
+  });
+
+  // Atualizar configuração da roleta admin
+  app.post('/ajax/admin_update_roulette.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const configId = req.body.configId;
+      const probability = parseFloat(req.body.probability);
+      
+      if (!isAdminSession(sessionId)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      if (!configId || isNaN(probability)) {
+        return res.status(400).json({ error: "Dados inválidos" });
+      }
+
+      if (probability < 0 || probability > 100) {
+        return res.status(400).json({ error: "Probabilidade deve estar entre 0 e 100" });
+      }
+
+      const config = await storage.updateRouletteConfig(configId, probability);
+      res.json({ success: true, config });
+    } catch (error) {
+      console.error("Error updating roulette config:", error);
+      res.status(500).json({ error: "Erro ao atualizar configuração" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
