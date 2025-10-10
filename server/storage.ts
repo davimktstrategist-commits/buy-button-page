@@ -235,7 +235,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async approveWithdrawal(id: string): Promise<Withdrawal> {
-    const [withdrawal] = await db
+    const withdrawal = await this.getWithdrawalById(id);
+    if (!withdrawal) {
+      throw new Error('Withdrawal not found');
+    }
+    
+    if (withdrawal.status !== 'pending') {
+      throw new Error('Only pending withdrawals can be approved');
+    }
+    
+    const [approvedWithdrawal] = await db
       .update(withdrawals)
       .set({ 
         status: 'completed',
@@ -244,15 +253,21 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(withdrawals.id, id))
       .returning();
-    return withdrawal;
+    return approvedWithdrawal;
   }
 
   async rejectWithdrawal(id: string, reason: string): Promise<Withdrawal> {
     const withdrawal = await this.getWithdrawalById(id);
-    if (withdrawal) {
-      // Return balance to user
-      await this.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
+    if (!withdrawal) {
+      throw new Error('Withdrawal not found');
     }
+    
+    if (withdrawal.status !== 'pending') {
+      throw new Error('Only pending withdrawals can be rejected');
+    }
+    
+    // Return balance to user
+    await this.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
     
     const [rejectedWithdrawal] = await db
       .update(withdrawals)

@@ -20,7 +20,7 @@ export function GatewaySettings() {
   const [privateKey, setPrivateKey] = useState("");
 
   const { data: config, isLoading } = useQuery<GatewayConfig>({
-    queryKey: ['/ajax/admin_gateway_config.php'],
+    queryKey: ['/api/admin/gateway-config'],
   });
 
   useEffect(() => {
@@ -32,10 +32,10 @@ export function GatewaySettings() {
 
   const saveConfigMutation = useMutation({
     mutationFn: async (data: { publicKey: string; privateKey: string }) => {
-      return apiRequest("POST", "/ajax/admin_save_gateway.php", data);
+      return apiRequest("POST", "/api/admin/gateway-config", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/ajax/admin_gateway_config.php'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/gateway-config'] });
       toast({
         title: "Configuração salva",
         description: "As chaves do gateway BRPIX foram atualizadas com sucesso.",

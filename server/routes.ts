@@ -479,6 +479,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gateway configuration routes
+  app.get('/api/admin/gateway-config', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const config = await storage.getGatewayConfig();
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching gateway config:", error);
+      res.status(500).json({ message: "Failed to fetch gateway config" });
+    }
+  });
+
+  app.post('/api/admin/gateway-config', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { publicKey, privateKey } = req.body;
+
+      if (!publicKey || !privateKey) {
+        return res.status(400).json({ message: "Public and private keys are required" });
+      }
+
+      await storage.saveGatewayConfig(publicKey, privateKey);
+      res.json({ message: "Gateway configuration saved successfully" });
+    } catch (error) {
+      console.error("Error saving gateway config:", error);
+      res.status(500).json({ message: "Failed to save gateway config" });
+    }
+  });
+
   // ===== ROTAS COMPATÍVEIS COM FRONTEND HTML ORIGINAL =====
   
   // Lista de ganhadores recentes (winners carousel)
