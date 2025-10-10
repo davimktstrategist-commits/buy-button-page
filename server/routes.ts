@@ -76,6 +76,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password: senha, // Em produção, usar hash
         });
         
+        // Migrate anonymous user data if exists
+        const oldSessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+        if (oldSessionId && oldSessionId !== newUser.id) {
+          await storage.migrateAnonymousUser(oldSessionId, newUser.id);
+          // Refresh user data after migration
+          const updatedUser = await storage.getUser(newUser.id);
+          if (updatedUser) {
+            return res.json({ 
+              success: true, 
+              message: 'Conta criada com sucesso!',
+              user: {
+                id: updatedUser.id,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                phone: updatedUser.phone,
+                balance: updatedUser.balance,
+                profileImageUrl: updatedUser.profileImageUrl
+              }
+            });
+          }
+        }
+        
         res.json({ 
           success: true, 
           message: 'Conta criada com sucesso!',
@@ -98,6 +121,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = await storage.getUserByEmail(email);
         if (!user || user.password !== senha) {
           return res.json({ success: false, message: 'Email ou senha incorretos' });
+        }
+        
+        // Migrate anonymous user data if exists
+        const oldSessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+        if (oldSessionId && oldSessionId !== user.id) {
+          await storage.migrateAnonymousUser(oldSessionId, user.id);
+          // Refresh user data after migration
+          const updatedUser = await storage.getUser(user.id);
+          if (updatedUser) {
+            return res.json({ 
+              success: true, 
+              message: 'Login realizado com sucesso!',
+              user: {
+                id: updatedUser.id,
+                email: updatedUser.email,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                phone: updatedUser.phone,
+                balance: updatedUser.balance,
+                profileImageUrl: updatedUser.profileImageUrl
+              }
+            });
+          }
         }
         
         // Retorna dados do usuário para o frontend

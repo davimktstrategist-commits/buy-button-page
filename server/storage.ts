@@ -66,6 +66,9 @@ export interface IStorage {
   getTopBalances(): Promise<any>;
   getGatewayConfig(): Promise<any>;
   saveGatewayConfig(publicKey: string, privateKey: string): Promise<void>;
+  
+  // User migration
+  migrateAnonymousUser(fromUserId: string, toUserId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -489,6 +492,75 @@ export class DatabaseStorage implements IStorage {
           set: { value: privateKey, updatedAt: new Date() }
         });
     }
+  }
+
+  async migrateAnonymousUser(fromUserId: string, toUserId: string): Promise<void> {
+    // Migrate all data from anonymous user to authenticated user
+    
+    // 1. Get source user
+    const fromUser = await this.getUser(fromUserId);
+    if (!fromUser) return; // No user to migrate
+    
+    // 2. SECURITY: Verify that fromUser is truly anonymous
+    // Anonymous users MUST have:
+    // - No email OR empty email
+    // - No password OR empty password
+    // - No phone OR empty phone
+    // This prevents attackers from stealing authenticated users' data
+    const hasEmail = fromUser.email && fromUser.email.trim() !== '';
+    const hasPassword = fromUser.password && fromUser.password.trim() !== '';
+    const hasPhone = fromUser.phone && fromUser.phone.trim() !== '';
+    
+    if (hasEmail || hasPassword || hasPhone) {
+      console.warn(`SECURITY BLOCK: Attempted to migrate authenticated user ${fromUserId} (email: ${!!hasEmail}, password: ${!!hasPassword}, phone: ${!!hasPhone})`);
+      return; // NOT anonymous - do not migrate or delete
+    }
+    
+    // 3. Prevent self-migration
+    if (fromUserId === toUserId) {
+      return; // Same user, nothing to migrate
+    }
+    
+    // 4. Transfer balance to authenticated user
+    const toUser = await this.getUser(toUserId);
+    if (!toUser) {
+      console.error(`Migration target user ${toUserId} not found`);
+      return;
+    }
+    
+    const combinedBalance = parseFloat(fromUser.balance) + parseFloat(toUser.balance);
+    await db
+      .update(users)
+      .set({ 
+        balance: combinedBalance.toFixed(2),
+        totalBet: (parseFloat(toUser.totalBet) + parseFloat(fromUser.totalBet)).toFixed(2),
+        totalWon: (parseFloat(toUser.totalWon) + parseFloat(fromUser.totalWon)).toFixed(2),
+        totalDeposited: (parseFloat(toUser.totalDeposited) + parseFloat(fromUser.totalDeposited)).toFixed(2),
+      })
+      .where(eq(users.id, toUserId));
+    
+    // 3. Migrate games
+    await db
+      .update(games)
+      .set({ userId: toUserId })
+      .where(eq(games.userId, fromUserId));
+    
+    // 4. Migrate transactions
+    await db
+      .update(transactions)
+      .set({ userId: toUserId })
+      .where(eq(transactions.userId, fromUserId));
+    
+    // 5. Migrate withdrawals
+    await db
+      .update(withdrawals)
+      .set({ userId: toUserId })
+      .where(eq(withdrawals.userId, fromUserId));
+    
+    // 6. Delete anonymous user
+    await db
+      .delete(users)
+      .where(eq(users.id, fromUserId));
   }
 }
 
