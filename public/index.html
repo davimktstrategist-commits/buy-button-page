@@ -235,12 +235,16 @@
       /* GAME MODE BUTTONS */
       #game-mode-buttons {
           position: absolute;
-          bottom: 140px;
-          right: 15px;
-          display: flex;
+          bottom: 90px;
+          left: 15px;
+          display: none;
           flex-direction: column;
           gap: 10px;
           z-index: 50;
+      }
+
+      #game-mode-buttons.visible {
+          display: flex;
       }
 
       .mode-button {
@@ -3593,6 +3597,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const saldoDisplayBottom = document.getElementById('saldo-display-bottom');
             if (saldoDisplayBottom) {
                 saldoDisplayBottom.style.display = state.isLoggedIn ? 'flex' : 'none';
+            }
+            
+            // Mostrar/esconder botões de modo de jogo (TURBO e AUTO)
+            const gameModeButtons = document.getElementById('game-mode-buttons');
+            if (gameModeButtons) {
+                if (state.isLoggedIn && state.saldo >= state.aposta) {
+                    gameModeButtons.classList.add('visible');
+                } else {
+                    gameModeButtons.classList.remove('visible');
+                }
             }
             
             // Alternar entre botão START e botão de ação da roleta
