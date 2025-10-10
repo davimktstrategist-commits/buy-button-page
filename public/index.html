@@ -3166,15 +3166,27 @@ document.addEventListener('DOMContentLoaded', () => {
             winnersListElement.lastElementChild.classList.add('entering');
         }
         
+        function generateRandomWinner() {
+            const prefixes = ['Jogador', 'Player', 'User', 'Tiger', 'Lucky', 'Winner'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const number = Math.floor(Math.random() * 9999);
+            const username = `${prefix}${number}`;
+            
+            const multipliers = [2, 3, 4, 5, 10, 15, 20, 30, 50, 100];
+            const multiplier = multipliers[Math.floor(Math.random() * multipliers.length)];
+            const betAmounts = [0.5, 1, 2, 5, 10, 20, 50];
+            const betAmount = betAmounts[Math.floor(Math.random() * betAmounts.length)];
+            const amount = betAmount * multiplier;
+            
+            return {
+                name: username,
+                prize: `${multiplier}x - R$ ${amount.toFixed(2)}`
+            };
+        }
+        
         async function fetchAndRefillQueue() {
-            try {
-                const response = await fetch('ajax/winners.php');
-                const data = await response.json();
-                if (data.success && data.winners.length > 0) {
-                    winnersQueue = winnersQueue.concat(data.winners);
-                }
-            } catch (error) {
-                console.error('Erro ao buscar a lista de ganhadores:', error);
+            for (let i = 0; i < 5; i++) {
+                winnersQueue.push(generateRandomWinner());
             }
         }
         
@@ -3201,7 +3213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const winner = winnersQueue.shift();
                 if (winner) addWinnerToList(winner);
             }
-            setInterval(cycleWinner, 4000); 
+            setInterval(cycleWinner, 5000); 
         }
         init();
     }
