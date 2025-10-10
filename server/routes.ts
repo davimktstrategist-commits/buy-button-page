@@ -1,6 +1,7 @@
 // API Routes for Roleta do Tigre
-import type { Express } from "express";
+import express, { type Express } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
@@ -1415,13 +1416,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Servir arquivos estáticos do public (imagens, sons, etc) - mas não HTML
+  app.use(express.static(path.join(process.cwd(), 'public'), {
+    index: false, // Não servir index.html automaticamente
+    extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'mp3', 'wav', 'ogg', 'webp', 'ico']
+  }));
+
   const httpServer = createServer(app);
   
   // Setup Vite for React app (dev mode only)
   if (process.env.NODE_ENV !== "production") {
     const { setupVite } = await import("./vite");
     await setupVite(app, httpServer);
+  } else {
+    // Em produção, servir o build da aplicação React
+    const { serveStatic } = await import("./vite");
+    serveStatic(app);
   }
+  
+  // Servir o jogo HTML estático na rota raiz
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
+  });
   
   return httpServer;
 }
