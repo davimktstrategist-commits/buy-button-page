@@ -3208,11 +3208,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 addWinnerToList(nextWinner);
             }
             
-            // Velocidade variável: às vezes rápido (2-3s), às vezes normal (4-7s)
-            const quickInterval = Math.random() < 0.3; // 30% de chance de ser rápido
-            const nextInterval = quickInterval 
-                ? Math.random() * 1000 + 2000  // 2-3 segundos (rápido)
-                : Math.random() * 3000 + 4000; // 4-7 segundos (normal)
+            // Velocidade variável: às vezes muito rápido, às vezes rápido
+            const veryQuickInterval = Math.random() < 0.4; // 40% de chance de ser muito rápido
+            const nextInterval = veryQuickInterval 
+                ? Math.random() * 1000 + 1000  // 1-2 segundos (muito rápido)
+                : Math.random() * 1500 + 2500; // 2.5-4 segundos (rápido)
             
             setTimeout(cycleWinner, nextInterval);
         }
@@ -3223,8 +3223,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const winner = winnersQueue.shift();
                 if (winner) addWinnerToList(winner);
             }
-            // Inicia o ciclo com intervalo variável
-            const firstInterval = Math.random() * 3000 + 4000;
+            // Inicia o ciclo com intervalo mais rápido
+            const firstInterval = Math.random() * 1500 + 2000;
             setTimeout(cycleWinner, firstInterval); 
         }
         init();
