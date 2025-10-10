@@ -56,75 +56,78 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
   }, [isSpinning, finalMultiplier]);
 
   return (
-    <div className="relative w-full" style={{ paddingBottom: '100%' }}>
-      {/* Indicador do topo (seta dourada) */}
+    <div className="relative w-full flex flex-col items-center">
+      {/* Seta Indicadora GRANDE no Topo */}
       <img 
         src="/cima.png" 
         alt="Indicador" 
-        className="absolute top-0 left-1/2 -translate-x-1/2 z-[2] pointer-events-none"
+        className="w-full mb-[-15%] z-[10] pointer-events-none"
         style={{ 
-          width: '100%', 
-          height: 'auto',
-          marginTop: '0'
+          maxWidth: '100%',
+          height: 'auto'
         }}
         data-testid="img-roulette-indicator"
       />
 
-      {/* Roleta Principal */}
-      <div
-        ref={wheelRef}
-        className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] transition-transform duration-[3000ms] ease-out"
-        style={{
-          width: '88%',
-          transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
-          transformOrigin: 'center center'
-        }}
-        data-testid="img-roulette-wheel"
-      >
+      {/* Container da Roleta */}
+      <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
+        {/* Roleta Principal */}
+        <div
+          ref={wheelRef}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[5] transition-transform ease-out"
+          style={{
+            width: '100%',
+            transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
+            transformOrigin: 'center center',
+            transitionDuration: '3000ms'
+          }}
+          data-testid="img-roulette-wheel"
+        >
+          <img 
+            src="/roleta1.png" 
+            alt="Roleta Principal" 
+            className="w-full h-auto"
+          />
+        </div>
+
+        {/* Roleta Bônus (centro) */}
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[7] transition-transform ease-out"
+          style={{
+            width: '38%',
+            transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
+            transformOrigin: 'center center',
+            transitionDuration: '3000ms'
+          }}
+          data-testid="img-bonus-wheel"
+        >
+          <img 
+            src="/roleta2.png" 
+            alt="Roleta Bônus" 
+            className="w-full h-auto"
+          />
+        </div>
+
+        {/* Indicador Bônus (seta branca pequena) */}
         <img 
-          src="/roleta1.png" 
-          alt="Roleta Principal" 
-          className="w-full h-auto"
+          src="/ceta.png" 
+          alt="Indicador Bônus" 
+          className="absolute top-[20%] left-1/2 -translate-x-1/2 z-[8] pointer-events-none"
+          style={{ 
+            width: '10%', 
+            height: 'auto'
+          }}
+          data-testid="img-bonus-indicator"
         />
       </div>
 
-      {/* Roleta Bônus (centro) */}
-      <div
-        className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[3] transition-transform duration-[3000ms] ease-out"
-        style={{
-          width: '35%',
-          transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
-          transformOrigin: 'center center'
-        }}
-        data-testid="img-bonus-wheel"
-      >
-        <img 
-          src="/roleta2.png" 
-          alt="Roleta Bônus" 
-          className="w-full h-auto"
-        />
-      </div>
-
-      {/* Indicador Bônus (seta branca pequena) */}
-      <img 
-        src="/ceta.png" 
-        alt="Indicador Bônus" 
-        className="absolute top-[30%] left-1/2 -translate-x-1/2 z-[4] pointer-events-none"
-        style={{ 
-          width: '8%', 
-          height: 'auto'
-        }}
-        data-testid="img-bonus-indicator"
-      />
-
-      {/* Barra Inferior */}
+      {/* Barra Inferior Decorativa */}
       <img 
         src="/baixo.png" 
         alt="Barra Inferior" 
-        className="absolute left-0 z-[2] pointer-events-none"
+        className="w-full mt-[-8%] z-[6] pointer-events-none"
         style={{ 
-          bottom: '-40px',
-          width: '100%', 
+          maxWidth: '100%',
           height: 'auto'
         }}
         data-testid="img-bottom-bar"
