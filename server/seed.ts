@@ -14,14 +14,21 @@ async function seedRouletteConfig() {
     return;
   }
 
-  // Main roulette configuration with balanced probabilities
+  // Main roulette configuration - 12 segmentos conforme especificado
+  // Multiplicadores: 1X, 2X, 3X, 4X, 5X, 10X, 15X, 20X, 30X, 50X, 100X, 100X (dois 100x)
   const mainConfigs = [
-    { type: 'main' as const, multiplier: 0, probability: '40.00' },    // 40% chance to lose
-    { type: 'main' as const, multiplier: 2, probability: '20.00' },    // 20% chance 2x
-    { type: 'main' as const, multiplier: 5, probability: '20.00' },    // 20% chance 5x
+    { type: 'main' as const, multiplier: 1, probability: '15.00' },    // 15% chance 1x
+    { type: 'main' as const, multiplier: 2, probability: '15.00' },    // 15% chance 2x
+    { type: 'main' as const, multiplier: 3, probability: '12.00' },    // 12% chance 3x
+    { type: 'main' as const, multiplier: 4, probability: '10.00' },    // 10% chance 4x
+    { type: 'main' as const, multiplier: 5, probability: '10.00' },    // 10% chance 5x
     { type: 'main' as const, multiplier: 10, probability: '10.00' },   // 10% chance 10x
-    { type: 'main' as const, multiplier: 15, probability: '5.00' },    // 5% chance 15x
-    { type: 'main' as const, multiplier: 100, probability: '5.00' },   // 5% chance 100x
+    { type: 'main' as const, multiplier: 15, probability: '8.00' },    // 8% chance 15x
+    { type: 'main' as const, multiplier: 20, probability: '7.00' },    // 7% chance 20x
+    { type: 'main' as const, multiplier: 30, probability: '5.00' },    // 5% chance 30x
+    { type: 'main' as const, multiplier: 50, probability: '4.00' },    // 4% chance 50x
+    { type: 'main' as const, multiplier: 100, probability: '2.00' },   // 2% chance 100x (primeiro)
+    { type: 'main' as const, multiplier: 100, probability: '2.00' },   // 2% chance 100x (segundo)
   ];
 
   // Bonus roulette configuration (optional, can be activated later)
