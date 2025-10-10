@@ -1093,12 +1093,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dados de afiliado
   app.get('/ajax/get_affiliate_data.php', async (req, res) => {
     try {
-      // Verificar se o usuário está autenticado
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.json({ success: false, message: 'Usuário não autenticado' });
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!sessionId) {
+        return res.json({ success: false, message: 'Sessão inválida' });
       }
 
-      const user = req.user as User;
+      // Buscar usuário
+      const user = await storage.getUser(sessionId);
       
       if (!user) {
         return res.json({ success: false, message: 'Usuário não encontrado' });
