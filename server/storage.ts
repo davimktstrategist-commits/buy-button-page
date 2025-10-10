@@ -49,6 +49,8 @@ export interface IStorage {
   getAllWithdrawals(): Promise<Withdrawal[]>;
   getWithdrawalById(id: string): Promise<Withdrawal | undefined>;
   updateWithdrawal(id: string, data: Partial<Withdrawal>): Promise<Withdrawal>;
+  approveWithdrawal(id: string): Promise<Withdrawal>;
+  rejectWithdrawal(id: string, reason: string): Promise<Withdrawal>;
   
   // Roulette configuration
   getRouletteConfigs(): Promise<RouletteConfig[]>;
@@ -58,6 +60,10 @@ export interface IStorage {
   // Admin stats
   getAllUsers(): Promise<User[]>;
   getDashboardStats(): Promise<any>;
+  getDeposits7Days(): Promise<any>;
+  getTopBalances(): Promise<any>;
+  getGatewayConfig(): Promise<any>;
+  saveGatewayConfig(publicKey: string, privateKey: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -226,6 +232,39 @@ export class DatabaseStorage implements IStorage {
       .where(eq(withdrawals.id, id))
       .returning();
     return withdrawal;
+  }
+
+  async approveWithdrawal(id: string): Promise<Withdrawal> {
+    const [withdrawal] = await db
+      .update(withdrawals)
+      .set({ 
+        status: 'completed',
+        processedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(withdrawals.id, id))
+      .returning();
+    return withdrawal;
+  }
+
+  async rejectWithdrawal(id: string, reason: string): Promise<Withdrawal> {
+    const withdrawal = await this.getWithdrawalById(id);
+    if (withdrawal) {
+      // Return balance to user
+      await this.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
+    }
+    
+    const [rejectedWithdrawal] = await db
+      .update(withdrawals)
+      .set({ 
+        status: 'failed',
+        rejectionReason: reason,
+        processedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(withdrawals.id, id))
+      .returning();
+    return rejectedWithdrawal;
   }
 
   // Roulette configuration

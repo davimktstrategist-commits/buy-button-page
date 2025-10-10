@@ -17,7 +17,7 @@ function generateAdminToken(): string {
 }
 
 function isValidAdminToken(token: string): boolean {
-  for (const [_, tokenData] of adminTokens.entries()) {
+  for (const tokenData of Array.from(adminTokens.values())) {
     if (tokenData.token === token && tokenData.expiresAt > new Date()) {
       return true;
     }
