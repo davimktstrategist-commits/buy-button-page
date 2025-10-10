@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import type { RouletteConfig } from "@shared/schema";
 import { Dices, Sparkles } from "lucide-react";
 
@@ -12,7 +12,6 @@ export function RouletteSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingConfigs, setEditingConfigs] = useState<Record<string, number>>({});
-  const saveTimeoutsRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const { data: configs = [] } = useQuery<RouletteConfig[]>({
     queryKey: ['/api/admin/roulette-config'],
@@ -39,36 +38,9 @@ export function RouletteSettings() {
     },
   });
 
-  // Auto-save effect
-  useEffect(() => {
-    Object.entries(editingConfigs).forEach(([id, probability]) => {
-      // Clear existing timeout
-      if (saveTimeoutsRef.current[id]) {
-        clearTimeout(saveTimeoutsRef.current[id]);
-      }
-
-      // Set new timeout
-      saveTimeoutsRef.current[id] = setTimeout(() => {
-        if (probability >= 0) {
-          updateConfigMutation.mutate({ id, probability });
-        }
-      }, 1000);
-    });
-
-    // Cleanup
-    return () => {
-      Object.values(saveTimeoutsRef.current).forEach(timeout => clearTimeout(timeout));
-    };
-  }, [editingConfigs]);
-
   const handleUpdate = (id: string) => {
     const probability = editingConfigs[id];
     if (probability !== undefined && probability >= 0) {
-      // Clear timeout if exists
-      if (saveTimeoutsRef.current[id]) {
-        clearTimeout(saveTimeoutsRef.current[id]);
-        delete saveTimeoutsRef.current[id];
-      }
       updateConfigMutation.mutate({ id, probability });
     } else {
       toast({
@@ -104,7 +76,11 @@ export function RouletteSettings() {
               [config.id]: newValue
             }));
           }}
-          onBlur={() => handleUpdate(config.id)}
+          onBlur={() => {
+            if (isEditing) {
+              handleUpdate(config.id);
+            }
+          }}
           className="text-right"
           min="0"
           step="0.01"
