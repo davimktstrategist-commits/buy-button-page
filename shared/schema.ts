@@ -46,6 +46,8 @@ export const users = pgTable("users", {
   totalDeposited: decimal("total_deposited", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalWon: decimal("total_won", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalBet: decimal("total_bet", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  referralCode: varchar("referral_code").unique(),
+  referredByUserId: varchar("referred_by_user_id").references(() => users.id),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -132,11 +134,51 @@ export const systemSettings = pgTable("system_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Affiliate referrals table
+export const affiliateReferrals = pgTable("affiliate_referrals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateUserId: varchar("affiliate_user_id").notNull().references(() => users.id),
+  referredUserId: varchar("referred_user_id").notNull().references(() => users.id),
+  referralCode: varchar("referral_code").notNull().unique(),
+  totalCommissionEarned: decimal("total_commission_earned", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("affiliate_referrals_affiliate_idx").on(table.affiliateUserId),
+  index("affiliate_referrals_referred_idx").on(table.referredUserId),
+  index("affiliate_referrals_code_idx").on(table.referralCode),
+]);
+
+// Affiliate commissions table
+export const affiliateCommissions = pgTable("affiliate_commissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  affiliateUserId: varchar("affiliate_user_id").notNull().references(() => users.id),
+  referredUserId: varchar("referred_user_id").notNull().references(() => users.id),
+  transactionId: varchar("transaction_id").notNull().references(() => transactions.id),
+  commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }).notNull(),
+  commissionPercentage: decimal("commission_percentage", { precision: 5, scale: 2 }).default('5.00').notNull(),
+  isPaid: boolean("is_paid").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("affiliate_commissions_affiliate_idx").on(table.affiliateUserId),
+  index("affiliate_commissions_referred_idx").on(table.referredUserId),
+  index("affiliate_commissions_transaction_idx").on(table.transactionId),
+]);
+
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   games: many(games),
   transactions: many(transactions),
   withdrawals: many(withdrawals),
+  affiliateReferrals: many(affiliateReferrals, { relationName: "affiliate" }),
+  referredUsers: many(affiliateReferrals, { relationName: "referred" }),
+  affiliateCommissions: many(affiliateCommissions, { relationName: "affiliateCommissions" }),
+  referredBy: one(users, {
+    fields: [users.referredByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const gamesRelations = relations(games, ({ one, many }) => ({
@@ -165,6 +207,35 @@ export const withdrawalsRelations = relations(withdrawals, ({ one }) => ({
   }),
   transaction: one(transactions, {
     fields: [withdrawals.transactionId],
+    references: [transactions.id],
+  }),
+}));
+
+export const affiliateReferralsRelations = relations(affiliateReferrals, ({ one }) => ({
+  affiliateUser: one(users, {
+    fields: [affiliateReferrals.affiliateUserId],
+    references: [users.id],
+    relationName: "affiliate",
+  }),
+  referredUser: one(users, {
+    fields: [affiliateReferrals.referredUserId],
+    references: [users.id],
+    relationName: "referred",
+  }),
+}));
+
+export const affiliateCommissionsRelations = relations(affiliateCommissions, ({ one }) => ({
+  affiliateUser: one(users, {
+    fields: [affiliateCommissions.affiliateUserId],
+    references: [users.id],
+    relationName: "affiliateCommissions",
+  }),
+  referredUser: one(users, {
+    fields: [affiliateCommissions.referredUserId],
+    references: [users.id],
+  }),
+  transaction: one(transactions, {
+    fields: [affiliateCommissions.transactionId],
     references: [transactions.id],
   }),
 }));
@@ -200,6 +271,18 @@ export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({
   processedAt: true,
 });
 
+export const insertAffiliateReferralSchema = createInsertSchema(affiliateReferrals).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAffiliateCommissionSchema = createInsertSchema(affiliateCommissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Upsert user schema for Replit Auth
 export const upsertUserSchema = z.object({
   id: z.string(),
@@ -225,5 +308,11 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type Withdrawal = typeof withdrawals.$inferSelect;
 export type InsertWithdrawal = z.infer<typeof insertWithdrawalSchema>;
+
+export type AffiliateReferral = typeof affiliateReferrals.$inferSelect;
+export type InsertAffiliateReferral = z.infer<typeof insertAffiliateReferralSchema>;
+
+export type AffiliateCommission = typeof affiliateCommissions.$inferSelect;
+export type InsertAffiliateCommission = z.infer<typeof insertAffiliateCommissionSchema>;
 
 export type SystemSetting = typeof systemSettings.$inferSelect;

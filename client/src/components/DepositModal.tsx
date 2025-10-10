@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,34 +6,42 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Copy, QrCode as QrCodeIcon } from "lucide-react";
+import { Loader2, Copy, QrCode as QrCodeIcon, CheckCircle2 } from "lucide-react";
 import QRCode from "react-qr-code";
 
 interface DepositModalProps {
   open: boolean;
   onClose: () => void;
+  sessionId: string;
 }
 
 const SUGGESTED_AMOUNTS = [20, 30, 50, 100];
 
-export function DepositModal({ open, onClose }: DepositModalProps) {
+export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
   const [amount, setAmount] = useState("");
   const [qrCodeData, setQrCodeData] = useState<{
+    transactionId: string;
     qrCode: string;
     qrCodeImage: string;
     copyPaste: string;
     expiresAt: string;
   } | null>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const createDepositMutation = useMutation({
     mutationFn: async (depositAmount: number) => {
-      const response = await apiRequest("POST", "/api/deposits", { amount: depositAmount }) as any;
+      const response = await apiRequest("POST", "/api/deposits", { 
+        amount: depositAmount,
+        sessionId 
+      }) as any;
       return response;
     },
     onSuccess: (data: any) => {
       setQrCodeData({
+        transactionId: data.transactionId,
         qrCode: data.qrCode,
         qrCodeImage: data.qrCodeImage,
         copyPaste: data.copyPaste,
@@ -76,9 +84,53 @@ export function DepositModal({ open, onClose }: DepositModalProps) {
     }
   };
 
+  // Poll for payment confirmation
+  useEffect(() => {
+    if (!qrCodeData?.transactionId || paymentConfirmed) return;
+
+    const checkPaymentStatus = async () => {
+      try {
+        setIsChecking(true);
+        const response = await apiRequest(
+          "POST", 
+          `/api/deposits/${qrCodeData.transactionId}/confirm`,
+          {}
+        ) as any;
+
+        if (response.status === 'completed') {
+          setPaymentConfirmed(true);
+          queryClient.invalidateQueries({ queryKey: ['/api/balance', sessionId] });
+          toast({
+            title: "Pagamento confirmado! 🎉",
+            description: `Seu saldo foi atualizado com R$ ${amount}`,
+          });
+          
+          // Close modal after 2 seconds
+          setTimeout(() => {
+            handleClose();
+          }, 2000);
+        }
+      } catch (error) {
+        console.error("Error checking payment:", error);
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    // Check immediately
+    checkPaymentStatus();
+
+    // Then poll every 3 seconds
+    const interval = setInterval(checkPaymentStatus, 3000);
+
+    return () => clearInterval(interval);
+  }, [qrCodeData?.transactionId, paymentConfirmed, queryClient, toast, amount]);
+
   const handleClose = () => {
     setQrCodeData(null);
     setAmount("");
+    setPaymentConfirmed(false);
+    setIsChecking(false);
     onClose();
   };
 
@@ -150,6 +202,19 @@ export function DepositModal({ open, onClose }: DepositModalProps) {
           </div>
         ) : (
           <div className="space-y-4 mt-4">
+            {/* Payment Status */}
+            {paymentConfirmed ? (
+              <div className="bg-success/20 border border-success text-success rounded-lg p-4 flex items-center justify-center gap-2">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-semibold">Pagamento Confirmado!</span>
+              </div>
+            ) : isChecking ? (
+              <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Aguardando pagamento...</span>
+              </div>
+            ) : null}
+
             {/* QR Code */}
             <div className="bg-white p-4 rounded-lg mx-auto w-fit">
               <QRCode value={qrCodeData.qrCode} size={200} />

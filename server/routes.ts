@@ -24,7 +24,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // User balance route
+  // User balance route (public - uses sessionId)
+  app.get('/api/balance', async (req: any, res) => {
+    try {
+      const { sessionId } = req.query;
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      // Get or create user with sessionId
+      let user = await storage.getUser(sessionId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: sessionId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
+
+      res.json({ balance: parseFloat(user.balance) });
+    } catch (error) {
+      console.error("Error fetching balance:", error);
+      res.status(500).json({ message: "Failed to fetch balance" });
+    }
+  });
+
+  // Legacy authenticated balance route (for admin)
   app.get('/api/user/balance', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -36,11 +64,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Game history route
-  app.get('/api/games/history', isAuthenticated, async (req: any, res) => {
+  // Game history route (public - uses sessionId)
+  app.get('/api/games/history', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const games = await storage.getGamesByUserId(userId, 20);
+      const sessionId = req.query.sessionId || (req.user?.claims?.sub);
+      
+      if (!sessionId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      const games = await storage.getGamesByUserId(sessionId, 20);
       res.json(games);
     } catch (error) {
       console.error("Error fetching game history:", error);
@@ -48,18 +81,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Play game route
-  app.post('/api/games/play', isAuthenticated, async (req: any, res) => {
+  // Play game route (public - uses sessionId)
+  app.post('/api/games/play', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.body.sessionId || req.user?.claims?.sub;
       const { betAmount } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
 
       if (!betAmount || betAmount <= 0) {
         return res.status(400).json({ message: "Invalid bet amount" });
       }
 
+      // Get or create user
+      let user = await storage.getUserBalance(userId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: userId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
+
       // Check user balance
-      const user = await storage.getUserBalance(userId);
       if (!user || parseFloat(user.balance) < betAmount) {
         return res.status(400).json({ message: "Insufficient balance" });
       }
@@ -131,11 +179,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create deposit (generate PIX QR code)
-  app.post('/api/deposits', isAuthenticated, async (req: any, res) => {
+  // Create deposit (generate PIX QR code) - Public with sessionId
+  app.post('/api/deposits', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.body.sessionId || req.user?.claims?.sub;
       const { amount } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      // Get or create user
+      let user = await storage.getUser(userId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: userId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
 
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid deposit amount" });
@@ -182,21 +246,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check deposit status (webhook or polling)
-  app.post('/api/deposits/:transactionId/confirm', isAuthenticated, async (req: any, res) => {
+  // Check deposit status (webhook or polling) - Public with sessionId
+  app.post('/api/deposits/:transactionId/confirm', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
       const { transactionId } = req.params;
 
       const transaction = await storage.getTransactionById(transactionId);
       
-      if (!transaction || transaction.userId !== userId) {
+      if (!transaction) {
         return res.status(404).json({ message: "Transaction not found" });
       }
 
       if (transaction.status === 'completed') {
         return res.json({ status: 'completed', message: 'Deposit already confirmed' });
       }
+
+      // Get userId from transaction
+      const userId = transaction.userId;
 
       // Check BRPIX status
       if (transaction.brpixTransactionId) {
@@ -230,6 +296,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error confirming deposit:", error);
       res.status(500).json({ message: "Failed to confirm deposit" });
+    }
+  });
+
+  // Create withdrawal request - Public with sessionId
+  app.post('/api/withdrawals', async (req: any, res) => {
+    try {
+      const userId = req.body.sessionId || req.user?.claims?.sub;
+      const { amount, pixKeyType, pixKey } = req.body;
+
+      if (!userId) {
+        return res.status(400).json({ message: "Session ID required" });
+      }
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Valor inválido" });
+      }
+
+      if (!pixKeyType || !pixKey) {
+        return res.status(400).json({ message: "Chave PIX obrigatória" });
+      }
+
+      // Check user balance
+      const user = await storage.getUser(userId);
+      if (!user || parseFloat(user.balance) < amount) {
+        return res.status(400).json({ message: "Saldo insuficiente" });
+      }
+
+      // Deduct amount from balance immediately
+      await storage.updateUserBalance(userId, -amount);
+
+      // Create withdrawal request
+      const withdrawal = await storage.createWithdrawal({
+        userId,
+        amount: amount.toString(),
+        pixKeyType,
+        pixKey,
+        status: 'pending',
+      });
+
+      res.json({ 
+        message: "Solicitação de saque criada com sucesso",
+        withdrawalId: withdrawal.id,
+      });
+    } catch (error) {
+      console.error("Error creating withdrawal:", error);
+      res.status(500).json({ message: "Erro ao criar solicitação de saque" });
     }
   });
 

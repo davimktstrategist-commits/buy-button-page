@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 interface WelcomeModalProps {
   open: boolean;
   onClose: () => void;
-  userName?: string;
 }
 
-export function WelcomeModal({ open, onClose, userName }: WelcomeModalProps) {
+export function WelcomeModal({ open, onClose }: WelcomeModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -22,7 +21,7 @@ export function WelcomeModal({ open, onClose, userName }: WelcomeModalProps) {
           </DialogTitle>
           <DialogDescription className="text-center text-base mt-4 space-y-3">
             <p>
-              {userName ? `Olá ${userName}!` : 'Olá!'} Seja muito bem-vindo ao nosso cassino online!
+              Bem-vindo ao nosso cassino online!
             </p>
             <p className="font-medium">
               🎰 Gire a roleta e ganhe prêmios incríveis!

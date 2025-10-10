@@ -55,16 +55,63 @@ function updateUserSession(
   user.expires_at = user.claims?.exp;
 }
 
+function generateReferralCode(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 async function upsertUser(
   claims: any,
+  referralCode?: string,
 ) {
+  // Check if user exists
+  const existingUser = await storage.getUser(claims["sub"]);
+  
+  // If user doesn't exist, generate a referral code
+  let userReferralCode = existingUser?.referralCode;
+  if (!existingUser) {
+    userReferralCode = generateReferralCode();
+    // Ensure code is unique
+    let attempts = 0;
+    while (attempts < 10) {
+      const codeExists = await storage.getUserByReferralCode(userReferralCode);
+      if (!codeExists) break;
+      userReferralCode = generateReferralCode();
+      attempts++;
+    }
+  }
+
+  // Check if referral code was provided and valid
+  let referredByUserId: string | undefined;
+  if (referralCode && !existingUser) {
+    const referrer = await storage.getUserByReferralCode(referralCode);
+    if (referrer) {
+      referredByUserId = referrer.id;
+    }
+  }
+
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    referralCode: userReferralCode,
+    referredByUserId,
   });
+
+  // Create affiliate referral record if applicable
+  if (referredByUserId && !existingUser) {
+    await storage.createAffiliateReferral({
+      affiliateUserId: referredByUserId,
+      referredUserId: claims["sub"],
+      referralCode: referralCode!,
+    });
+  }
 }
 
 export async function setupAuth(app: Express) {
