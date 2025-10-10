@@ -289,8 +289,23 @@ export class DatabaseStorage implements IStorage {
     const platformProfit = totalBets - totalWinnings;
     
     const pendingWithdrawals = allWithdrawals.filter(w => w.status === 'pending').length;
-    
     const accountBalance = allUsers.reduce((sum, u) => sum + parseFloat(u.balance), 0);
+    
+    // Depósitos de hoje
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const depositsToday = allTransactions
+      .filter(t => t.type === 'deposit' && t.status === 'completed' && new Date(t.createdAt) >= today)
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    
+    // Depósitos confirmados (count)
+    const confirmedDepositsCount = allTransactions
+      .filter(t => t.type === 'deposit' && t.status === 'completed').length;
+    
+    // Saques pagos
+    const withdrawalsPaid = allWithdrawals
+      .filter(w => w.status === 'completed')
+      .reduce((sum, w) => sum + parseFloat(w.amount), 0);
 
     return {
       totalUsers,
@@ -301,7 +316,100 @@ export class DatabaseStorage implements IStorage {
       activeGames: 0,
       pendingWithdrawals,
       accountBalance: accountBalance.toFixed(2),
+      depositsToday: depositsToday.toFixed(2),
+      confirmedDepositsCount,
+      withdrawalsPaid: withdrawalsPaid.toFixed(2),
+      depositRate: 0,
+      userGrowth: 100,
+      // Trends for sparklines (mock data for now)
+      profitTrend: [0,0,0,0,0,0,platformProfit],
+      betsTrend: [0,0,0,0,0,0,totalBets],
+      depositsTodayTrend: [0,0,0,0,0,0,depositsToday],
+      winsTrend: [0,0,0,0,0,0,totalWinnings],
+      usersTrend: [0,0,0,0,0,0,totalUsers],
+      confirmedDepositsTrend: [0,0,0,0,0,0,confirmedDepositsCount],
+      balanceTrend: [0,0,0,0,0,0,accountBalance],
+      withdrawalsTrend: [0,0,0,0,0,0,withdrawalsPaid],
     };
+  }
+
+  async getDeposits7Days(): Promise<any> {
+    const allTransactions = await this.getAllTransactions();
+    const deposits = allTransactions.filter(t => t.type === 'deposit' && t.status === 'completed');
+    
+    const labels = [];
+    const values = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      
+      const nextDay = new Date(date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      const dayDeposits = deposits
+        .filter(d => new Date(d.createdAt) >= date && new Date(d.createdAt) < nextDay)
+        .reduce((sum, d) => sum + parseFloat(d.amount), 0);
+      
+      labels.push(i === 0 ? 'Hoje' : `D-${i}`);
+      values.push(parseFloat(dayDeposits.toFixed(2)));
+    }
+    
+    return { labels, values };
+  }
+
+  async getTopBalances(): Promise<any> {
+    const allUsers = await this.getAllUsers();
+    const sorted = allUsers
+      .sort((a, b) => parseFloat(b.balance) - parseFloat(a.balance))
+      .slice(0, 5);
+    
+    const labels = sorted.map(u => u.email || u.id.substring(0, 8) + '...');
+    const values = sorted.map(u => parseFloat(u.balance));
+    
+    return { labels, values };
+  }
+
+  async getGatewayConfig(): Promise<any> {
+    const settings = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, 'BRPIX_PUBLIC_KEY'))
+      .limit(1);
+    
+    return {
+      publicKey: settings[0]?.value || '',
+      privateKey: settings[0] ? '******************' : ''
+    };
+  }
+
+  async saveGatewayConfig(publicKey: string, privateKey: string): Promise<void> {
+    // Update or create public key
+    await db
+      .insert(systemSettings)
+      .values({
+        key: 'BRPIX_PUBLIC_KEY',
+        value: publicKey,
+        description: 'BRPIX Public Key (X-Public-Key)'
+      })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: publicKey, updatedAt: new Date() }
+      });
+    
+    // Update or create private key
+    await db
+      .insert(systemSettings)
+      .values({
+        key: 'BRPIX_PRIVATE_KEY',
+        value: privateKey,
+        description: 'BRPIX Private Key (X-Private-Key)'
+      })
+      .onConflictDoUpdate({
+        target: systemSettings.key,
+        set: { value: privateKey, updatedAt: new Date() }
+      });
   }
 }
 
