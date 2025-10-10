@@ -10,7 +10,7 @@ import { Key, Save } from "lucide-react";
 
 interface GatewayConfig {
   publicKey: string;
-  privateKey: string;
+  hasPrivateKey: boolean;
 }
 
 export function GatewaySettings() {
@@ -61,7 +61,7 @@ export function GatewaySettings() {
       return;
     }
 
-    if (!privateKey && !config?.privateKey) {
+    if (!privateKey && !config?.hasPrivateKey) {
       toast({
         title: "Campos obrigatórios",
         description: "A chave privada é obrigatória na primeira configuração.",
@@ -72,7 +72,7 @@ export function GatewaySettings() {
 
     saveConfigMutation.mutate({
       publicKey,
-      privateKey: privateKey || config?.privateKey || "",
+      privateKey: privateKey || "", // Send empty string to keep existing key
     });
   };
 
@@ -118,13 +118,13 @@ export function GatewaySettings() {
           <Input
             id="privateKey"
             type="password"
-            placeholder={config?.privateKey ? "••••••••••••••••" : "Insira a chave privada do BRPIX"}
+            placeholder={config?.hasPrivateKey ? "••••••••••••••••" : "Insira a chave privada do BRPIX"}
             value={privateKey}
             onChange={(e) => setPrivateKey(e.target.value)}
             data-testid="input-private-key"
           />
           <p className="text-xs text-muted-foreground">
-            {config?.privateKey 
+            {config?.hasPrivateKey 
               ? "Deixe em branco para manter a chave atual" 
               : "Esta chave é usada para autenticação segura com o BRPIX"}
           </p>
@@ -140,7 +140,7 @@ export function GatewaySettings() {
             {saveConfigMutation.isPending ? "Salvando..." : "Salvar Configuração"}
           </Button>
           
-          {config?.publicKey && (
+          {config?.hasPrivateKey && (
             <p className="text-sm text-muted-foreground">
               Última atualização: configuração ativa
             </p>

@@ -426,19 +426,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getGatewayConfig(): Promise<any> {
-    const settings = await db
+    const publicKeySetting = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings.key, 'BRPIX_PUBLIC_KEY'))
       .limit(1);
     
+    const privateKeySetting = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, 'BRPIX_PRIVATE_KEY'))
+      .limit(1);
+    
     return {
-      publicKey: settings[0]?.value || '',
-      privateKey: settings[0] ? '******************' : ''
+      publicKey: publicKeySetting[0]?.value || '',
+      hasPrivateKey: !!privateKeySetting[0]?.value
     };
   }
 
-  async saveGatewayConfig(publicKey: string, privateKey: string): Promise<void> {
+  async saveGatewayConfig(publicKey: string, privateKey?: string): Promise<void> {
     // Update or create public key
     await db
       .insert(systemSettings)
@@ -452,18 +458,20 @@ export class DatabaseStorage implements IStorage {
         set: { value: publicKey, updatedAt: new Date() }
       });
     
-    // Update or create private key
-    await db
-      .insert(systemSettings)
-      .values({
-        key: 'BRPIX_PRIVATE_KEY',
-        value: privateKey,
-        description: 'BRPIX Private Key (X-Private-Key)'
-      })
-      .onConflictDoUpdate({
-        target: systemSettings.key,
-        set: { value: privateKey, updatedAt: new Date() }
-      });
+    // Only update private key if a value is provided
+    if (privateKey && privateKey.trim() !== '') {
+      await db
+        .insert(systemSettings)
+        .values({
+          key: 'BRPIX_PRIVATE_KEY',
+          value: privateKey,
+          description: 'BRPIX Private Key (X-Private-Key)'
+        })
+        .onConflictDoUpdate({
+          target: systemSettings.key,
+          set: { value: privateKey, updatedAt: new Date() }
+        });
+    }
   }
 }
 

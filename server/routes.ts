@@ -494,8 +494,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { publicKey, privateKey } = req.body;
 
-      if (!publicKey || !privateKey) {
-        return res.status(400).json({ message: "Public and private keys are required" });
+      if (!publicKey) {
+        return res.status(400).json({ message: "Public key is required" });
       }
 
       await storage.saveGatewayConfig(publicKey, privateKey);
