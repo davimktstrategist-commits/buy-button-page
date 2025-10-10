@@ -152,16 +152,16 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - `POST /api/withdraw.php` - Solicitar saque (body: `{sessionId, amount, pixKeyType, pixKey}`)
 - `GET /api/check_rollover.php?sessionId=...` - Verificar rollover
 
-#### AJAX - Admin (requer token admin)
+#### AJAX - Admin (requer token admin via Authorization header)
 - `POST /ajax/admin_login.php` - Login admin (body: `{password}`) - retorna token temporário
-- `GET /ajax/admin_stats.php?sessionId={token}` - Estatísticas do dashboard
-- `GET /ajax/admin_users.php?sessionId={token}` - Lista de usuários
-- `GET /ajax/admin_transactions.php?sessionId={token}` - Todas as transações
-- `GET /ajax/admin_withdrawals.php?sessionId={token}` - Solicitações de saque
-- `POST /ajax/admin_approve_withdrawal.php` - Aprovar saque (body: `{sessionId, withdrawalId}`)
-- `POST /ajax/admin_reject_withdrawal.php` - Rejeitar saque (body: `{sessionId, withdrawalId, reason}`)
-- `GET /ajax/admin_roulette_config.php?sessionId={token}` - Configurações da roleta
-- `POST /ajax/admin_update_roulette.php` - Atualizar probabilidade (body: `{sessionId, configId, probability}`)
+- `GET /ajax/admin_stats.php` - Estatísticas do dashboard (header: `Authorization: Bearer {token}`)
+- `GET /ajax/admin_users.php` - Lista de usuários (header: `Authorization: Bearer {token}`)
+- `GET /ajax/admin_transactions.php` - Todas as transações (header: `Authorization: Bearer {token}`)
+- `GET /ajax/admin_withdrawals.php` - Solicitações de saque (header: `Authorization: Bearer {token}`)
+- `POST /ajax/admin_approve_withdrawal.php` - Aprovar saque (header: `Authorization: Bearer {token}`, body: `{withdrawalId}`)
+- `POST /ajax/admin_reject_withdrawal.php` - Rejeitar saque (header: `Authorization: Bearer {token}`, body: `{withdrawalId, reason}`)
+- `GET /ajax/admin_roulette_config.php` - Configurações da roleta (header: `Authorization: Bearer {token}`)
+- `POST /ajax/admin_update_roulette.php` - Atualizar probabilidade (header: `Authorization: Bearer {token}`, body: `{configId, probability}`)
 
 ### Rotas Legacy (API JSON)
 
