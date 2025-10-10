@@ -370,20 +370,9 @@ export class DatabaseStorage implements IStorage {
       activeGames: 0,
       pendingWithdrawals,
       accountBalance: accountBalance.toFixed(2),
-      depositsToday: depositsToday.toFixed(2),
-      confirmedDepositsCount,
-      withdrawalsPaid: withdrawalsPaid.toFixed(2),
-      depositRate: 0,
-      userGrowth: 100,
-      // Trends for sparklines (mock data for now)
-      profitTrend: [0,0,0,0,0,0,platformProfit],
-      betsTrend: [0,0,0,0,0,0,totalBets],
-      depositsTodayTrend: [0,0,0,0,0,0,depositsToday],
-      winsTrend: [0,0,0,0,0,0,totalWinnings],
-      usersTrend: [0,0,0,0,0,0,totalUsers],
-      confirmedDepositsTrend: [0,0,0,0,0,0,confirmedDepositsCount],
-      balanceTrend: [0,0,0,0,0,0,accountBalance],
-      withdrawalsTrend: [0,0,0,0,0,0,withdrawalsPaid],
+      todayDeposits: depositsToday.toFixed(2),
+      confirmedDeposits: confirmedDepositsCount,
+      paidWithdrawals: withdrawalsPaid.toFixed(2),
     };
   }
 
