@@ -48,7 +48,7 @@ export default function Game() {
     queryKey: ['/api/games/history', sessionId],
     queryFn: async () => {
       if (!sessionId) return [];
-      const response = await apiRequest("GET", `/api/games/history?sessionId=${sessionId}`);
+      const response = await apiRequest("GET", `/api/games/history?sessionId=${sessionId}`) as unknown;
       return response as GameType[];
     },
     enabled: !!sessionId,
@@ -115,8 +115,8 @@ export default function Game() {
   }
 
   return (
-    <div className="casino-bg" style={{ minHeight: '100vh', overflow: 'hidden' }}>
-      <div id="game-container" className="relative flex flex-col">
+    <div className="casino-bg flex items-center justify-center" style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      <div id="game-container" className="relative w-full h-full flex flex-col">
         {/* Lista de Vencedores Recentes - Topo Esquerdo */}
         <div className="absolute top-4 left-4 z-[25] flex flex-col gap-2" data-testid="winners-list">
           {Array.isArray(gameHistory) && gameHistory.slice(0, 4).map((game, idx) => (
@@ -137,7 +137,7 @@ export default function Game() {
         </div>
 
         {/* Ícones do Topo Direito - Grid 2x2 */}
-        <div className="absolute top-4 right-4 grid grid-cols-2 gap-3 z-[25]">
+        <div className="absolute top-4 right-4 grid grid-cols-2 gap-[10px] z-[25]">
           <button 
             onClick={() => {
               playSound('click');
@@ -180,24 +180,30 @@ export default function Game() {
           </button>
         </div>
 
-        {/* Área da Roleta Centralizada */}
-        <div className="flex-1 flex items-center justify-center px-4 pt-16 pb-4">
-          <div className="w-full max-w-[400px]">
-            <RouletteWheel
-              isSpinning={isSpinning}
-              finalMultiplier={finalMultiplier}
-              onSpinComplete={handleSpinComplete}
-            />
-          </div>
+        {/* Área da Roleta Centralizada - Responsiva */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] roulette-container">
+          <RouletteWheel
+            isSpinning={isSpinning}
+            finalMultiplier={finalMultiplier}
+            onSpinComplete={handleSpinComplete}
+          />
         </div>
 
-        {/* Controles Inferiores */}
-        <div className="pb-8 px-4 flex flex-col items-center gap-4 z-[20]">
-          {/* Botão START Grande e Roxo/Azul */}
+        {/* Área Inferior com Escamas - 20% da tela */}
+        <div 
+          className="absolute bottom-0 left-0 right-0 z-[4] flex flex-col items-center justify-end"
+          style={{
+            height: '20vh',
+            backgroundImage: 'url(/baixo.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'bottom center'
+          }}
+        >
+          {/* Botão START - 20px do fundo */}
           <button
             onClick={handleSpin}
             disabled={isSpinning || playGameMutation.isPending}
-            className="relative group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mb-20 z-[25] group disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="button-spin"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-[28px] blur-xl opacity-70" />
@@ -208,15 +214,9 @@ export default function Game() {
             </div>
           </button>
 
-          {/* Painel de Apostas - Fundo Verde com Textura */}
-          <div 
-            className="relative w-full max-w-[380px] bg-gradient-to-br from-green-900/60 to-green-800/50 backdrop-blur-sm rounded-2xl p-4 border-2 border-green-600/40"
-            style={{
-              backgroundImage: 'url(/baixo.png)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center'
-            }}
-          >
+          {/* Painel de Apostas - Sobre as Escamas */}
+          <div className="w-full max-w-[380px] px-4 mb-5 z-[25]">
+            <div className="relative bg-gradient-to-br from-green-900/60 to-green-800/50 backdrop-blur-sm rounded-2xl p-4 border-2 border-green-600/40">
             <div className="relative z-10 flex items-center justify-center gap-3">
               {/* Botão - */}
               <button 
@@ -256,6 +256,7 @@ export default function Game() {
               >
                 +
               </button>
+            </div>
             </div>
           </div>
         </div>

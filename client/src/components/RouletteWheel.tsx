@@ -57,11 +57,11 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      {/* Seta Indicadora GRANDE no Topo */}
+      {/* Seta Indicadora GRANDE no Topo - Z-index 3 */}
       <img 
         src="/cima.png" 
         alt="Indicador" 
-        className="w-full mb-[-15%] z-[10] pointer-events-none"
+        className="w-full mb-[-15%] z-[3] pointer-events-none"
         style={{ 
           maxWidth: '100%',
           height: 'auto'
@@ -71,10 +71,10 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
 
       {/* Container da Roleta */}
       <div className="relative w-full" style={{ aspectRatio: '1/1' }}>
-        {/* Roleta Principal */}
+        {/* Roleta Principal - Z-index 2 */}
         <div
           ref={wheelRef}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[5] transition-transform ease-out"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] transition-transform ease-out"
           style={{
             width: '100%',
             transform: `translate(-50%, -50%) rotate(${rotation}deg)`,
@@ -90,9 +90,9 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
           />
         </div>
 
-        {/* Roleta Bônus (centro) */}
+        {/* Roleta Bônus (centro) - Z-index 2 (mesma camada da principal) */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[7] transition-transform ease-out"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2] transition-transform ease-out"
           style={{
             width: '38%',
             transform: `translate(-50%, -50%) rotate(${-rotation}deg)`,
@@ -108,11 +108,11 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
           />
         </div>
 
-        {/* Indicador Bônus (seta branca pequena) */}
+        {/* Indicador Bônus (seta branca pequena) - Z-index 3 */}
         <img 
           src="/ceta.png" 
           alt="Indicador Bônus" 
-          className="absolute top-[20%] left-1/2 -translate-x-1/2 z-[8] pointer-events-none"
+          className="absolute top-[20%] left-1/2 -translate-x-1/2 z-[3] pointer-events-none"
           style={{ 
             width: '10%', 
             height: 'auto'
@@ -121,11 +121,11 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
         />
       </div>
 
-      {/* Barra Inferior Decorativa */}
+      {/* Barra Inferior Decorativa - Z-index 2 */}
       <img 
         src="/baixo.png" 
         alt="Barra Inferior" 
-        className="w-full mt-[-8%] z-[6] pointer-events-none"
+        className="w-full mt-[-8%] z-[2] pointer-events-none"
         style={{ 
           maxWidth: '100%',
           height: 'auto'
