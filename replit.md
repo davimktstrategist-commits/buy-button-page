@@ -50,31 +50,42 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
   - Tipos suportados: CPF, CNPJ, Email, Telefone, Chave aleatória
 
 ### 👑 Painel Administrativo
-- **Dashboard com métricas**:
-  - Lucro da plataforma (apostas - prêmios)
-  - Total apostado e prêmios pagos
-  - Número de usuários
-  - Saques pendentes
-  - Saldo total em contas
+**Design**: Tema escuro roxo/azul (#1a1625, #2d1b4e) com sidebar lateral e gráficos Chart.js
+
+- **Dashboard com métricas em cards**:
+  - 8 cards com sparklines (Lucro, Total Apostado, Depósitos Hoje, Prêmios, Usuários, Depósitos Confirmados, Saldo Total, Saques Pagos)
+  - Gráfico de linha: Depósitos dos Últimos 7 dias
+  - Gráfico de barras: Maiores Saldos de Usuários (Top 5)
+  - Métricas calculadas em tempo real do banco de dados
   
 - **Gestão de Usuários**:
   - Lista de todos os usuários
   - Visualização de saldos e histórico
-  - Status ativo/inativo
+  - Total depositado, apostado e ganho por usuário
   
-- **Gestão de Transações**:
-  - Histórico completo de transações
-  - Filtros por tipo (depósito, saque, aposta, ganho)
-  - Visualização de IDs BRPIX e valores de split
+- **Gestão de Depósitos**:
+  - Histórico completo de depósitos
+  - Visualização de IDs BRPIX
+  - Status de cada transação (pending, completed, etc)
+  - **Split BRPIX (10,5%) completamente oculto do frontend** - processado apenas no backend
   
 - **Gestão de Saques**:
   - Aprovação/rejeição de saques
   - Visualização de chaves PIX
+  - Devolução automática de saldo ao rejeitar
+  - Status: completed (aprovado) ou cancelled (rejeitado)
   
 - **Configuração da Roleta**:
   - Ajuste de probabilidades por multiplicador
   - Roleta Principal e Roleta Bônus
   - Validação de soma de probabilidades (deve somar 100%)
+  - Sliders visuais para ajuste de %
+  
+- **Gateway de Pagamento BRPIX**:
+  - Configuração de credenciais (Public Key, Private Key)
+  - Armazenamento seguro em systemSettings
+  - Interface com instruções de onde obter as credenciais
+  - Ambiente: api-gateway.brpixpay.com.br (Produção)
 
 ### 🔐 Autenticação e Segurança
 - **Usuários**: Sistema público com sessionId anônimo (UUID v4) via localStorage

@@ -257,7 +257,7 @@ export class DatabaseStorage implements IStorage {
     const [rejectedWithdrawal] = await db
       .update(withdrawals)
       .set({ 
-        status: 'failed',
+        status: 'cancelled',
         rejectionReason: reason,
         processedAt: new Date(),
         updatedAt: new Date()
