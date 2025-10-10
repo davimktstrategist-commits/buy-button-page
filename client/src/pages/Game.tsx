@@ -10,11 +10,13 @@ import { ProfileModal } from "@/components/ProfileModal";
 import { RulesModal } from "@/components/RulesModal";
 import { WinAnimation } from "@/components/WinAnimation";
 import { useToast } from "@/hooks/use-toast";
-import { User, Volume2, HelpCircle, DollarSign } from "lucide-react";
+import { useSound } from "@/contexts/SoundContext";
+import { User, Volume2, VolumeX, HelpCircle, DollarSign } from "lucide-react";
 import type { Game as GameType } from "@shared/schema";
 
 export default function Game() {
   const { sessionId } = useSession();
+  const { isMuted, toggleSound, playSound } = useSound();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -79,12 +81,20 @@ export default function Game() {
       setShowDeposit(true);
       return;
     }
+    playSound('spin');
     playGameMutation.mutate();
   };
 
   const handleSpinComplete = (multiplier: number) => {
     setIsSpinning(false);
     setShowWin(true);
+    
+    // Play win or lose sound
+    if (multiplier > 1) {
+      playSound('win');
+    } else {
+      playSound('lose');
+    }
     
     queryClient.invalidateQueries({ queryKey: ['/api/balance', sessionId] });
     queryClient.invalidateQueries({ queryKey: ['/api/games/history', sessionId] });
@@ -129,27 +139,40 @@ export default function Game() {
         {/* Ícones do Topo Direito - Grid 2x2 */}
         <div className="absolute top-4 right-4 grid grid-cols-2 gap-3 z-[25]">
           <button 
-            onClick={() => setShowProfile(true)}
+            onClick={() => {
+              playSound('click');
+              setShowProfile(true);
+            }}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
             data-testid="button-profile"
           >
             <User className="w-5 h-5" />
           </button>
           <button 
+            onClick={() => {
+              playSound('click');
+              toggleSound();
+            }}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
             data-testid="button-sound"
           >
-            <Volume2 className="w-5 h-5" />
+            {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>
           <button 
-            onClick={() => setShowRules(true)}
+            onClick={() => {
+              playSound('click');
+              setShowRules(true);
+            }}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
             data-testid="button-help"
           >
             <HelpCircle className="w-5 h-5" />
           </button>
           <button 
-            onClick={() => setShowDeposit(true)}
+            onClick={() => {
+              playSound('click');
+              setShowDeposit(true);
+            }}
             className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all animate-pulse"
             data-testid="button-deposit"
           >
@@ -197,7 +220,10 @@ export default function Game() {
             <div className="relative z-10 flex items-center justify-center gap-3">
               {/* Botão - */}
               <button 
-                onClick={() => setBetAmount(Math.max(0.10, betAmount - 0.10))}
+                onClick={() => {
+                  playSound('click');
+                  setBetAmount(Math.max(0.10, betAmount - 0.10));
+                }}
                 className="w-14 h-14 rounded-full border-3 border-green-500 bg-gradient-to-br from-green-900/95 to-green-800/90 text-green-300 flex items-center justify-center text-3xl font-bold shadow-lg hover:scale-105 transition-all"
                 data-testid="button-decrease-bet"
               >
@@ -221,7 +247,10 @@ export default function Game() {
 
               {/* Botão + */}
               <button 
-                onClick={() => setBetAmount(betAmount + 0.10)}
+                onClick={() => {
+                  playSound('click');
+                  setBetAmount(betAmount + 0.10);
+                }}
                 className="w-14 h-14 rounded-full border-3 border-green-500 bg-gradient-to-br from-green-900/95 to-green-800/90 text-green-300 flex items-center justify-center text-3xl font-bold shadow-lg hover:scale-105 transition-all"
                 data-testid="button-increase-bet"
               >
