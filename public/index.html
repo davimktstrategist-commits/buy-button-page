@@ -3989,7 +3989,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('stats-ganhos').textContent = '...';
             document.getElementById('affiliate-history-list').innerHTML = '<p>Carregando...</p>';
             try {
-                const sessionId = getSessionId();
+                const sessionId = localStorage.getItem('sessionId');
                 const response = await fetch(`ajax/get_affiliate_data.php?sessionId=${sessionId}`);
                 const data = await response.json();
                 if (!data.success) throw new Error(data.message);
