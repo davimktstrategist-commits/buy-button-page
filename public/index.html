@@ -3450,12 +3450,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const startButton = document.getElementById('start-button');
             const playButton = document.getElementById('play-button');
             
-            if (state.isLoggedIn && state.saldo >= state.aposta) {
+            if (!state.isLoggedIn) {
+                // Não logado: mostrar botão animado (lottie)
+                if (startButton) startButton.style.display = 'none';
+                if (playButton) playButton.style.display = 'block';
+            } else if (state.saldo >= state.aposta) {
                 // Logado com saldo: mostrar botão de ação (lottie)
                 if (startButton) startButton.style.display = 'none';
                 if (playButton) playButton.style.display = 'block';
             } else {
-                // Deslogado ou sem saldo: mostrar botão START
+                // Logado sem saldo: mostrar botão START
                 if (startButton) startButton.style.display = 'block';
                 if (playButton) playButton.style.display = 'none';
             }
