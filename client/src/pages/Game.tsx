@@ -9,6 +9,7 @@ import { AuthModal } from "@/components/AuthModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { RulesModal } from "@/components/RulesModal";
 import { WinAnimation } from "@/components/WinAnimation";
+import { RecentWinners } from "@/components/RecentWinners";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from "@/contexts/SoundContext";
 import { User, Volume2, VolumeX, HelpCircle, DollarSign } from "lucide-react";
@@ -117,24 +118,8 @@ export default function Game() {
   return (
     <div className="casino-bg flex items-center justify-center" style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div id="game-container" className="relative w-full h-full flex flex-col">
-        {/* Lista de Vencedores Recentes - Topo Esquerdo */}
-        <div className="absolute top-4 left-4 z-[25] flex flex-col gap-2" data-testid="winners-list">
-          {Array.isArray(gameHistory) && gameHistory.slice(0, 4).map((game, idx) => (
-            <div 
-              key={game.id} 
-              className="bg-black/40 backdrop-blur-sm border border-green-600/30 rounded-lg px-3 py-1 flex items-center gap-2"
-              data-testid={`winner-item-${idx}`}
-            >
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-white text-xs font-semibold">
-                {`${String.fromCharCode(65 + idx)}${'*'.repeat(6)}`}
-              </span>
-              <span className="text-yellow-400 text-xs font-bold ml-auto">
-                {game.multiplier}x
-              </span>
-            </div>
-          ))}
-        </div>
+        {/* Lista de Ganhadores Simulados - Topo Esquerdo */}
+        <RecentWinners />
 
         {/* Ícones do Topo Direito - Grid 2x2 */}
         <div className="absolute top-4 right-4 grid grid-cols-2 gap-[10px] z-[25]">

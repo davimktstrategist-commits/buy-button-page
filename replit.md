@@ -23,7 +23,7 @@ The frontend employs a dual architecture: a static HTML/CSS/JS game interface an
 - **PHP-Compatibility:** Supports PHP-compatible routes (`/ajax/*.php` and `/api/*.php`) for the HTML frontend, and dedicated `/api/admin/*` routes for the React admin panel.
 
 ### Feature Specifications
-- **Roulette Game:** Animated roulette with 12 segments and configurable multipliers (1x to 100x). Includes a bonus wheel, real-time balance, and game history.
+- **Roulette Game:** Animated roulette with 12 segments and configurable multipliers (1x to 100x). Includes a bonus wheel, real-time balance, and game history. Features a simulated recent winners list in the upper left corner showing other players' winnings to enhance engagement.
 - **Payment System:** BRPIX integration for PIX deposits (dynamic QR Code, copy-paste code, configurable expiration) and withdrawals (PIX key requests, admin approval). Features automatic 10.5% split for commission.
 - **Admin Panel:**
     - **Dashboard:** Real-time metrics (Game Profit, Total Wagered, Deposits Today, Payouts, Total Users, Confirmed Deposits, Total Account Balance, Paid Withdrawals) with sparklines. Graphs for 7-day deposits and top user balances.
