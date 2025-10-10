@@ -3002,6 +3002,18 @@
         </ul>
 </div>
 <script>
+// Global utility function - accessible from all scripts
+window.showNotification = (message, isError = false) => {
+    const notificationElement = document.getElementById('notification');
+    if (notificationElement) {
+        notificationElement.textContent = message;
+        notificationElement.className = isError ? 'error' : '';
+        notificationElement.style.display = 'block';
+        setTimeout(() => { notificationElement.style.display = 'none'; }, 3000);
+    }
+};
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', () => {
     // ========== FORMATAÇÃO DE TELEFONE ==========
     const telefoneInput = document.getElementById('register-telefone');
@@ -3327,13 +3339,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const formatCurrency = (value) => `R$ ${Number(value).toFixed(2).replace('.', ',')}`;
-
-        const showNotification = (message, isError = false) => {
-            DOMElements.notification.textContent = message;
-            DOMElements.notification.className = isError ? 'error' : '';
-            DOMElements.notification.style.display = 'block';
-            setTimeout(() => { DOMElements.notification.style.display = 'none'; }, 3000);
-        };
 
         const updateDisplay = () => {
             const saldoFormatado = formatCurrency(state.saldo);

@@ -699,7 +699,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         winners: winners.map(game => ({
           id: game.id,
-          userId: game.userId.substring(0, 8), // Mostrar apenas primeiros 8 chars do userId
+          name: `Jogador ${game.userId.substring(0, 6)}`, // Nome do jogador (usando parte do ID)
+          prize: `R$ ${parseFloat(game.winAmount).toFixed(2).replace('.', ',')}`, // Prêmio formatado
+          userId: game.userId.substring(0, 8),
           betAmount: parseFloat(game.betAmount),
           multiplier: game.multiplier,
           winAmount: parseFloat(game.winAmount),
