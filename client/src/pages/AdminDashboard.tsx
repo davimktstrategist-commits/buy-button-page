@@ -23,9 +23,6 @@ import { RouletteSettings } from "@/components/admin/RouletteSettings";
 import { UsersManagement } from "@/components/admin/UsersManagement";
 import { TransactionsManagement } from "@/components/admin/TransactionsManagement";
 import { WithdrawalsManagement } from "@/components/admin/WithdrawalsManagement";
-import { AffiliatesManagement } from "@/components/admin/AffiliatesManagement";
-import { DepositsChart } from "@/components/admin/DepositsChart";
-import { TopBalancesChart } from "@/components/admin/TopBalancesChart";
 
 interface DashboardStats {
   totalUsers: number;
@@ -120,9 +117,9 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border bg-card flex flex-col">
+      <aside className="w-64 border-r border-border bg-card flex flex-col flex-shrink-0">
         {/* Logo */}
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-2">
@@ -259,7 +256,7 @@ export default function AdminDashboard() {
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Lucro do Jogo</CardTitle>
                   </CardHeader>
@@ -267,15 +264,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-profit">
                       R$ {stats?.platformProfit || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,20 Q25,10 50,15 T100,25" fill="none" stroke="rgb(251, 191, 36)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Total Apostado (Jogo)</CardTitle>
                   </CardHeader>
@@ -283,15 +275,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-total-bets">
                       R$ {stats?.totalBets || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,25 Q25,15 50,20 T100,18" fill="none" stroke="rgb(34, 197, 94)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium">Depósitos de Hoje</CardTitle>
@@ -302,15 +289,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-today-deposits">
                       R$ {stats?.todayDeposits || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,30 Q25,28 50,25 T100,30" fill="none" stroke="rgb(59, 130, 246)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Prêmios Pagos (Jogo)</CardTitle>
                   </CardHeader>
@@ -318,15 +300,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-winnings">
                       R$ {stats?.totalWinnings || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,15 Q25,20 50,18 T100,22" fill="none" stroke="rgb(239, 68, 68)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium">Total de Usuários</CardTitle>
@@ -340,15 +317,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-users">
                       {stats?.totalUsers || 0}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,35 Q25,30 50,32 T100,28" fill="none" stroke="rgb(168, 85, 247)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Depósitos Confirmados</CardTitle>
                   </CardHeader>
@@ -356,15 +328,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-confirmed-deposits">
                       {stats?.confirmedDeposits || 0}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,22 Q25,18 50,20 T100,16" fill="none" stroke="rgb(14, 165, 233)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium">Saldo Total em Contas</CardTitle>
                   </CardHeader>
@@ -372,15 +339,10 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-account-balance">
                       R$ {stats?.accountBalance || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,20 Q25,22 50,19 T100,21" fill="none" stroke="rgb(251, 191, 36)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
 
-                <Card className="relative overflow-hidden">
+                <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm font-medium">Saques Pagos</CardTitle>
@@ -391,25 +353,23 @@ export default function AdminDashboard() {
                     <div className="text-2xl font-display font-bold" data-testid="text-paid-withdrawals">
                       R$ {stats?.paidWithdrawals || '0,00'}
                     </div>
-                    <div className="h-16 mt-2">
-                      <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
-                        <path d="M0,25 Q25,23 50,26 T100,24" fill="none" stroke="rgb(107, 114, 128)" strokeWidth="2" />
-                      </svg>
-                    </div>
                   </CardContent>
                 </Card>
-              </div>
-
-              {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <DepositsChart />
-                <TopBalancesChart />
               </div>
             </>
           )}
 
           {activeSection === 'users' && <UsersManagement />}
-          {activeSection === 'affiliates' && <AffiliatesManagement />}
+          {activeSection === 'affiliates' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Gestão de Afiliados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Sistema de afiliados em desenvolvimento</p>
+              </CardContent>
+            </Card>
+          )}
           {activeSection === 'deposits' && <TransactionsManagement />}
           {activeSection === 'withdrawals' && <WithdrawalsManagement />}
           {activeSection === 'roulette' && <RouletteSettings />}
