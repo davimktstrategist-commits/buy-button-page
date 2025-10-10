@@ -77,11 +77,15 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
   - Validação de soma de probabilidades (deve somar 100%)
 
 ### 🔐 Autenticação e Segurança
-- Login via Replit Auth (Google, GitHub, Email, etc)
-- Proteção de rotas (middleware isAuthenticated)
-- Acesso admin restrito (middleware isAdmin)
-- Credenciais BRPIX armazenadas como secrets (não expostas no frontend)
-- Sessões persistidas em PostgreSQL
+- **Usuários**: Sistema público com sessionId anônimo (UUID v4) via localStorage
+- **Admin**: Sistema de autenticação seguro com tokens temporários
+  - Login com senha (ADMIN_PASSWORD secret)
+  - Tokens gerados pelo servidor (64 bytes hex)
+  - Expiração de 24 horas
+  - Validação em todas as rotas admin
+  - Senha nunca exposta no frontend
+- **BRPIX**: Credenciais armazenadas como secrets (BRPIX_SECRET_KEY, BRPIX_COMPANY_ID)
+- **Sessões**: Auto-criação de usuários anônimos com sessionId
 
 ## Estrutura do Banco de Dados
 
@@ -147,6 +151,17 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - `GET /api/check_payment_status.php?transactionId=...` - Verificar status do pagamento
 - `POST /api/withdraw.php` - Solicitar saque (body: `{sessionId, amount, pixKeyType, pixKey}`)
 - `GET /api/check_rollover.php?sessionId=...` - Verificar rollover
+
+#### AJAX - Admin (requer token admin)
+- `POST /ajax/admin_login.php` - Login admin (body: `{password}`) - retorna token temporário
+- `GET /ajax/admin_stats.php?sessionId={token}` - Estatísticas do dashboard
+- `GET /ajax/admin_users.php?sessionId={token}` - Lista de usuários
+- `GET /ajax/admin_transactions.php?sessionId={token}` - Todas as transações
+- `GET /ajax/admin_withdrawals.php?sessionId={token}` - Solicitações de saque
+- `POST /ajax/admin_approve_withdrawal.php` - Aprovar saque (body: `{sessionId, withdrawalId}`)
+- `POST /ajax/admin_reject_withdrawal.php` - Rejeitar saque (body: `{sessionId, withdrawalId, reason}`)
+- `GET /ajax/admin_roulette_config.php?sessionId={token}` - Configurações da roleta
+- `POST /ajax/admin_update_roulette.php` - Atualizar probabilidade (body: `{sessionId, configId, probability}`)
 
 ### Rotas Legacy (API JSON)
 

@@ -930,12 +930,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper para extrair token admin do header Authorization
+  function getAdminToken(req: any): string | undefined {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      return authHeader.substring(7);
+    }
+    return undefined;
+  }
+
   // Estatísticas do dashboard admin
   app.get('/ajax/admin_stats.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -950,9 +959,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lista de usuários admin
   app.get('/ajax/admin_users.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -967,9 +976,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lista de transações admin
   app.get('/ajax/admin_transactions.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -984,9 +993,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lista de saques admin
   app.get('/ajax/admin_withdrawals.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1001,10 +1010,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Aprovar saque admin
   app.post('/ajax/admin_approve_withdrawal.php', async (req, res) => {
     try {
-      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       const withdrawalId = req.body.withdrawalId;
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1023,11 +1032,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rejeitar saque admin
   app.post('/ajax/admin_reject_withdrawal.php', async (req, res) => {
     try {
-      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       const withdrawalId = req.body.withdrawalId;
       const reason = req.body.reason;
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1046,9 +1055,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configuração da roleta admin
   app.get('/ajax/admin_roulette_config.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1063,11 +1072,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Atualizar configuração da roleta admin
   app.post('/ajax/admin_update_roulette.php', async (req, res) => {
     try {
-      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const token = getAdminToken(req);
       const configId = req.body.configId;
       const probability = parseFloat(req.body.probability);
       
-      if (!isAdminToken(sessionId)) {
+      if (!isAdminToken(token)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 

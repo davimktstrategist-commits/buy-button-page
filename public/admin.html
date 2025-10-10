@@ -621,7 +621,9 @@
         // Load dashboard stats
         async function loadDashboard() {
             try {
-                const response = await fetch(`/ajax/admin_stats.php?sessionId=${adminToken}`);
+                const response = await fetch('/ajax/admin_stats.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 const stats = await response.json();
                 
                 document.getElementById('statProfit').textContent = formatMoney(stats.platformProfit || 0);
@@ -648,7 +650,9 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_users.php?sessionId=${adminToken}`);
+                const response = await fetch('/ajax/admin_users.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 const users = await response.json();
                 
                 tbody.innerHTML = users.map(user => `
@@ -679,7 +683,9 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_transactions.php?sessionId=${adminToken}`);
+                const response = await fetch('/ajax/admin_transactions.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 const transactions = await response.json();
                 
                 tbody.innerHTML = transactions.map(tx => {
@@ -713,7 +719,9 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_withdrawals.php?sessionId=${adminToken}`);
+                const response = await fetch('/ajax/admin_withdrawals.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 const withdrawals = await response.json();
                 
                 tbody.innerHTML = withdrawals.map(w => `
@@ -753,7 +761,9 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_roulette_config.php?sessionId=${adminToken}`);
+                const response = await fetch('/ajax/admin_roulette_config.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
                 const configs = await response.json();
                 
                 container.innerHTML = configs.map(config => `
@@ -834,9 +844,11 @@
                 for (const config of configs) {
                     await fetch('/ajax/admin_update_roulette.php', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${adminToken}`
+                        },
                         body: JSON.stringify({ 
-                            sessionId: adminToken,
                             configId: config.id,
                             probability: config.probability 
                         })
@@ -857,9 +869,11 @@
             try {
                 const response = await fetch('/ajax/admin_approve_withdrawal.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
                     body: JSON.stringify({ 
-                        sessionId: adminToken,
                         withdrawalId: id 
                     })
                 });
@@ -884,9 +898,11 @@
             try {
                 const response = await fetch('/ajax/admin_reject_withdrawal.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
                     body: JSON.stringify({ 
-                        sessionId: adminToken,
                         withdrawalId: id,
                         reason 
                     })
