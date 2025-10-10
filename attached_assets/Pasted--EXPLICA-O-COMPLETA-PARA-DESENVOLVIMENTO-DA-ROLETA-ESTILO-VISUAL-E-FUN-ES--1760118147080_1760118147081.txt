@@ -1,0 +1,119 @@
+🎰 EXPLICAÇÃO COMPLETA PARA DESENVOLVIMENTO DA ROLETA (ESTILO VISUAL E FUNÇÕES)
+
+------------------------------------------------------------
+1️⃣ VISÃO GERAL
+------------------------------------------------------------
+O layout da roleta deve seguir o mesmo estilo da imagem de referência:
+- Fundo (background) verde esmeralda, com textura de escamas e pedras místicas.
+- Iluminação central suave.
+- Interface com aparência 3D (efeito de profundi dade e sombras).
+- Paleta predominante: tons de verde (#00b86b, #065c39, #0e3224).
+
+------------------------------------------------------------
+2️⃣ ELEMENTOS PRINCIPAIS
+------------------------------------------------------------
+
+🎡 ROUELETTE WHEEL (roleta principal)
+- Formato circular dividido em seções (12 fatias).
+- Cada fatia deve conter um multiplicador:
+  [1X, 2X, 3X, 4X, 5X, 10X, 15X, 20X, 30X, 50X, 100X].
+- As seções devem alternar tons de verde mais claro e escuro.
+- Borda com pontos de luz (brancos) simulando LEDs.
+- Centro da roleta deve conter um círculo menor com 3 fatias (1X, 2X, 3X, 4X).
+
+📍 SETA (ponteiro superior)
+- Localizada no topo central da tela.
+- Estilo 3D com formato de ponta de flecha verde-esmeralda e borda dourada.
+- Deve girar junto com a roleta e parar indicando o resultado.
+- Iluminação animada na seta ao parar em 100X.
+
+------------------------------------------------------------
+3️⃣ PAINEL SUPERIOR (RESULTADOS RECENTES)
+------------------------------------------------------------
+- Localizado acima da seta.
+- Exibe lista dos últimos ganhadores com nome parcialmente oculto:
+  Exemplo:
+  Am****** Am****** → 1,0x
+  Au****** Pe****** → 100,0x
+  Ol****** Pi****** → 2,0x
+  Al****** Fe****** → 2,0x
+- Ícones verdes de círculo indicam que a transação foi bem-sucedida.
+- As multiplicações aparecem em amarelo (ex: 100,0x).
+
+------------------------------------------------------------
+4️⃣ BOTÕES SUPERIORES DIREITOS
+------------------------------------------------------------
+- Ícone de usuário 👤 → abre menu de perfil.
+- Ícone de alto-falante 🔇 → ativa/desativa som.
+- Ícone de interrogação ❓ → abre tutorial rápido.
+- Ícone quadrado 💵 → mostra histórico de ganhos.
+
+------------------------------------------------------------
+5️⃣ BOTÃO PRINCIPAL (START)
+------------------------------------------------------------
+- Localizado no centro inferior da tela.
+- Texto: “Start”
+- Cor: azul-claro (#1ca3ec)
+- Fonte bold e arredondada.
+- Ao clicar, a roleta gira com som de rotação e desacelera com easing suave.
+
+------------------------------------------------------------
+6️⃣ PAINEL INFERIOR (CONTROLE DE APOSTA)
+------------------------------------------------------------
+- Campo central: “GIRO R$0,50”
+- Botões laterais:
+  - “–” para reduzir valor.
+  - “+” para aumentar valor.
+- Fundo verde translúcido.
+- Fonte branca.
+- Abaixo, campo “SALDO R$0,00” com ícone de moeda dourado.
+
+------------------------------------------------------------
+7️⃣ FUNCIONALIDADES
+------------------------------------------------------------
+- O valor do giro é deduzido do saldo ao clicar em “Start”.
+- Ao parar a roleta:
+  • Exibe multiplicador sorteado.
+  • Calcula prêmio = aposta × multiplicador.
+  • Atualiza saldo automaticamente.
+  • Mostra resultado na lista superior (últimos ganhadores).
+- Animações:
+  - Luzes piscando no setor vencedor.
+  - Som de “vitória” quando 10X+.
+
+------------------------------------------------------------
+8️⃣ BACKGROUND (FUNDO)
+------------------------------------------------------------
+- Textura com escamas e pedras em tons esmeralda.
+- Efeito de luz suave vindo do centro inferior.
+- Detalhes místicos (runas nas paredes, sombras nas laterais).
+- Cor base: verde #006b43 / sombras #012a1a.
+
+------------------------------------------------------------
+9️⃣ ARQUIVOS SUGERIDOS
+------------------------------------------------------------
+/index.html      → estrutura visual da roleta.
+/style.css       → estilos e gradientes.
+/script.js       → lógica de giro, delays, som e resultado.
+/assets/bg.png   → background verde limpo.
+/assets/icons/   → pasta com ícones (user, mute, help, money).
+/assets/sound/   → sons de giro e vitória.
+
+------------------------------------------------------------
+🔧 RESUMO TÉCNICO
+------------------------------------------------------------
+- Efeito de rotação: CSS Transform + JavaScript easing.
+- Rotação aleatória com base em probabilidades configuráveis.
+- Armazenar últimos resultados localmente (sessionStorage).
+- Responsivo (mobile e desktop vertical).
+- Fundo fixo (background não gira).
+- FPS sugerido: 60 para suavidade da rotação.
+
+------------------------------------------------------------
+✅ RESULTADO FINAL
+------------------------------------------------------------
+Uma roleta interativa em 3D com:
+- Fundo místico verde.
+- Painel de vencedores animado.
+- Botões e ícones funcionais.
+- Experiência fluida e profissional.
