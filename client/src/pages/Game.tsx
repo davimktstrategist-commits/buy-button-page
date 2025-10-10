@@ -90,7 +90,7 @@ export default function Game() {
     setShowWin(true);
     
     // Play win or lose sound
-    if (multiplier > 1) {
+    if (multiplier >= 1) {
       playSound('win');
     } else {
       playSound('lose');
