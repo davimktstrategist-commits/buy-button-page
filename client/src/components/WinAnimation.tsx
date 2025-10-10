@@ -40,7 +40,7 @@ export function WinAnimation({ show, amount, multiplier }: WinAnimationProps) {
             ...defaults,
             particleCount,
             origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-            colors: ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1']
+            colors: ['#86efac', '#22c55e', '#16a34a', '#4ade80', '#a3e635']
           });
 
           // Fire from right side
@@ -48,7 +48,7 @@ export function WinAnimation({ show, amount, multiplier }: WinAnimationProps) {
             ...defaults,
             particleCount,
             origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-            colors: ['#FFD700', '#FFA500', '#FF6B6B', '#4ECDC4', '#45B7D1']
+            colors: ['#86efac', '#22c55e', '#16a34a', '#4ade80', '#a3e635']
           });
         }, 250);
 

@@ -125,14 +125,14 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[400px] w-[79%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#ff9d2f]/30 p-8">
+      <DialogContent className="sm:max-w-[400px] w-[79%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#22c55e]/30 p-8">
         <VisuallyHidden>
           <DialogTitle>Login/Cadastro</DialogTitle>
           <DialogDescription>Entre ou cadastre-se para jogar</DialogDescription>
         </VisuallyHidden>
         <button
           onClick={onClose}
-          className="absolute top-2 right-4 text-[#888] hover:text-[#ff6c2f] text-3xl"
+          className="absolute top-2 right-4 text-[#888] hover:text-[#22c55e] text-3xl"
           data-testid="button-close-auth"
         >
           <X />
@@ -144,7 +144,7 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
             onClick={() => setActiveTab("login")}
             className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
               activeTab === "login"
-                ? "bg-gradient-to-br from-[#ff6c2f] to-[#ff8c47] text-white"
+                ? "bg-gradient-to-br from-[#16a34a] to-[#22c55e] text-white"
                 : "bg-transparent text-[#aaa]"
             }`}
             data-testid="tab-login"
@@ -155,7 +155,7 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
             onClick={() => setActiveTab("register")}
             className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
               activeTab === "register"
-                ? "bg-gradient-to-br from-[#ff6c2f] to-[#ff8c47] text-white"
+                ? "bg-gradient-to-br from-[#16a34a] to-[#22c55e] text-white"
                 : "bg-transparent text-[#aaa]"
             }`}
             data-testid="tab-register"
@@ -202,7 +202,7 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
 
             <Button
               type="submit"
-              className="bg-gradient-to-br from-[#ff6c2f] to-[#ff8c47] hover:translate-y-[-2px] transition-transform"
+              className="bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:translate-y-[-2px] transition-transform"
               data-testid="button-login-submit"
             >
               Entrar
@@ -275,7 +275,7 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
 
             <Button
               type="submit"
-              className="bg-gradient-to-br from-[#ff6c2f] to-[#ff8c47] hover:translate-y-[-2px] transition-transform mt-2"
+              className="bg-gradient-to-br from-[#16a34a] to-[#22c55e] hover:translate-y-[-2px] transition-transform mt-2"
               data-testid="button-register-submit"
             >
               Cadastrar

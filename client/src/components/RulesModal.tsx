@@ -23,7 +23,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent 
-        className="sm:max-w-[500px] w-[90%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#ff9d2f]/30 p-0 max-h-[80vh] overflow-hidden"
+        className="sm:max-w-[500px] w-[90%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#22c55e]/30 p-0 max-h-[80vh] overflow-hidden"
         data-testid="modal-rules"
       >
         <VisuallyHidden>
@@ -32,14 +32,14 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
         </VisuallyHidden>
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#888] hover:text-[#ff6c2f] text-2xl z-10"
+          className="absolute top-4 right-4 text-[#888] hover:text-[#22c55e] text-2xl z-10"
           data-testid="button-close-rules"
         >
           <X />
         </button>
 
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-[#ffc83d] text-center mb-6">
+          <h2 className="text-2xl font-bold text-[#86efac] text-center mb-6">
             Informações
           </h2>
 
@@ -53,7 +53,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex-1 min-w-[100px] py-2 px-3 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-1 ${
                     activeTab === tab.id
-                      ? "bg-gradient-to-br from-[#ff6c2f] to-[#ff8c47] text-white"
+                      ? "bg-gradient-to-br from-[#16a34a] to-[#22c55e] text-white"
                       : "bg-[#252525] text-[#aaa] hover:bg-[#333]"
                   }`}
                   data-testid={`tab-${tab.id}`}
@@ -69,7 +69,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
           <div className="overflow-y-auto max-h-[50vh] pr-2">
             {activeTab === "jogar" && (
               <div className="space-y-4 text-[#d1d1d1]" data-testid="content-jogar">
-                <h3 className="text-xl font-bold text-[#ffc83d]">Como Jogar</h3>
+                <h3 className="text-xl font-bold text-[#86efac]">Como Jogar</h3>
                 
                 <div className="space-y-3">
                   <div>
@@ -99,8 +99,8 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
                     </p>
                   </div>
 
-                  <div className="bg-[#1a1a1a]/50 border border-[#ff9d2f]/20 rounded-lg p-3">
-                    <p className="text-sm text-[#ffc83d]">
+                  <div className="bg-[#1a1a1a]/50 border border-[#22c55e]/20 rounded-lg p-3">
+                    <p className="text-sm text-[#86efac]">
                       💡 <strong>Dica:</strong> Comece com apostas menores para conhecer o jogo!
                     </p>
                   </div>
@@ -110,7 +110,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
 
             {activeTab === "deposito" && (
               <div className="space-y-4 text-[#d1d1d1]" data-testid="content-deposito">
-                <h3 className="text-xl font-bold text-[#ffc83d]">Como Depositar</h3>
+                <h3 className="text-xl font-bold text-[#86efac]">Como Depositar</h3>
                 
                 <div className="space-y-3">
                   <div>
@@ -135,8 +135,8 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
                     </ul>
                   </div>
 
-                  <div className="bg-[#1a1a1a]/50 border border-[#ff9d2f]/20 rounded-lg p-3">
-                    <p className="text-sm text-[#ffc83d]">
+                  <div className="bg-[#1a1a1a]/50 border border-[#22c55e]/20 rounded-lg p-3">
+                    <p className="text-sm text-[#86efac]">
                       ⏱️ <strong>Tempo:</strong> Crédito em até 60 segundos após confirmação!
                     </p>
                   </div>
@@ -146,7 +146,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
 
             {activeTab === "saque" && (
               <div className="space-y-4 text-[#d1d1d1]" data-testid="content-saque">
-                <h3 className="text-xl font-bold text-[#ffc83d]">Como Sacar</h3>
+                <h3 className="text-xl font-bold text-[#86efac]">Como Sacar</h3>
                 
                 <div className="space-y-3">
                   <div>
@@ -172,8 +172,8 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
                     </ul>
                   </div>
 
-                  <div className="bg-[#1a1a1a]/50 border border-[#ff9d2f]/20 rounded-lg p-3">
-                    <p className="text-sm text-[#ffc83d]">
+                  <div className="bg-[#1a1a1a]/50 border border-[#22c55e]/20 rounded-lg p-3">
+                    <p className="text-sm text-[#86efac]">
                       ⚠️ <strong>Atenção:</strong> Certifique-se de que todos os dados estão corretos 
                       antes de solicitar o saque!
                     </p>
@@ -184,7 +184,7 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
 
             {activeTab === "afiliados" && (
               <div className="space-y-4 text-[#d1d1d1]" data-testid="content-afiliados">
-                <h3 className="text-xl font-bold text-[#ffc83d]">Programa de Afiliados</h3>
+                <h3 className="text-xl font-bold text-[#86efac]">Programa de Afiliados</h3>
                 
                 <div className="space-y-3">
                   <div>
@@ -216,8 +216,8 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
                     </ol>
                   </div>
 
-                  <div className="bg-[#1a1a1a]/50 border border-[#ff9d2f]/20 rounded-lg p-3">
-                    <p className="text-sm text-[#ffc83d]">
+                  <div className="bg-[#1a1a1a]/50 border border-[#22c55e]/20 rounded-lg p-3">
+                    <p className="text-sm text-[#86efac]">
                       🎁 <strong>Bônus:</strong> Quanto mais indicados, maiores seus ganhos!
                     </p>
                   </div>
