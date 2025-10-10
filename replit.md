@@ -15,7 +15,7 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - **Tema**: Verde escuro de cassino com escamas de dragão (backgrounds reais aplicados)
 - **Autenticação**: REMOVIDA - Sistema totalmente público com sessionId anônimo
 - **State Management**: TanStack Query v5
-- **Design**: Backgrounds de cassino verde personalizados (casino-bg-1.png, casino-bg-2.png)
+- **Design**: Imagens reais do jogo (fundo.png, roleta1.png, roleta2.png, cima.png, ceta.png, baixo.png)
 
 ### Backend (Express + TypeScript)
 - **Framework**: Express.js
@@ -28,9 +28,11 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 ## Funcionalidades Principais
 
 ### 🎰 Jogo de Roleta
-- Roleta animada com 8 segmentos
-- Multiplicadores: 0x, 2x, 5x, 10x, 15x, 100x
-- Probabilidades configuráveis pelo admin
+- Roleta principal animada com 12 segmentos
+- Multiplicadores: 1x, 2x, 3x, 4x, 5x, 10x, 15x, 20x, 30x, 50x, 100x (2x o 100x)
+- Roleta bônus menor girando em sentido oposto
+- Indicadores dourados (cima.png) e barra inferior decorativa (baixo.png)
+- Background de templo verde escuro (fundo.png)
 - Sistema de apostas com saldo em tempo real
 - Histórico de resultados recentes
 - Animações de vitória/derrota

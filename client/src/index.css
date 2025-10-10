@@ -101,7 +101,7 @@
 
 /* Casino Background Pattern */
 .casino-bg {
-  background-image: url('/casino-bg-1.png');
+  background-image: url('/fundo.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -118,7 +118,7 @@
   right: 0;
   bottom: 0;
   z-index: -1;
-  background-image: url('/casino-bg-1.png');
+  background-image: url('/fundo.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -144,7 +144,7 @@
   height: 100vh;
   max-width: 420px;
   margin: 0 auto;
-  background-image: url('/casino-bg-1.png');
+  background-image: url('/fundo.png');
   background-size: cover;
   background-position: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
