@@ -74,12 +74,12 @@
 @layer utilities {
   .hover-elevate {
     @apply transition-all duration-200;
-    @apply hover:brightness-110 hover:saturate-110;
+    @apply hover:brightness-110;
   }
 
   .active-elevate-2 {
     @apply transition-all duration-100;
-    @apply active:brightness-125 active:saturate-125;
+    @apply active:brightness-125;
   }
 
   .no-default-hover-elevate {
@@ -101,10 +101,18 @@
 
 /* Casino Background Pattern */
 .casino-bg {
-  background: 
-    linear-gradient(135deg, rgba(0, 50, 20, 0.4) 0%, rgba(0, 30, 15, 0.6) 100%),
-    radial-gradient(ellipse at top, rgba(34, 197, 94, 0.1) 0%, transparent 70%),
-    radial-gradient(ellipse at bottom, rgba(0, 0, 0, 0.8) 0%, transparent 70%);
+  background-image: url('/casino-bg-1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: #0a0e0a;
+}
+
+.casino-bg-alt {
+  background-image: url('/casino-bg-2.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   background-color: #0a0e0a;
 }
 

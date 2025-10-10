@@ -1,10 +1,10 @@
 # Roleta do Tigre - Aplicativo de Jogo com PIX
 
 ## Visão Geral
-Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPIX para depósitos/saques via PIX, e painel administrativo completo.
+Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPIX para depósitos/saques via PIX. **Site totalmente público (sem login)** - usa sessões anônimas via localStorage.
 
 ## Status do Projeto
-✅ **MVP Completo** - Frontend, backend e integração BRPIX implementados
+✅ **MVP Completo e Público** - Frontend redesenhado, backend com sessões anônimas, e integração BRPIX funcionando
 
 ## Arquitetura
 
@@ -12,16 +12,18 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
 - **Framework**: React 18 com Vite
 - **Roteamento**: Wouter
 - **UI**: Shadcn UI + Tailwind CSS
-- **Tema**: Verde escuro com acentos dourados (tema tigre)
-- **Autenticação**: Replit Auth (Google, GitHub, Email)
+- **Tema**: Verde escuro de cassino com escamas de dragão (backgrounds reais aplicados)
+- **Autenticação**: REMOVIDA - Sistema totalmente público com sessionId anônimo
 - **State Management**: TanStack Query v5
+- **Design**: Backgrounds de cassino verde personalizados (casino-bg-1.png, casino-bg-2.png)
 
 ### Backend (Express + TypeScript)
 - **Framework**: Express.js
 - **Database**: PostgreSQL (Neon)
 - **ORM**: Drizzle ORM
-- **Autenticação**: Replit Auth (OpenID Connect)
+- **Autenticação**: REMOVIDA - Todas as rotas são públicas com sessionId
 - **Pagamentos**: BRPIX PIX Gateway
+- **Sessão**: Auto-criação de usuário anônimo quando sessionId não existe
 
 ## Funcionalidades Principais
 

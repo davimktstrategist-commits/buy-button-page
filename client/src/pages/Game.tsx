@@ -96,11 +96,13 @@ export default function Game() {
     }, 3000);
   };
 
-  const recentResults = gameHistory.slice(0, 4).map(game => ({
-    player: `${game.userId.substring(0, 2)}******`,
-    multiplier: `${game.multiplier}.0xi`,
-    amount: parseFloat(game.winAmount)
-  }));
+  const recentResults = Array.isArray(gameHistory) 
+    ? gameHistory.slice(0, 4).map(game => ({
+        player: `${game.userId.substring(0, 2)}******`,
+        multiplier: `${game.multiplier}.0xi`,
+        amount: parseFloat(game.winAmount)
+      }))
+    : [];
 
   if (!sessionId) {
     return null;
