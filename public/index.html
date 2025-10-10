@@ -232,6 +232,57 @@
           fill: currentColor;
       }
 
+      /* GAME MODE BUTTONS */
+      #game-mode-buttons {
+          position: absolute;
+          bottom: 220px;
+          right: 15px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          z-index: 50;
+      }
+
+      .mode-button {
+          width: 80px;
+          height: 50px;
+          background: linear-gradient(135deg, rgba(var(--theme-bg-rgb), 0.9) 0%, rgba(var(--theme-bg-rgb), 0.75) 100%);
+          border: 2px solid var(--theme-text);
+          border-radius: 10px;
+          color: var(--theme-text);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+          gap: 2px;
+      }
+
+      .mode-button:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+      }
+
+      .mode-button.active {
+          background: linear-gradient(135deg, var(--theme-text) 0%, var(--theme-text) 100%);
+          color: var(--theme-bg);
+          border-color: #86efac;
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+      }
+
+      .mode-icon {
+          font-size: 18px;
+          line-height: 1;
+      }
+
+      .mode-text {
+          font-size: 10px;
+          font-weight: 900;
+          letter-spacing: 0.5px;
+      }
+
       /* BOTTOM CONTROLS */
       .bottom-game-controls {
           position: absolute;
@@ -840,6 +891,64 @@
           border-color: #86efac;
           transform: translateY(-2px);
           box-shadow: 0 6px 20px rgba(134, 239, 172, 0.3);
+      }
+
+      /* AUTO PLAY MODAL */
+      #auto-play-content {
+          width: 85%;
+          max-width: 350px;
+          background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+          backdrop-filter: blur(15px);
+          color: white;
+          padding: 30px 20px;
+          border-radius: 16px;
+          border: 2px solid rgba(34, 197, 94, 0.3);
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+          position: relative;
+      }
+
+      .auto-play-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 12px;
+          margin-bottom: 20px;
+      }
+
+      .auto-play-option {
+          padding: 20px;
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
+          border: 2px solid #22c55e;
+          border-radius: 12px;
+          color: #86efac;
+          font-size: 24px;
+          font-weight: 900;
+          cursor: pointer;
+          transition: all 0.3s ease;
+      }
+
+      .auto-play-option:hover {
+          background: linear-gradient(135deg, #22c55e, #16a34a);
+          color: white;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 20px rgba(34, 197, 94, 0.5);
+      }
+
+      .stop-auto-btn {
+          width: 100%;
+          padding: 16px;
+          background: linear-gradient(135deg, #ef4444, #dc2626);
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 18px;
+          font-weight: 900;
+          cursor: pointer;
+          transition: all 0.3s ease;
+      }
+
+      .stop-auto-btn:hover {
+          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          transform: translateY(-2px);
       }
 
       /* AUTH MODAL */
@@ -1501,7 +1610,19 @@
             <button id="rules-btn" class="icon-button" title="Regras">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"></path></svg>
             </button>
-                    </div>
+        </div>
+
+        <!-- GAME MODE BUTTONS - Bottom Right -->
+        <div id="game-mode-buttons">
+            <button id="turbo-button" class="mode-button" title="Modo Turbo">
+                <span class="mode-icon">⚡</span>
+                <span class="mode-text">TURBO</span>
+            </button>
+            <button id="auto-button" class="mode-button" title="Modo Automático">
+                <span class="mode-icon">🔄</span>
+                <span class="mode-text">AUTO</span>
+            </button>
+        </div>
 
         <!-- ROLETAS -->
         <img id="roulette-indicator" src="images/cima_img_68e47ebc1886d7.67745424.png" alt="Indicador da roleta">
@@ -1787,6 +1908,22 @@
                     </div>
 
                 </div>
+            </div>
+        </div>
+
+        <!-- AUTO PLAY MODAL -->
+        <div id="auto-play-modal" class="modal-overlay">
+            <div id="auto-play-content">
+                <button class="modal-close2" id="close-auto-play">✕</button>
+                <h2 style="color: #86efac; margin-bottom: 20px; text-align: center;">Rodadas Automáticas</h2>
+                <div class="auto-play-grid">
+                    <button class="auto-play-option" data-rounds="10">10</button>
+                    <button class="auto-play-option" data-rounds="20">20</button>
+                    <button class="auto-play-option" data-rounds="30">30</button>
+                    <button class="auto-play-option" data-rounds="50">50</button>
+                    <button class="auto-play-option" data-rounds="100">100</button>
+                </div>
+                <button id="stop-auto-play" class="stop-auto-btn" style="display: none;">PARAR AUTO</button>
             </div>
         </div>
 
