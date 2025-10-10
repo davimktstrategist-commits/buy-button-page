@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Loader2, Copy, QrCode as QrCodeIcon, CheckCircle2 } from "lucide-react";
-import QRCode from "react-qr-code";
+import { Loader2, Copy, QrCode as QrCodeIcon, X, CheckCircle } from "lucide-react";
 
 interface DepositModalProps {
   open: boolean;
@@ -16,18 +14,18 @@ interface DepositModalProps {
 }
 
 const SUGGESTED_AMOUNTS = [20, 30, 50, 100];
+const DEPOSITO_MIN = 20;
 
 export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
   const [amount, setAmount] = useState("");
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [qrCodeData, setQrCodeData] = useState<{
     transactionId: string;
     qrCode: string;
     qrCodeImage: string;
-    copyPaste: string;
-    expiresAt: string;
   } | null>(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -44,13 +42,8 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
         transactionId: data.transactionId,
         qrCode: data.qrCode,
         qrCodeImage: data.qrCodeImage,
-        copyPaste: data.copyPaste,
-        expiresAt: data.expiresAt,
       });
-      toast({
-        title: "PIX gerado com sucesso!",
-        description: "Escaneie o QR Code ou copie o código PIX para realizar o pagamento.",
-      });
+      setIsLoading(false);
     },
     onError: (error: Error) => {
       toast({
@@ -58,30 +51,40 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
         description: error.message,
         variant: "destructive",
       });
+      setIsLoading(false);
     },
   });
 
-  const handleGenerate = () => {
-    const depositAmount = parseFloat(amount);
-    if (isNaN(depositAmount) || depositAmount <= 0) {
+  const handleGenerate = (e: React.FormEvent) => {
+    e.preventDefault();
+    const depositAmount = parseFloat(amount.replace(',', '.'));
+    
+    if (isNaN(depositAmount) || depositAmount < DEPOSITO_MIN) {
       toast({
         title: "Valor inválido",
-        description: "Por favor, insira um valor válido para depósito.",
+        description: `O valor mínimo para depósito é R$ ${DEPOSITO_MIN.toFixed(2).replace('.', ',')}`,
         variant: "destructive",
       });
       return;
     }
+    
+    setIsLoading(true);
     createDepositMutation.mutate(depositAmount);
   };
 
   const handleCopy = async () => {
-    if (qrCodeData?.copyPaste) {
-      await navigator.clipboard.writeText(qrCodeData.copyPaste);
+    if (qrCodeData?.qrCode) {
+      await navigator.clipboard.writeText(qrCodeData.qrCode);
       toast({
         title: "Copiado!",
-        description: "Código PIX copiado para a área de transferência.",
+        description: "Código PIX copiado com sucesso!",
       });
     }
+  };
+
+  const handleSuggestedAmount = (value: number) => {
+    setSelectedAmount(value);
+    setAmount(value.toFixed(2).replace('.', ','));
   };
 
   // Poll for payment confirmation
@@ -90,7 +93,6 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
 
     const checkPaymentStatus = async () => {
       try {
-        setIsChecking(true);
         const response = await apiRequest(
           "POST", 
           `/api/deposits/${qrCodeData.transactionId}/confirm`,
@@ -101,163 +103,169 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
           setPaymentConfirmed(true);
           queryClient.invalidateQueries({ queryKey: ['/api/balance', sessionId] });
           toast({
-            title: "Pagamento confirmado! 🎉",
-            description: `Seu saldo foi atualizado com R$ ${amount}`,
+            title: "Depósito confirmado com sucesso!",
+            description: "Seu saldo foi atualizado!",
           });
           
-          // Close modal after 2 seconds
           setTimeout(() => {
-            handleClose();
-          }, 2000);
+            window.location.reload();
+          }, 2500);
         }
       } catch (error) {
         console.error("Error checking payment:", error);
-      } finally {
-        setIsChecking(false);
       }
     };
 
-    // Check immediately
-    checkPaymentStatus();
-
-    // Then poll every 3 seconds
     const interval = setInterval(checkPaymentStatus, 3000);
-
     return () => clearInterval(interval);
-  }, [qrCodeData?.transactionId, paymentConfirmed, queryClient, toast, amount]);
+  }, [qrCodeData?.transactionId, paymentConfirmed, queryClient, toast, sessionId]);
 
   const handleClose = () => {
     setQrCodeData(null);
     setAmount("");
+    setSelectedAmount(null);
     setPaymentConfirmed(false);
-    setIsChecking(false);
+    setIsLoading(false);
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="mx-auto mb-2">
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-              <QrCodeIcon className="w-8 h-8 text-primary" />
-            </div>
-          </div>
-          <DialogTitle className="text-2xl font-display font-bold text-center">
-            Depositar via PIX
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            Depósito rápido e seguro com PIX
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent 
+        className="p-0 border-0 bg-transparent max-w-[420px] w-[90%] overflow-hidden"
+        data-testid="modal-deposit"
+      >
+        {/* Banner Superior */}
+        <div className="relative">
+          <img 
+            src="/banner.jpeg" 
+            alt="Banner" 
+            className="w-full h-auto rounded-t-2xl"
+          />
+        </div>
 
-        {!qrCodeData ? (
-          <div className="space-y-4 mt-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount">Valor do Depósito</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="text-lg"
-                data-testid="input-deposit-amount"
-              />
-            </div>
+        {/* Card do Modal */}
+        <div className="bg-[#101012] rounded-b-2xl relative">
+          <button
+            onClick={handleClose}
+            className="absolute top-4 right-4 text-[#888] hover:text-white text-2xl z-10"
+            data-testid="button-close-deposit"
+          >
+            <X />
+          </button>
 
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Valores Sugeridos</Label>
-              <div className="grid grid-cols-4 gap-2">
-                {SUGGESTED_AMOUNTS.map((suggestedAmount) => (
-                  <Button
-                    key={suggestedAmount}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setAmount(suggestedAmount.toString())}
-                    data-testid={`button-suggested-${suggestedAmount}`}
-                  >
-                    R$ {suggestedAmount}
-                  </Button>
-                ))}
-              </div>
-            </div>
+          <div className="p-6">
+            {!qrCodeData ? (
+              <form onSubmit={handleGenerate} className="space-y-4" data-testid="form-deposit">
+                <div>
+                  <label className="text-white text-sm font-medium block mb-2">
+                    Valor do depósito
+                  </label>
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="R$ 0,00"
+                    className="w-full px-4 py-4 bg-[#2a2a2a] border border-[#3a3a3a] rounded-xl text-white text-lg focus:outline-none focus:border-[#fd8303]"
+                    required
+                    data-testid="input-deposit-amount"
+                  />
+                </div>
 
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={handleGenerate}
-              disabled={createDepositMutation.isPending}
-              data-testid="button-generate-pix"
-            >
-              {createDepositMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Gerando QR Code...
-                </>
-              ) : (
-                "Gerar QR Code PIX"
-              )}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4 mt-4">
-            {/* Payment Status */}
-            {paymentConfirmed ? (
-              <div className="bg-success/20 border border-success text-success rounded-lg p-4 flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="font-semibold">Pagamento Confirmado!</span>
-              </div>
-            ) : isChecking ? (
-              <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Aguardando pagamento...</span>
-              </div>
-            ) : null}
+                {/* Valores Sugeridos */}
+                <div className="grid grid-cols-4 gap-2">
+                  {SUGGESTED_AMOUNTS.map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleSuggestedAmount(value)}
+                      className={`px-4 py-3 rounded-xl font-semibold transition-all ${
+                        selectedAmount === value
+                          ? 'bg-[#fd8303] text-white'
+                          : 'bg-[#2a2a2a] text-white hover:bg-[#333333]'
+                      }`}
+                      data-testid={`button-suggested-${value}`}
+                    >
+                      R$ {value.toFixed(2).replace('.', ',')}
+                    </button>
+                  ))}
+                </div>
 
-            {/* QR Code */}
-            <div className="bg-white p-4 rounded-lg mx-auto w-fit">
-              <QRCode value={qrCodeData.qrCode} size={200} />
-            </div>
-
-            {/* Copy PIX Code */}
-            <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Código PIX Copia e Cola</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={qrCodeData.copyPaste}
-                  readOnly
-                  className="font-mono text-xs"
-                  data-testid="input-pix-code"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleCopy}
-                  data-testid="button-copy-pix"
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-[#fd8303] text-white py-4 rounded-xl font-bold text-lg hover:bg-[#e57503] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  data-testid="button-generate-pix"
                 >
-                  <Copy className="h-4 w-4" />
-                </Button>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Gerando...
+                    </>
+                  ) : (
+                    <>
+                      <QrCodeIcon className="w-5 h-5" />
+                      Gerar QR Code PIX
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4" data-testid="qr-section">
+                <h3 className="text-white text-xl font-bold text-center">
+                  PIX gerado com sucesso!
+                </h3>
+                <p className="text-[#888] text-sm text-center">
+                  Escaneie o QR Code ou use o código Pix Copia e Cola
+                </p>
+
+                {/* QR Code com overlay de PAGO */}
+                <div className="relative w-[250px] h-[250px] mx-auto">
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCodeData.qrCode)}`}
+                    alt="QR Code"
+                    className="w-full h-full bg-white p-1 rounded-2xl"
+                    data-testid="img-qr-code"
+                  />
+                  
+                  {paymentConfirmed && (
+                    <div className="absolute inset-0 bg-[#22c55e]/95 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                      <div className="text-white text-3xl font-extrabold flex items-center gap-2">
+                        PAGO <CheckCircle className="w-8 h-8" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Código Copia e Cola */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={qrCodeData.qrCode}
+                    readOnly
+                    className="flex-1 px-3 py-3 bg-[#2a2a2a] border border-[#3a3a3a] rounded-lg text-white text-sm"
+                    data-testid="input-pix-code"
+                  />
+                  <button
+                    onClick={handleCopy}
+                    className="bg-[#fd8303] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#e57503] transition-colors flex items-center gap-2"
+                    data-testid="button-copy-pix"
+                  >
+                    <Copy className="w-4 h-4" />
+                    Copiar
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="text-sm text-muted-foreground text-center space-y-1">
-              <p>Valor: <span className="font-bold text-foreground">R$ {amount}</span></p>
-              <p className="text-xs">
-                Expira em: {new Date(qrCodeData.expiresAt).toLocaleString('pt-BR')}
-              </p>
-            </div>
-
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleClose}
-              data-testid="button-close-deposit"
-            >
-              Fechar
-            </Button>
+            {/* Loading Overlay */}
+            {isLoading && (
+              <div className="absolute inset-0 bg-[#101012]/70 backdrop-blur-sm flex items-center justify-center z-20">
+                <div className="w-12 h-12 border-4 border-[#fd8303] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );
