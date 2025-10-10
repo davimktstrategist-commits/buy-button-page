@@ -1093,18 +1093,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Dados de afiliado
   app.get('/ajax/get_affiliate_data.php', async (req, res) => {
     try {
-      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      // Verificar se o usuário está autenticado
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.json({ success: false, message: 'Usuário não autenticado' });
+      }
+
+      const user = req.user as User;
       
-      // Por enquanto, retorna dados vazios de afiliado
-      res.json({ 
-        affiliateCode: sessionId,
-        totalReferrals: 0,
-        totalCommission: 0,
-        referrals: []
+      if (!user) {
+        return res.json({ success: false, message: 'Usuário não encontrado' });
+      }
+
+      // Gerar link de afiliado
+      const affiliateLink = `${req.protocol}://${req.get('host')}?ref=${user.id}`;
+
+      // Buscar indicados do usuário
+      const referrals = await db.select().from(users).where(eq(users.referredByUserId, user.id));
+      
+      // Contar depositantes ativos (usuários que fizeram depósito)
+      const depositantes = referrals.filter(r => parseFloat(r.totalDeposited || '0') > 0).length;
+
+      // Calcular ganhos de comissões (3% dos depósitos dos indicados)
+      let totalComission = 0;
+      for (const referral of referrals) {
+        const depositValue = parseFloat(referral.totalDeposited || '0');
+        totalComission += depositValue * 0.03; // 3% de comissão
+      }
+
+      res.json({
+        success: true,
+        link: affiliateLink,
+        stats: {
+          convidados: referrals.length,
+          depositantes: depositantes,
+          ganhos: totalComission
+        },
+        comissoes: {
+          master: 0,
+          agente: 0,
+          blogueiro: 3
+        },
+        historico: []
       });
     } catch (error) {
       console.error("Error getting affiliate data:", error);
-      res.status(500).json({ error: "Erro ao obter dados de afiliado" });
+      res.json({ success: false, message: "Erro ao obter dados de afiliado" });
     }
   });
 
