@@ -591,19 +591,19 @@
         // Load dashboard stats
         async function loadDashboard() {
             try {
-                const response = await fetch('/api/admin/stats');
+                const response = await fetch(`/ajax/admin_stats.php?sessionId=${ADMIN_PASSWORD}`);
                 const stats = await response.json();
                 
-                document.getElementById('statProfit').textContent = formatMoney(stats.profit || 0);
-                document.getElementById('statBets').textContent = formatMoney(stats.totalBet || 0);
-                document.getElementById('statWins').textContent = formatMoney(stats.totalWon || 0);
+                document.getElementById('statProfit').textContent = formatMoney(stats.platformProfit || 0);
+                document.getElementById('statBets').textContent = formatMoney(stats.totalBets || 0);
+                document.getElementById('statWins').textContent = formatMoney(stats.totalWinnings || 0);
                 document.getElementById('statUsers').textContent = stats.totalUsers || 0;
                 document.getElementById('statPendingWithdrawals').textContent = stats.pendingWithdrawals || 0;
-                document.getElementById('statTotalBalance').textContent = formatMoney(stats.totalBalance || 0);
-                document.getElementById('statTotalDeposited').textContent = formatMoney(stats.totalDeposited || 0);
+                document.getElementById('statTotalBalance').textContent = formatMoney(stats.accountBalance || 0);
+                document.getElementById('statTotalDeposited').textContent = formatMoney(stats.totalDeposits || 0);
                 
                 // Calculate split (10.5% of total deposited)
-                const splitAmount = (stats.totalDeposited || 0) * 0.105;
+                const splitAmount = parseFloat(stats.totalDeposits || 0) * 0.105;
                 document.getElementById('statSplit').textContent = formatMoney(splitAmount);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
@@ -618,7 +618,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch('/api/admin/users');
+                const response = await fetch(`/ajax/admin_users.php?sessionId=${ADMIN_PASSWORD}`);
                 const users = await response.json();
                 
                 tbody.innerHTML = users.map(user => `
@@ -649,7 +649,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch('/api/admin/transactions');
+                const response = await fetch(`/ajax/admin_transactions.php?sessionId=${ADMIN_PASSWORD}`);
                 const transactions = await response.json();
                 
                 tbody.innerHTML = transactions.map(tx => {
@@ -683,7 +683,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch('/api/admin/withdrawals');
+                const response = await fetch(`/ajax/admin_withdrawals.php?sessionId=${ADMIN_PASSWORD}`);
                 const withdrawals = await response.json();
                 
                 tbody.innerHTML = withdrawals.map(w => `
@@ -723,7 +723,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch('/api/admin/roulette-config');
+                const response = await fetch(`/ajax/admin_roulette_config.php?sessionId=${ADMIN_PASSWORD}`);
                 const configs = await response.json();
                 
                 container.innerHTML = configs.map(config => `
@@ -802,10 +802,14 @@
             
             try {
                 for (const config of configs) {
-                    await fetch(`/api/admin/roulette-config/${config.id}`, {
-                        method: 'PUT',
+                    await fetch('/ajax/admin_update_roulette.php', {
+                        method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ probability: config.probability })
+                        body: JSON.stringify({ 
+                            sessionId: ADMIN_PASSWORD,
+                            configId: config.id,
+                            probability: config.probability 
+                        })
                     });
                 }
                 
@@ -821,8 +825,13 @@
             if (!confirm('Aprovar este saque?')) return;
             
             try {
-                const response = await fetch(`/api/admin/withdrawals/${id}/approve`, {
-                    method: 'POST'
+                const response = await fetch('/ajax/admin_approve_withdrawal.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        sessionId: ADMIN_PASSWORD,
+                        withdrawalId: id 
+                    })
                 });
                 
                 if (response.ok) {
@@ -843,10 +852,14 @@
             if (!reason) return;
             
             try {
-                const response = await fetch(`/api/admin/withdrawals/${id}/reject`, {
+                const response = await fetch('/ajax/admin_reject_withdrawal.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason })
+                    body: JSON.stringify({ 
+                        sessionId: ADMIN_PASSWORD,
+                        withdrawalId: id,
+                        reason 
+                    })
                 });
                 
                 if (response.ok) {
