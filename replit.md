@@ -50,18 +50,37 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
   - Tipos suportados: CPF, CNPJ, Email, Telefone, Chave aleatória
 
 ### 👑 Painel Administrativo
-**Design**: Tema escuro roxo/azul (#1a1625, #2d1b4e) com sidebar lateral e gráficos Chart.js
+**Design**: Sidebar lateral com tema dark, dashboard com cards de métricas + sparklines SVG
+
+- **Estrutura de Navegação**:
+  - Sidebar lateral colapsável com seções:
+    - **GESTÃO**: Usuários, Afiliados, Depósitos, Saques
+    - **JOGOS**: Roleta
+    - **SISTEMA**: Configurações futuras
+  - Dashboard principal como home
+  - Header com usuários online e avatar do admin
 
 - **Dashboard com métricas em cards**:
-  - 8 cards com sparklines (Lucro, Total Apostado, Depósitos Hoje, Prêmios, Usuários, Depósitos Confirmados, Saldo Total, Saques Pagos)
-  - Gráfico de linha: Depósitos dos Últimos 7 dias
-  - Gráfico de barras: Maiores Saldos de Usuários (Top 5)
+  - 8 cards com sparklines SVG animados:
+    - Lucro do Jogo
+    - Total Apostado (Jogo)
+    - Depósitos de Hoje
+    - Prêmios Pagos (Jogo)
+    - Total de Usuários (com % de crescimento)
+    - Depósitos Confirmados
+    - Saldo Total em Contas
+    - Saques Pagos (com pendentes)
+  - Gráfico de barras: Depósitos dos Últimos 7 dias
+  - Gráfico de barras horizontais: Maiores Saldos de Usuários (Top 5)
   - Métricas calculadas em tempo real do banco de dados
   
 - **Gestão de Usuários**:
   - Lista de todos os usuários
   - Visualização de saldos e histórico
   - Total depositado, apostado e ganho por usuário
+  
+- **Gestão de Afiliados**:
+  - Placeholder para sistema de afiliados futuro
   
 - **Gestão de Depósitos**:
   - Histórico completo de depósitos
@@ -76,16 +95,14 @@ Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPI
   - Status: completed (aprovado) ou cancelled (rejeitado)
   
 - **Configuração da Roleta**:
+  - Layout: Dois cards lado a lado (Roleta Principal e Roleta Bônus)
   - Ajuste de probabilidades por multiplicador
-  - Roleta Principal e Roleta Bônus
-  - Validação de soma de probabilidades (deve somar 100%)
-  - Sliders visuais para ajuste de %
-  
-- **Gateway de Pagamento BRPIX**:
-  - Configuração de credenciais (Public Key, Private Key)
-  - Armazenamento seguro em systemSettings
-  - Interface com instruções de onde obter as credenciais
-  - Ambiente: api-gateway.brpixpay.com.br (Produção)
+  - **SEM validação de soma 100%** - permite qualquer valor de probabilidade
+  - Auto-save após 1 segundo de inatividade
+  - Save manual ao desfocar campo (onBlur)
+  - Prêmios configuráveis:
+    - Roleta Principal: 0x, 5x, 15x, 2x, 20x, 100x, 10x, 50x
+    - Roleta Bônus: 2x, 3x, 4x, 1x
 
 ### 🔐 Autenticação e Segurança
 - **Usuários**: Sistema público com sessionId anônimo (UUID v4) via localStorage
