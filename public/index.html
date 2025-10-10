@@ -91,6 +91,11 @@
           margin-top: 0;
           position: relative;
           z-index: 2;
+          opacity: 0;
+          transition: opacity 0.3s ease-in;
+      }
+      #roulette-indicator.loaded {
+          opacity: 1;
       }
       #roulette-wheel {
           position: absolute;
@@ -101,6 +106,11 @@
           width: 88%;
           height: auto;
           z-index: 1;
+          opacity: 0;
+          transition: opacity 0.3s ease-in;
+      }
+      #roulette-wheel.loaded {
+          opacity: 1;
       }
       #bonus-wheel {
           position: absolute;
@@ -111,6 +121,11 @@
           width: 35%;
           height: auto;
           z-index: 3;
+          opacity: 0;
+          transition: opacity 0.3s ease-in;
+      }
+      #bonus-wheel.loaded {
+          opacity: 1;
       }
       #roulette-wheel.swaying, #roleta1-labels.swaying {
           animation: sway-roleta1 8s ease-in-out infinite;
@@ -3349,6 +3364,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if(DOMElements.spinSound) DOMElements.spinSound.volume = 0.1;
         if(DOMElements.winSound) DOMElements.winSound.volume = 0.1;
         if(DOMElements.multiplierSound) DOMElements.multiplierSound.volume = 0.1;
+
+        // Preload roulette images to prevent layout shift
+        const rouletteImg = DOMElements.roleta1;
+        const bonusImg = DOMElements.roleta2;
+        const indicatorImg = document.getElementById('roulette-indicator');
+        
+        const checkImagesLoaded = () => {
+            if (rouletteImg.complete) rouletteImg.classList.add('loaded');
+            else rouletteImg.addEventListener('load', () => rouletteImg.classList.add('loaded'));
+            
+            if (bonusImg.complete) bonusImg.classList.add('loaded');
+            else bonusImg.addEventListener('load', () => bonusImg.classList.add('loaded'));
+            
+            if (indicatorImg && indicatorImg.complete) indicatorImg.classList.add('loaded');
+            else if (indicatorImg) indicatorImg.addEventListener('load', () => indicatorImg.classList.add('loaded'));
+        };
+        checkImagesLoaded();
 
         const unlockAllAudio = () => {
             if (audioUnlocked) return;
