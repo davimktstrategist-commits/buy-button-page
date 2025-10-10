@@ -7,6 +7,23 @@ import { brpixService } from "./brpixService";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
+import { randomBytes } from "crypto";
+
+// Admin token storage (in-memory)
+const adminTokens = new Map<string, { token: string; expiresAt: Date }>();
+
+function generateAdminToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+function isValidAdminToken(token: string): boolean {
+  for (const [_, tokenData] of adminTokens.entries()) {
+    if (tokenData.token === token && tokenData.expiresAt > new Date()) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -882,19 +899,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== ROTAS ADMIN PHP-COMPATÍVEIS (SEM REPLIT AUTH) =====
   
-  const ADMIN_PASSWORD = 'admin123'; // Senha de admin
-  
-  // Verificar se é admin
-  function isAdminSession(sessionId: string | undefined): boolean {
-    return sessionId === ADMIN_PASSWORD;
+  // Verificar se o token é válido
+  function isAdminToken(token: string | undefined): boolean {
+    if (!token) return false;
+    return isValidAdminToken(token);
   }
+  
+  // Rota de login admin
+  app.post('/ajax/admin_login.php', async (req, res) => {
+    try {
+      const { password } = req.body;
+      
+      if (password === process.env.ADMIN_PASSWORD) {
+        const token = generateAdminToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+        
+        adminTokens.set(token, { token, expiresAt });
+        
+        res.json({ 
+          success: true, 
+          token,
+          expiresAt: expiresAt.toISOString()
+        });
+      } else {
+        res.status(401).json({ success: false, error: "Senha incorreta" });
+      }
+    } catch (error) {
+      console.error("Error in admin login:", error);
+      res.status(500).json({ success: false, error: "Erro ao fazer login" });
+    }
+  });
 
   // Estatísticas do dashboard admin
   app.get('/ajax/admin_stats.php', async (req, res) => {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -911,7 +952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -928,7 +969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -945,7 +986,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -963,7 +1004,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
       const withdrawalId = req.body.withdrawalId;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -986,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const withdrawalId = req.body.withdrawalId;
       const reason = req.body.reason;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1007,7 +1048,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 
@@ -1026,7 +1067,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const configId = req.body.configId;
       const probability = parseFloat(req.body.probability);
       
-      if (!isAdminSession(sessionId)) {
+      if (!isAdminToken(sessionId)) {
         return res.status(403).json({ error: "Acesso negado" });
       }
 

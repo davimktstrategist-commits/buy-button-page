@@ -53,7 +53,7 @@ app.use((req, res, next) => {
 
   // Serve index.html para rotas não-API (catch-all)
   app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api')) {
+    if (!req.path.startsWith('/api') && !req.path.startsWith('/ajax')) {
       res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
     }
   });

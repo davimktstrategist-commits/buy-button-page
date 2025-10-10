@@ -554,28 +554,57 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Admin authentication
-        const ADMIN_PASSWORD = 'admin123'; // Change this to a secure password
+        // Admin authentication with secure tokens
         let adminToken = localStorage.getItem('adminToken');
 
-        // Check if already logged in
-        if (adminToken === ADMIN_PASSWORD) {
-            showAdminPanel();
+        // Check if already logged in with valid token
+        if (adminToken) {
+            // Validate token by trying to load stats
+            validateToken();
         }
 
         // Login form handler
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const password = document.getElementById('adminPassword').value;
             
-            if (password === ADMIN_PASSWORD) {
-                localStorage.setItem('adminToken', password);
-                showAdminPanel();
-                loadDashboard();
-            } else {
-                alert('Senha incorreta!');
+            try {
+                const response = await fetch('/ajax/admin_login.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    adminToken = data.token;
+                    localStorage.setItem('adminToken', adminToken);
+                    showAdminPanel();
+                } else {
+                    alert('Senha incorreta!');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Erro ao fazer login. Tente novamente.');
             }
         });
+
+        async function validateToken() {
+            try {
+                const response = await fetch(`/ajax/admin_stats.php?sessionId=${adminToken}`);
+                if (response.ok) {
+                    showAdminPanel();
+                } else {
+                    // Token inválido, limpar
+                    localStorage.removeItem('adminToken');
+                    adminToken = null;
+                }
+            } catch (error) {
+                localStorage.removeItem('adminToken');
+                adminToken = null;
+            }
+        }
 
         function showAdminPanel() {
             document.getElementById('loginScreen').style.display = 'none';
@@ -585,13 +614,14 @@
 
         function logout() {
             localStorage.removeItem('adminToken');
+            adminToken = null;
             location.reload();
         }
 
         // Load dashboard stats
         async function loadDashboard() {
             try {
-                const response = await fetch(`/ajax/admin_stats.php?sessionId=${ADMIN_PASSWORD}`);
+                const response = await fetch(`/ajax/admin_stats.php?sessionId=${adminToken}`);
                 const stats = await response.json();
                 
                 document.getElementById('statProfit').textContent = formatMoney(stats.platformProfit || 0);
@@ -618,7 +648,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_users.php?sessionId=${ADMIN_PASSWORD}`);
+                const response = await fetch(`/ajax/admin_users.php?sessionId=${adminToken}`);
                 const users = await response.json();
                 
                 tbody.innerHTML = users.map(user => `
@@ -649,7 +679,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_transactions.php?sessionId=${ADMIN_PASSWORD}`);
+                const response = await fetch(`/ajax/admin_transactions.php?sessionId=${adminToken}`);
                 const transactions = await response.json();
                 
                 tbody.innerHTML = transactions.map(tx => {
@@ -683,7 +713,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_withdrawals.php?sessionId=${ADMIN_PASSWORD}`);
+                const response = await fetch(`/ajax/admin_withdrawals.php?sessionId=${adminToken}`);
                 const withdrawals = await response.json();
                 
                 tbody.innerHTML = withdrawals.map(w => `
@@ -723,7 +753,7 @@
             loadingEl.style.display = 'block';
             
             try {
-                const response = await fetch(`/ajax/admin_roulette_config.php?sessionId=${ADMIN_PASSWORD}`);
+                const response = await fetch(`/ajax/admin_roulette_config.php?sessionId=${adminToken}`);
                 const configs = await response.json();
                 
                 container.innerHTML = configs.map(config => `
@@ -806,7 +836,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
-                            sessionId: ADMIN_PASSWORD,
+                            sessionId: adminToken,
                             configId: config.id,
                             probability: config.probability 
                         })
@@ -829,7 +859,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        sessionId: ADMIN_PASSWORD,
+                        sessionId: adminToken,
                         withdrawalId: id 
                     })
                 });
@@ -856,7 +886,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        sessionId: ADMIN_PASSWORD,
+                        sessionId: adminToken,
                         withdrawalId: id,
                         reason 
                     })
