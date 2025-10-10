@@ -47,12 +47,35 @@ export default function AdminDashboard() {
   const [gestaoOpen, setGestaoOpen] = useState(true);
   const [jogosOpen, setJogosOpen] = useState(true);
   const [sistemaOpen, setSistemaOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !isAdmin) {
-      setLocation('/');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      if (response.ok) {
+        const { token } = await response.json();
+        localStorage.setItem('adminToken', token);
+        window.location.reload(); // Recarrega para aplicar o token
+      } else {
+        setLoginError('Senha incorreta');
+      }
+    } catch (error) {
+      setLoginError('Erro ao fazer login');
+    } finally {
+      setIsLoggingIn(false);
     }
-  }, [isAdmin, isLoading, setLocation]);
+  };
 
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/stats'],
@@ -67,7 +90,57 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAdmin) return null;
+  // Show login page if not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">
+                  Senha de Administrador
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background"
+                  placeholder="Digite a senha"
+                  required
+                  data-testid="input-admin-password"
+                />
+              </div>
+              {loginError && (
+                <p className="text-sm text-destructive">{loginError}</p>
+              )}
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoggingIn}
+                data-testid="button-admin-login"
+              >
+                {isLoggingIn ? 'Entrando...' : 'Entrar'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                className="w-full" 
+                onClick={() => setLocation('/')}
+                data-testid="button-back-to-game"
+              >
+                Voltar ao Jogo
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const MenuItem = ({ 
     icon: Icon, 

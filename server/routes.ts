@@ -25,9 +25,63 @@ function isValidAdminToken(token: string): boolean {
   return false;
 }
 
+// Middleware to require admin token
+function requireAdminToken(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.replace('Bearer ', '');
+  
+  if (!token || !isValidAdminToken(token)) {
+    return res.status(401).json({ message: "Não autorizado" });
+  }
+  
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
+
+  // Admin login (password-based)
+  app.post('/api/admin/login', async (req, res) => {
+    try {
+      const { password } = req.body;
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      
+      if (!adminPassword) {
+        console.error("CRITICAL: ADMIN_PASSWORD environment variable not set!");
+        return res.status(500).json({ message: "Configuração de segurança inválida" });
+      }
+      
+      if (password === adminPassword) {
+        const token = generateAdminToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        adminTokens.set(token, { token, expiresAt });
+        
+        res.json({ token, expiresAt });
+      } else {
+        res.status(401).json({ message: "Senha incorreta" });
+      }
+    } catch (error) {
+      console.error("Error in admin login:", error);
+      res.status(500).json({ message: "Erro ao fazer login" });
+    }
+  });
+
+  // Admin token verification
+  app.get('/api/admin/verify', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      
+      if (!token || !isValidAdminToken(token)) {
+        return res.json({ isAdmin: false });
+      }
+      
+      res.json({ isAdmin: true });
+    } catch (error) {
+      console.error("Error verifying admin token:", error);
+      res.json({ isAdmin: false });
+    }
+  });
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -363,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
-  app.get('/api/admin/stats', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/stats', requireAdminToken, async (req: any, res) => {
     try {
       const stats = await storage.getDashboardStats();
       res.json(stats);
@@ -373,7 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/users', requireAdminToken, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -383,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/transactions', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/transactions', requireAdminToken, async (req: any, res) => {
     try {
       const transactions = await storage.getAllTransactions();
       res.json(transactions);
@@ -393,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/withdrawals', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/withdrawals', requireAdminToken, async (req: any, res) => {
     try {
       const withdrawals = await storage.getAllWithdrawals();
       res.json(withdrawals);
@@ -403,7 +457,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/withdrawals/:id/approve', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/withdrawals/:id/approve', requireAdminToken, async (req: any, res) => {
     try {
       const { id } = req.params;
       
@@ -425,7 +479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/withdrawals/:id/reject', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/withdrawals/:id/reject', requireAdminToken, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { reason } = req.body;
@@ -452,7 +506,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/roulette-config', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/roulette-config', requireAdminToken, async (req: any, res) => {
     try {
       const configs = await storage.getRouletteConfigs();
       res.json(configs);
@@ -462,7 +516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/admin/roulette-config/:id', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.put('/api/admin/roulette-config/:id', requireAdminToken, async (req: any, res) => {
     try {
       const { id } = req.params;
       const { probability } = req.body;
@@ -480,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Gateway configuration routes
-  app.get('/api/admin/gateway-config', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/gateway-config', requireAdminToken, async (req: any, res) => {
     try {
       const config = await storage.getGatewayConfig();
       res.json(config);
@@ -490,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/gateway-config', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/gateway-config', requireAdminToken, async (req: any, res) => {
     try {
       const { publicKey, privateKey } = req.body;
 
@@ -1197,5 +1251,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup Vite for React app (dev mode only)
+  if (process.env.NODE_ENV !== "production") {
+    const { setupVite } = await import("./vite");
+    await setupVite(app, httpServer);
+  }
+  
   return httpServer;
 }

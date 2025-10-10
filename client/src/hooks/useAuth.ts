@@ -1,17 +1,35 @@
-// Hook para gerenciar autenticação com Replit Auth
+// Hook para gerenciar autenticação de admin (password-based)
 import { useQuery } from "@tanstack/react-query";
-import type { User } from "@shared/schema";
+
+interface AdminSession {
+  isAdmin: boolean;
+  token?: string;
+}
 
 export function useAuth() {
-  const { data: user, isLoading } = useQuery<User>({
-    queryKey: ["/api/auth/user"],
+  // Verifica se há token admin no localStorage
+  const adminToken = typeof window !== 'undefined' ? localStorage.getItem('adminToken') : null;
+  
+  const { data, isLoading } = useQuery<AdminSession>({
+    queryKey: ["/api/admin/verify"],
     retry: false,
+    enabled: !!adminToken,
+    queryFn: async () => {
+      const response = await fetch('/api/admin/verify', {
+        headers: {
+          'Authorization': `Bearer ${adminToken}`
+        }
+      });
+      return response.json();
+    }
   });
 
+  const isAdmin = adminToken && data?.isAdmin === true;
+
   return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    user: isAdmin ? { role: 'admin' } : null,
+    isLoading: adminToken ? isLoading : false,
+    isAuthenticated: !!isAdmin,
+    isAdmin: !!isAdmin,
   };
 }

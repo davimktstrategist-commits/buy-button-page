@@ -1,346 +1,50 @@
 # Roleta do Tigre - Aplicativo de Jogo com PIX
 
-## Visão Geral
-Aplicativo completo de jogo de roleta com tema de tigre verde, integração BRPIX para depósitos/saques via PIX. **Site totalmente público (sem login)** - usa sessões anônimas via localStorage.
+## Overview
+The "Roleta do Tigre" project is a comprehensive online roulette game application featuring a green tiger theme. Its core purpose is to provide an engaging gaming experience coupled with seamless financial transactions via BRPIX for deposits and withdrawals. The application operates publicly without requiring user logins, utilizing anonymous sessions. The project aims to deliver a fully functional Minimum Viable Product (MVP) that includes both the game interface and an administrative panel. The business vision is to tap into the online gaming market with a unique theme and efficient payment processing, offering a user-friendly and secure platform.
 
-## Status do Projeto
-✅ **MVP Completo e Público** - Frontend HTML original integrado, backend Node.js/Express com rotas PHP-compatíveis, sistema de sessões anônimas via localStorage funcionando perfeitamente
+## User Preferences
+I prefer simple language in explanations. I like an iterative development workflow, so please propose changes and improvements in stages. Ask before making major architectural changes or introducing new dependencies. I prefer detailed explanations for complex logic. Do not make changes to the `public/` folder unless absolutely necessary for core game functionality, and do not modify the `server/seed.ts` file without explicit instruction.
 
-## Arquitetura
+## System Architecture
 
-### Frontend (HTML/CSS/JavaScript Original)
-- **Arquivos estáticos**: HTML, CSS, JS servidos da pasta `public/`
-- **UI**: Bootstrap 5 + CSS customizado
-- **Tema**: Verde escuro de cassino com imagens originais
-- **Autenticação**: Sistema totalmente público com sessionId anônimo via localStorage
-- **SessionID**: UUID v4 gerado automaticamente, armazenado em localStorage
-- **Interceptor fetch()**: Adiciona sessionId em todas as requisições para `/ajax/` e `/api/`
-- **Design**: Imagens originais do jogo (fundo.png, roleta1.png, roleta2.png, cima.png, ceta.png, baixo.png)
+### UI/UX Decisions
+The frontend employs a dual architecture: a static HTML/CSS/JS game interface and a React/TypeScript administrative Single Page Application (SPA). The game's design follows a dark green casino theme, utilizing Bootstrap 5 and custom CSS. The admin panel uses Shadcn UI with Tailwind CSS, featuring a dark theme sidebar and a dashboard with animated SVG sparklines for metrics. Typography uses Inter for UI and body text, and Poppins for titles and large numbers. Components are custom-styled Shadcn UI with elevation, hover/active states, and smooth animations.
 
-### Backend (Express + TypeScript)
-- **Framework**: Express.js
-- **Database**: PostgreSQL (Neon)
-- **ORM**: Drizzle ORM
-- **Autenticação**: REMOVIDA - Todas as rotas são públicas com sessionId
-- **Pagamentos**: BRPIX PIX Gateway
-- **Sessão**: Auto-criação de usuário anônimo quando sessionId não existe
-- **Rotas PHP-compatíveis**: Endpoints `/ajax/*.php` e `/api/*.php` para compatibilidade com frontend original
+### Technical Implementations
+**Frontend:**
+- **Game:** Static files in `public/`, Bootstrap 5, custom CSS. Uses anonymous `sessionId` via `localStorage` (UUID v4) for user tracking. Intercepts `fetch()` requests to add `sessionId`.
+- **Admin:** React/TypeScript SPA (`client/`), Vite, Shadcn UI, Tailwind CSS. Token-based authentication for admin users.
+**Backend:**
+- **Framework:** Express.js with TypeScript.
+- **Database:** PostgreSQL (Neon) managed with Drizzle ORM.
+- **Authentication:** Anonymous user sessions for the game (auto-creation of user if `sessionId` is new). Password-based authentication for admin panel via environment variables (`ADMIN_PASSWORD`).
+- **Payment Gateway:** BRPIX for PIX transactions.
+- **PHP-Compatibility:** Supports PHP-compatible routes (`/ajax/*.php` and `/api/*.php`) for the HTML frontend, and dedicated `/api/admin/*` routes for the React admin panel.
 
-## Funcionalidades Principais
+### Feature Specifications
+- **Roulette Game:** Animated roulette with 12 segments and configurable multipliers (1x to 100x). Includes a bonus wheel, real-time balance, and game history.
+- **Payment System:** BRPIX integration for PIX deposits (dynamic QR Code, copy-paste code, configurable expiration) and withdrawals (PIX key requests, admin approval). Features automatic 10.5% split for commission.
+- **Admin Panel:**
+    - **Dashboard:** Real-time metrics (Game Profit, Total Wagered, Deposits Today, Payouts, Total Users, Confirmed Deposits, Total Account Balance, Paid Withdrawals) with sparklines. Graphs for 7-day deposits and top user balances.
+    - **Management:** Users (balance, history), Deposits (history, BRPIX IDs, status), Withdrawals (approval/rejection, PIX keys, auto-refund on rejection).
+    - **Roulette Configuration:** Adjustable probabilities per multiplier for main and bonus roulettes, with auto-save.
+- **Authentication & Security:** Anonymous `sessionId` for game users. Admin panel uses password-based login with JWT-like tokens (24-hour expiry). BRPIX credentials are secured in environment variables.
 
-### 🎰 Jogo de Roleta
-- Roleta principal animada com 12 segmentos
-- Multiplicadores: 1x, 2x, 3x, 4x, 5x, 10x, 15x, 20x, 30x, 50x, 100x (2x o 100x)
-- Roleta bônus menor girando em sentido oposto
-- Indicadores dourados (cima.png) e barra inferior decorativa (baixo.png)
-- Background de templo verde escuro (fundo.png)
-- Sistema de apostas com saldo em tempo real
-- Histórico de resultados recentes
-- Animações de vitória/derrota
+### System Design Choices
+- **Public Access:** The game is fully public, relying on `localStorage` for anonymous user sessions, eliminating the need for traditional user registration.
+- **Dual Frontend Approach:** Allows for rapid deployment of the game while providing a robust, modern interface for administration.
+- **Microservice-like Separation:** Clear distinction between game, payment, and admin API endpoints, though residing within a single Express application.
+- **Database Schema:** `users`, `games`, `transactions`, `withdrawals`, `roulette_config`, `sessions` tables to manage all aspects of the application.
 
-### 💰 Sistema de Pagamentos (BRPIX)
-- **Depósitos via PIX**:
-  - Geração de QR Code dinâmico
-  - Código Copia e Cola
-  - Expiração configurável (30min padrão)
-  - Split automático de 10,5% para conta de comissão
-- **Saques**:
-  - Solicitação de saque via chave PIX
-  - Aprovação/rejeição pelo admin
-  - Tipos suportados: CPF, CNPJ, Email, Telefone, Chave aleatória
+## External Dependencies
 
-### 👑 Painel Administrativo
-**Design**: Sidebar lateral com tema dark, dashboard com cards de métricas + sparklines SVG
-
-- **Estrutura de Navegação**:
-  - Sidebar lateral colapsável com seções:
-    - **GESTÃO**: Usuários, Afiliados, Depósitos, Saques
-    - **JOGOS**: Roleta
-    - **SISTEMA**: Configurações futuras
-  - Dashboard principal como home
-  - Header com usuários online e avatar do admin
-
-- **Dashboard com métricas em cards**:
-  - 8 cards com sparklines SVG animados:
-    - Lucro do Jogo
-    - Total Apostado (Jogo)
-    - Depósitos de Hoje
-    - Prêmios Pagos (Jogo)
-    - Total de Usuários (com % de crescimento)
-    - Depósitos Confirmados
-    - Saldo Total em Contas
-    - Saques Pagos (com pendentes)
-  - Gráfico de barras: Depósitos dos Últimos 7 dias
-  - Gráfico de barras horizontais: Maiores Saldos de Usuários (Top 5)
-  - Métricas calculadas em tempo real do banco de dados
-  
-- **Gestão de Usuários**:
-  - Lista de todos os usuários
-  - Visualização de saldos e histórico
-  - Total depositado, apostado e ganho por usuário
-  
-- **Gestão de Afiliados**:
-  - Placeholder para sistema de afiliados futuro
-  
-- **Gestão de Depósitos**:
-  - Histórico completo de depósitos
-  - Visualização de IDs BRPIX
-  - Status de cada transação (pending, completed, etc)
-  - **Split BRPIX (10,5%) completamente oculto do frontend** - processado apenas no backend
-  
-- **Gestão de Saques**:
-  - Aprovação/rejeição de saques
-  - Visualização de chaves PIX
-  - Devolução automática de saldo ao rejeitar
-  - Status: completed (aprovado) ou cancelled (rejeitado)
-  
-- **Configuração da Roleta**:
-  - Layout: Dois cards lado a lado (Roleta Principal e Roleta Bônus)
-  - Ajuste de probabilidades por multiplicador
-  - **SEM validação de soma 100%** - permite qualquer valor de probabilidade
-  - Auto-save após 1 segundo de inatividade
-  - Save manual ao desfocar campo (onBlur)
-  - Prêmios configuráveis:
-    - Roleta Principal: 0x, 5x, 15x, 2x, 20x, 100x, 10x, 50x
-    - Roleta Bônus: 2x, 3x, 4x, 1x
-
-### 🔐 Autenticação e Segurança
-- **Usuários**: Sistema público com sessionId anônimo (UUID v4) via localStorage
-- **Admin**: Sistema de autenticação seguro com tokens temporários
-  - Login com senha (ADMIN_PASSWORD secret)
-  - Tokens gerados pelo servidor (64 bytes hex)
-  - Expiração de 24 horas
-  - Validação em todas as rotas admin
-  - Senha nunca exposta no frontend
-- **BRPIX**: Credenciais armazenadas como secrets (BRPIX_SECRET_KEY, BRPIX_COMPANY_ID)
-- **Sessões**: Auto-criação de usuários anônimos com sessionId
-
-## Estrutura do Banco de Dados
-
-### Tabelas Principais
-1. **users** - Usuários do sistema
-   - Dados Replit Auth (id, email, nome, foto)
-   - Saldo, total depositado, total ganho, total apostado
-   - Role (user/admin)
-
-2. **games** - Histórico de jogos
-   - Referência ao usuário
-   - Valor da aposta, multiplicador, valor ganho
-   - Tipo de roleta (main/bonus)
-
-3. **transactions** - Transações financeiras
-   - Tipo (deposit, withdrawal, bet, win)
-   - Dados BRPIX (ID transação, QR Code, etc)
-   - Split amount e percentage
-   - Status (pending, processing, completed, failed, cancelled)
-
-4. **withdrawals** - Solicitações de saque
-   - Chave PIX e tipo
-   - Status e motivo de rejeição
-   - Data de processamento
-
-5. **roulette_config** - Configuração da roleta
-   - Tipo (main/bonus)
-   - Multiplicador e probabilidade
-   - Status ativo/inativo
-
-6. **sessions** - Sessões de autenticação (Replit Auth)
-
-## Integração BRPIX
-
-### Credenciais (armazenadas como secrets)
-- `BRPIX_SECRET_KEY`: Chave secreta da API BRPIX
-- `BRPIX_COMPANY_ID`: ID da empresa BRPIX
-
-### Split Automático
-- **Percentual**: 10,5% de cada depósito
-- **Processamento**: Automático na criação da transação PIX
-- **Conta de destino**: Configurada nas credenciais BRPIX
-
-### Endpoints BRPIX Utilizados
-- `POST /transactions` - Criar transação PIX
-- `GET /transactions/:id` - Consultar status
-- `GET /transactions` - Listar transações
-
-## Endpoints da API
-
-### Rotas PHP-Compatíveis (Frontend HTML Original)
-
-#### AJAX - Jogo
-- `GET /ajax/winners.php` - Lista de ganhadores recentes (formato: `{success: true, winners: [...]}`)
-- `GET /ajax/get_saldo.php?sessionId=...` - Obter saldo do usuário
-- `GET /ajax/get_history.php?sessionId=...` - Histórico de jogos do usuário
-- `POST /ajax/start_spin.php` - Iniciar giro/aposta (body: `{sessionId, betAmount}`)
-- `POST /ajax/finish_spin.php` - Finalizar giro (apenas confirmação)
-- `GET /ajax/get_affiliate_data.php?sessionId=...` - Dados de afiliado
-
-#### API - Pagamentos e Saques
-- `POST /api/payment.php` - Criar pagamento PIX (body: `{sessionId, amount}`)
-- `GET /api/check_payment_status.php?transactionId=...` - Verificar status do pagamento
-- `POST /api/withdraw.php` - Solicitar saque (body: `{sessionId, amount, pixKeyType, pixKey}`)
-- `GET /api/check_rollover.php?sessionId=...` - Verificar rollover
-
-#### AJAX - Admin (requer token admin via Authorization header)
-- `POST /ajax/admin_login.php` - Login admin (body: `{password}`) - retorna token temporário
-- `GET /ajax/admin_stats.php` - Estatísticas do dashboard (header: `Authorization: Bearer {token}`)
-- `GET /ajax/admin_users.php` - Lista de usuários (header: `Authorization: Bearer {token}`)
-- `GET /ajax/admin_transactions.php` - Todas as transações (header: `Authorization: Bearer {token}`)
-- `GET /ajax/admin_withdrawals.php` - Solicitações de saque (header: `Authorization: Bearer {token}`)
-- `POST /ajax/admin_approve_withdrawal.php` - Aprovar saque (header: `Authorization: Bearer {token}`, body: `{withdrawalId}`)
-- `POST /ajax/admin_reject_withdrawal.php` - Rejeitar saque (header: `Authorization: Bearer {token}`, body: `{withdrawalId, reason}`)
-- `GET /ajax/admin_roulette_config.php` - Configurações da roleta (header: `Authorization: Bearer {token}`)
-- `POST /ajax/admin_update_roulette.php` - Atualizar probabilidade (header: `Authorization: Bearer {token}`, body: `{configId, probability}`)
-- `GET /ajax/admin_deposits_7days.php` - Dados do gráfico de Depósitos (Últimos 7 dias) (header: `Authorization: Bearer {token}`)
-- `GET /ajax/admin_top_balances.php` - Dados do gráfico de Maiores Saldos (Top 5) (header: `Authorization: Bearer {token}`)
-- `GET /ajax/admin_gateway_config.php` - Configuração do gateway BRPIX (header: `Authorization: Bearer {token}`)
-- `POST /ajax/admin_save_gateway.php` - Salvar credenciais BRPIX (header: `Authorization: Bearer {token}`, body: `{publicKey, privateKey}`)
-
-### Rotas Legacy (API JSON)
-
-#### Usuário
-- `GET /api/user/balance` - Saldo do usuário (com autenticação)
-- `GET /api/games/history` - Histórico de jogos
-- `POST /api/games/play` - Jogar roleta
-- `POST /api/deposits` - Criar depósito PIX
-- `POST /api/deposits/:id/confirm` - Confirmar depósito
-- `POST /api/withdrawals` - Criar solicitação de saque
-
-#### Admin (requer autenticação + role admin)
-- `GET /api/admin/stats` - Estatísticas do dashboard
-- `GET /api/admin/users` - Lista de usuários
-- `GET /api/admin/transactions` - Todas as transações
-- `GET /api/admin/withdrawals` - Solicitações de saque
-- `POST /api/admin/withdrawals/:id/approve` - Aprovar saque
-- `POST /api/admin/withdrawals/:id/reject` - Rejeitar saque
-- `GET /api/admin/roulette-config` - Configurações da roleta
-- `PUT /api/admin/roulette-config/:id` - Atualizar probabilidade
-
-**Nota**: Todas as rotas PHP-compatíveis aceitam `sessionId` via query param, header `X-Session-Id` ou body.
-
-## Scripts Disponíveis
-
-```bash
-npm run dev          # Inicia servidor de desenvolvimento
-npm run db:push      # Sincroniza schema com banco de dados
-npm run db:studio    # Abre Drizzle Studio (visualizar DB)
-npx tsx server/seed.ts  # Popular configurações iniciais da roleta
-```
-
-## Variáveis de Ambiente
-
-### Automáticas (Replit)
-- `DATABASE_URL` - URL do PostgreSQL
-- `REPL_ID` - ID do Repl
-- `REPLIT_DOMAINS` - Domínios do Repl
-- `SESSION_SECRET` - Secret para sessões
-
-### Manuais (Secrets)
-- `BRPIX_SECRET_KEY` - Chave da API BRPIX
-- `BRPIX_COMPANY_ID` - ID da empresa BRPIX
-
-## Design System
-
-### Cores
-- **Primary**: Verde escuro (#2d5016 / hsl(147 70% 35%))
-- **Background**: Verde muito escuro (#0a1409 / hsl(147 25% 12%))
-- **Accent Gold**: Dourado (#e8a800 / hsl(45 90% 55%))
-- **Success**: Verde brilhante (#34c759 / hsl(142 76% 36%))
-- **Danger**: Vermelho (#ef4444 / hsl(0 72% 51%))
-
-### Tipografia
-- **Sans**: Inter (UI, corpo)
-- **Display**: Poppins (títulos, números grandes)
-
-### Componentes
-- Todos os componentes Shadcn UI customizados
-- Sistema de elevação com hover/active states
-- Animações suaves para roleta e vitórias
-
-## Fluxos Principais
-
-### 1. Novo Usuário (Sistema Público - Sem Login)
-1. Acessa a página do jogo
-2. Sistema gera automaticamente um `sessionId` UUID v4
-3. SessionId é armazenado no localStorage
-4. Usuário anônimo é criado automaticamente no backend
-5. Pode fazer depósito PIX para adicionar saldo
-6. Joga roleta normalmente
-
-### 2. Fazer Depósito
-1. Usuário clica em "Depositar"
-2. Escolhe valor (ou usa sugeridos)
-3. Sistema gera QR Code PIX via BRPIX
-4. Usuário paga via app bancário
-5. Sistema verifica pagamento (polling)
-6. Saldo é creditado automaticamente
-7. 10,5% vai para conta de split (comissão)
-
-### 3. Jogar Roleta
-1. Usuário seleciona valor da aposta
-2. Clica em "Girar"
-3. Sistema verifica saldo via sessionId
-4. Calcula resultado baseado em probabilidades
-5. Roda animação (3 segundos)
-6. Mostra resultado com animação
-7. Atualiza saldo e histórico
-
-### 4. Admin Gerenciar Probabilidades
-1. Admin acessa /admin
-2. Vai para aba "Roleta"
-3. Ajusta probabilidades
-4. Salva alterações
-5. Novas probabilidades aplicadas imediatamente
-
-## Próximos Passos (Pós-MVP)
-
-### Funcionalidades Adicionais
-- [ ] Sistema de afiliados com links de referência
-- [ ] Roleta Bônus ativável
-- [ ] Histórico detalhado de transações com filtros
-- [ ] Notificações em tempo real (WebSocket)
-- [ ] Sistema de limites diários/semanais
-- [ ] Backup automático de dados
-- [ ] Logs de auditoria admin
-
-### Melhorias Técnicas
-- [ ] Webhook BRPIX para confirmação instantânea
-- [ ] Cache com Redis para dados frequentes
-- [ ] Rate limiting nas APIs
-- [ ] Testes automatizados (unit + e2e)
-- [ ] CI/CD pipeline
-- [ ] Monitoramento com logs estruturados
-
-## Observações Importantes
-
-### Segurança
-- ✅ Credenciais BRPIX nunca expostas no frontend
-- ✅ Split automático processado no backend
-- ✅ Rotas admin protegidas com middleware
-- ✅ Validação de dados em todas as requisições
-- ✅ Sessões seguras com PostgreSQL
-
-### Performance
-- ✅ Queries otimizadas com índices
-- ✅ Relacionamentos modelados corretamente
-- ✅ Cache de queries no frontend (TanStack Query)
-- ✅ Lazy loading de componentes pesados
-
-### UX
-- ✅ Estados de loading em todas as ações
-- ✅ Mensagens de erro claras
-- ✅ Feedback visual para ações (toasts)
-- ✅ Animações suaves e profissionais
-- ✅ Design responsivo (mobile-first)
-
-## Suporte
-
-Para dúvidas ou problemas:
-1. Verificar logs do workflow "Start application"
-2. Verificar Drizzle Studio (npm run db:studio)
-3. Consultar documentação BRPIX: https://brpixdigital.readme.io
-
----
-
-**Última atualização**: 2024-10-10  
-**Versão**: 1.0.0 MVP  
-**Status**: ✅ Pronto para uso
+- **BRPIX Gateway:** Used for all PIX-based deposit and withdrawal functionalities.
+    - `BRPIX_SECRET_KEY` (secret)
+    - `BRPIX_COMPANY_ID` (secret)
+- **PostgreSQL Database:** Provided by Neon, used as the primary data store.
+- **Drizzle ORM:** Used for database interaction with PostgreSQL.
+- **Vite:** Build tool for the React admin frontend.
+- **Shadcn UI:** Component library for the React admin panel.
+- **Tailwind CSS:** Utility-first CSS framework for styling the React admin panel.
+- **Bootstrap 5:** Frontend framework for the static HTML game interface.

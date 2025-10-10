@@ -51,13 +51,6 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // Serve index.html para rotas não-API (catch-all)
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/ajax')) {
-      res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
-    }
-  });
-
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
