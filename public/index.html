@@ -1345,6 +1345,79 @@
        }
    });
    </script>
+
+   <script>
+   // Sistema de SessionID para usuários anônimos
+   (function() {
+     // Gerar UUID v4
+     function generateUUID() {
+       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+         const r = Math.random() * 16 | 0;
+         const v = c === 'x' ? r : (r & 0x3 | 0x8);
+         return v.toString(16);
+       });
+     }
+
+     // Obter ou criar sessionId
+     let sessionId = localStorage.getItem('sessionId');
+     if (!sessionId) {
+       sessionId = generateUUID();
+       localStorage.setItem('sessionId', sessionId);
+       console.log('Novo sessionId criado:', sessionId);
+     } else {
+       console.log('SessionId recuperado:', sessionId);
+     }
+
+     // Armazenar sessionId globalmente
+     window.APP_SESSION_ID = sessionId;
+
+     // Interceptar fetch para adicionar sessionId
+     const originalFetch = window.fetch;
+     window.fetch = function(url, options = {}) {
+       // Verificar se é uma requisição para API/AJAX
+       if (typeof url === 'string' && (url.includes('/ajax/') || url.includes('/api/'))) {
+         // Adicionar sessionId ao header
+         options.headers = options.headers || {};
+         options.headers['X-Session-Id'] = sessionId;
+
+         // Se for POST, adicionar sessionId ao body também
+         if (options.method === 'POST' && options.body) {
+           try {
+             // Se for FormData
+             if (options.body instanceof FormData) {
+               options.body.append('sessionId', sessionId);
+             } 
+             // Se for string JSON ou URLSearchParams
+             else if (typeof options.body === 'string') {
+               try {
+                 const bodyData = JSON.parse(options.body);
+                 bodyData.sessionId = sessionId;
+                 options.body = JSON.stringify(bodyData);
+               } catch (e) {
+                 // Se não for JSON, pode ser URLSearchParams
+                 const params = new URLSearchParams(options.body);
+                 params.set('sessionId', sessionId);
+                 options.body = params.toString();
+               }
+             }
+           } catch (e) {
+             console.error('Erro ao adicionar sessionId ao body:', e);
+           }
+         }
+         
+         // Se for GET, adicionar sessionId à URL
+         if (!options.method || options.method === 'GET') {
+           const separator = url.includes('?') ? '&' : '?';
+           url = url + separator + 'sessionId=' + sessionId;
+         }
+       }
+
+       return originalFetch.call(this, url, options);
+     };
+
+     console.log('Sistema de SessionID inicializado');
+   })();
+   </script>
 </head>
 <body>
     <audio id="backgroundMusic" loop="" preload="auto" muted="">

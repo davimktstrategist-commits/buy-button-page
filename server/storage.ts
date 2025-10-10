@@ -34,6 +34,7 @@ export interface IStorage {
   createGame(game: InsertGame): Promise<Game>;
   getGamesByUserId(userId: string, limit?: number): Promise<Game[]>;
   getAllGames(): Promise<Game[]>;
+  getRecentWinners(limit?: number): Promise<Game[]>;
   
   // Transaction operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
@@ -134,6 +135,15 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(games)
       .orderBy(desc(games.createdAt));
+  }
+
+  async getRecentWinners(limit: number = 50): Promise<Game[]> {
+    return db
+      .select()
+      .from(games)
+      .where(sql`${games.winAmount} > 0`)
+      .orderBy(desc(games.createdAt))
+      .limit(limit);
   }
 
   // Transaction operations

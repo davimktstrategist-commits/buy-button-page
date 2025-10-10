@@ -462,6 +462,424 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ROTAS COMPATÍVEIS COM FRONTEND HTML ORIGINAL =====
+  
+  // Lista de ganhadores recentes (winners carousel)
+  app.get('/ajax/winners.php', async (req, res) => {
+    try {
+      // Buscar últimos 50 jogos com ganhos > 0
+      const winners = await storage.getRecentWinners(50);
+      res.json({ 
+        success: true,
+        winners: winners.map(game => ({
+          id: game.id,
+          userId: game.userId.substring(0, 8), // Mostrar apenas primeiros 8 chars do userId
+          betAmount: parseFloat(game.betAmount),
+          multiplier: game.multiplier,
+          winAmount: parseFloat(game.winAmount),
+          createdAt: game.createdAt
+        }))
+      });
+    } catch (error) {
+      console.error("Error fetching winners:", error);
+      res.status(500).json({ success: false, error: "Erro ao buscar ganhadores" });
+    }
+  });
+
+  // Obter saldo do usuário
+  app.get('/ajax/get_saldo.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      // Get or create user
+      let user = await storage.getUser(sessionId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: sessionId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
+
+      res.json({ 
+        saldo: parseFloat(user.balance).toFixed(2),
+        balance: parseFloat(user.balance).toFixed(2)
+      });
+    } catch (error) {
+      console.error("Error getting balance:", error);
+      res.status(500).json({ error: "Erro ao obter saldo" });
+    }
+  });
+
+  // Histórico de jogos do usuário
+  app.get('/ajax/get_history.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      const games = await storage.getGamesByUserId(sessionId, 20);
+      
+      // Format games for frontend
+      const history = games.map(game => ({
+        id: game.id,
+        betAmount: parseFloat(game.betAmount),
+        multiplier: game.multiplier,
+        winAmount: parseFloat(game.winAmount),
+        createdAt: game.createdAt,
+      }));
+
+      res.json({ history });
+    } catch (error) {
+      console.error("Error getting history:", error);
+      res.status(500).json({ error: "Erro ao obter histórico" });
+    }
+  });
+
+  // Iniciar giro (start spin)
+  app.post('/ajax/start_spin.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const betAmount = parseFloat(req.body.betAmount || req.body.valor);
+
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      if (!betAmount || betAmount <= 0) {
+        return res.status(400).json({ error: "Valor de aposta inválido" });
+      }
+
+      // Get or create user
+      let user = await storage.getUserBalance(sessionId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: sessionId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
+
+      // Check user balance
+      if (parseFloat(user.balance) < betAmount) {
+        return res.status(400).json({ error: "Saldo insuficiente" });
+      }
+
+      // Get roulette configuration
+      const configs = await storage.getRouletteConfigsByType('main');
+      
+      // Calculate result based on probabilities
+      const random = Math.random() * 100;
+      let cumulativeProbability = 0;
+      let selectedMultiplier = 0;
+
+      for (const config of configs) {
+        cumulativeProbability += parseFloat(config.probability);
+        if (random <= cumulativeProbability) {
+          selectedMultiplier = config.multiplier;
+          break;
+        }
+      }
+
+      // Calculate win amount
+      const winAmount = betAmount * selectedMultiplier;
+      const netChange = winAmount - betAmount;
+
+      // Create game record
+      const game = await storage.createGame({
+        userId: sessionId,
+        betAmount: betAmount.toString(),
+        multiplier: selectedMultiplier,
+        winAmount: winAmount.toString(),
+        rouletteType: 'main',
+        status: 'completed',
+      });
+
+      // Create bet transaction
+      await storage.createTransaction({
+        userId: sessionId,
+        type: 'bet',
+        amount: betAmount.toString(),
+        status: 'completed',
+        gameId: game.id,
+        description: `Aposta no jogo ${game.id}`,
+      });
+
+      // Create win transaction if won
+      if (winAmount > 0) {
+        await storage.createTransaction({
+          userId: sessionId,
+          type: 'win',
+          amount: winAmount.toString(),
+          status: 'completed',
+          gameId: game.id,
+          description: `Ganho no jogo ${game.id} - ${selectedMultiplier}x`,
+        });
+      }
+
+      // Update user balance and stats
+      await storage.updateUserBalance(sessionId, netChange);
+      await storage.updateUserStats(sessionId, betAmount, winAmount);
+
+      // Get updated balance
+      const updatedUser = await storage.getUserBalance(sessionId);
+
+      res.json({
+        success: true,
+        multiplier: selectedMultiplier,
+        winAmount: winAmount.toFixed(2),
+        balance: parseFloat(updatedUser?.balance || '0').toFixed(2),
+        premio: winAmount.toFixed(2),
+      });
+    } catch (error) {
+      console.error("Error starting spin:", error);
+      res.status(500).json({ error: "Erro ao iniciar giro" });
+    }
+  });
+
+  // Finalizar giro (finish spin) - pode ser apenas confirmação
+  app.post('/ajax/finish_spin.php', async (req, res) => {
+    try {
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error finishing spin:", error);
+      res.status(500).json({ error: "Erro ao finalizar giro" });
+    }
+  });
+
+  // Criar pagamento PIX
+  app.post('/api/payment.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const amount = parseFloat(req.body.amount || req.body.valor);
+
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      // Get or create user
+      let user = await storage.getUser(sessionId);
+      if (!user) {
+        user = await storage.upsertUser({
+          id: sessionId,
+          email: null,
+          firstName: null,
+          lastName: null,
+          profileImageUrl: null,
+        });
+      }
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: "Valor de depósito inválido" });
+      }
+
+      // Create BRPIX transaction
+      const brpixTransaction = await brpixService.createTransaction({
+        amount,
+        description: `Depósito Roleta do Tigre - User ${sessionId}`,
+        externalReference: sessionId,
+        expirationMinutes: 30,
+      });
+
+      // Calculate split amount
+      const splitAmount = brpixService.calculateSplitAmount(amount);
+
+      // Create deposit transaction in database
+      const transaction = await storage.createTransaction({
+        userId: sessionId,
+        type: 'deposit',
+        amount: amount.toString(),
+        status: 'pending',
+        brpixTransactionId: brpixTransaction.id,
+        brpixQrCode: brpixTransaction.qrCode,
+        brpixQrCodeImage: brpixTransaction.qrCodeImage,
+        brpixCopyPaste: brpixTransaction.copyPaste,
+        brpixExpiresAt: new Date(brpixTransaction.expiresAt),
+        splitAmount: splitAmount.toString(),
+        splitPercentage: brpixService.getSplitPercentage().toString(),
+        description: `Depósito via PIX`,
+      });
+
+      res.json({
+        success: true,
+        transactionId: transaction.id,
+        qrcode: brpixTransaction.copyPaste,
+        qrCodeImage: brpixTransaction.qrCodeImage,
+        copyPaste: brpixTransaction.copyPaste,
+        expiresAt: brpixTransaction.expiresAt,
+        amount,
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      res.status(500).json({ error: "Erro ao criar pagamento" });
+    }
+  });
+
+  // Verificar status do pagamento
+  app.get('/api/check_payment_status.php', async (req, res) => {
+    try {
+      const transactionId = req.query.transactionId as string;
+
+      if (!transactionId) {
+        return res.status(400).json({ error: "Transaction ID required" });
+      }
+
+      const transaction = await storage.getTransactionById(transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({ error: "Transação não encontrada" });
+      }
+
+      if (transaction.status === 'completed') {
+        return res.json({ 
+          status: 'completed',
+          paid: true,
+          message: 'Pagamento confirmado' 
+        });
+      }
+
+      // Check BRPIX status
+      if (transaction.brpixTransactionId) {
+        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
+        
+        if (brpixStatus === 'paid' || brpixStatus === 'completed') {
+          // Update transaction status
+          await storage.updateTransaction(transactionId, { status: 'completed' });
+          
+          // Update user balance and total deposited
+          const userId = transaction.userId;
+          await storage.updateUserBalance(userId, parseFloat(transaction.amount));
+          
+          // Update total deposited via SQL
+          const user = await storage.getUser(userId);
+          if (user) {
+            await db.update(users)
+              .set({
+                totalDeposited: sql`${users.totalDeposited} + ${parseFloat(transaction.amount)}`,
+                updatedAt: new Date()
+              })
+              .where(eq(users.id, userId));
+          }
+
+          res.json({ 
+            status: 'completed',
+            paid: true,
+            message: 'Pagamento confirmado' 
+          });
+        } else {
+          res.json({ 
+            status: brpixStatus,
+            paid: false,
+            message: 'Aguardando pagamento' 
+          });
+        }
+      } else {
+        res.json({ 
+          status: 'pending',
+          paid: false,
+          message: 'Aguardando pagamento' 
+        });
+      }
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      res.status(500).json({ error: "Erro ao verificar status do pagamento" });
+    }
+  });
+
+  // Solicitar saque
+  app.post('/api/withdraw.php', async (req, res) => {
+    try {
+      const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
+      const amount = parseFloat(req.body.amount || req.body.valor);
+      const pixKeyType = req.body.pixKeyType || req.body.tipo_chave;
+      const pixKey = req.body.pixKey || req.body.chave_pix;
+
+      if (!sessionId) {
+        return res.status(400).json({ error: "Session ID required" });
+      }
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ error: "Valor inválido" });
+      }
+
+      if (!pixKeyType || !pixKey) {
+        return res.status(400).json({ error: "Chave PIX obrigatória" });
+      }
+
+      // Check user balance
+      const user = await storage.getUser(sessionId);
+      if (!user || parseFloat(user.balance) < amount) {
+        return res.status(400).json({ error: "Saldo insuficiente" });
+      }
+
+      // Deduct amount from balance immediately
+      await storage.updateUserBalance(sessionId, -amount);
+
+      // Create withdrawal request
+      const withdrawal = await storage.createWithdrawal({
+        userId: sessionId,
+        amount: amount.toString(),
+        pixKeyType,
+        pixKey,
+        status: 'pending',
+      });
+
+      res.json({ 
+        success: true,
+        message: "Solicitação de saque criada com sucesso",
+        withdrawalId: withdrawal.id,
+      });
+    } catch (error) {
+      console.error("Error creating withdrawal:", error);
+      res.status(500).json({ error: "Erro ao criar solicitação de saque" });
+    }
+  });
+
+  // Verificar rollover (se aplicável)
+  app.get('/api/check_rollover.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      // Por enquanto, sempre retorna rollover completo
+      res.json({ 
+        rolloverCompleto: true,
+        rolloverRestante: 0,
+        rolloverTotal: 0
+      });
+    } catch (error) {
+      console.error("Error checking rollover:", error);
+      res.status(500).json({ error: "Erro ao verificar rollover" });
+    }
+  });
+
+  // Dados de afiliado
+  app.get('/ajax/get_affiliate_data.php', async (req, res) => {
+    try {
+      const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
+      
+      // Por enquanto, retorna dados vazios de afiliado
+      res.json({ 
+        affiliateCode: sessionId,
+        totalReferrals: 0,
+        totalCommission: 0,
+        referrals: []
+      });
+    } catch (error) {
+      console.error("Error getting affiliate data:", error);
+      res.status(500).json({ error: "Erro ao obter dados de afiliado" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
