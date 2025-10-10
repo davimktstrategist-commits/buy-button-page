@@ -105,15 +105,51 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #0a0e0a;
+  background-color: #012606;
+  position: relative;
 }
 
-.casino-bg-alt {
-  background-image: url('/casino-bg-2.png');
+/* Background com blur */
+.casino-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background-image: url('/casino-bg-1.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-color: #0a0e0a;
+  filter: blur(12px);
+  transform: scale(1.1);
+}
+
+/* Overlay escuro por cima do blur */
+.casino-bg::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Container do jogo */
+#game-container {
+  width: 100%;
+  height: 100vh;
+  max-width: 420px;
+  margin: 0 auto;
+  background-image: url('/casino-bg-1.png');
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
 }
 
 /* Dragon Scale Pattern */

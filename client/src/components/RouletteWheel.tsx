@@ -32,6 +32,7 @@ const INNER_SEGMENTS = [
 
 export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: RouletteWheelProps) {
   const [rotation, setRotation] = useState(0);
+  const [currentRotation, setCurrentRotation] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
       setAnimationKey(prev => prev + 1);
       
       setTimeout(() => {
+        setCurrentRotation(finalRotation % 360);
         onSpinComplete?.(finalMultiplier);
       }, 3000);
     }
@@ -114,7 +116,7 @@ export function RouletteWheel({ isSpinning, finalMultiplier, onSpinComplete }: R
             filter: "drop-shadow(0 0 30px rgba(0, 184, 107, 0.6))"
           }}
           animate={{
-            rotate: isSpinning ? rotation : 0
+            rotate: isSpinning ? rotation : currentRotation
           }}
           transition={{
             duration: 3,

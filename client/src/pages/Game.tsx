@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSession } from "@/hooks/useSession";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -6,9 +6,8 @@ import { RouletteWheel } from "@/components/RouletteWheel";
 import { DepositModal } from "@/components/DepositModal";
 import { WithdrawalModal } from "@/components/WithdrawalModal";
 import { WinAnimation } from "@/components/WinAnimation";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { User, Volume2, Settings, Wallet } from "lucide-react";
+import { User, Volume2, HelpCircle, DollarSign } from "lucide-react";
 import type { Game as GameType } from "@shared/schema";
 
 export default function Game() {
@@ -59,15 +58,8 @@ export default function Game() {
     onSuccess: (data: any) => {
       setFinalMultiplier(data.multiplier);
       setIsSpinning(true);
-      setWinAmount(data.winAmount);
+      setWinAmount(parseFloat(data.winAmount));
       setWinMultiplier(data.multiplier);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erro ao jogar",
-        description: error.message,
-        variant: "destructive",
-      });
     },
   });
 
@@ -97,148 +89,102 @@ export default function Game() {
     }, 3000);
   };
 
-  const recentResults = Array.isArray(gameHistory) 
-    ? gameHistory.slice(0, 4).map(game => ({
-        player: `${game.userId.substring(0, 2)}******`,
-        multiplier: `${game.multiplier}.0xi`,
-        amount: parseFloat(game.winAmount)
-      }))
-    : [];
-
   if (!sessionId) {
     return null;
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden casino-bg">
-      {/* Decorative Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-green-700/10 rounded-full blur-3xl" />
-      </div>
-      
-      {/* Content */}
-      <div className="relative z-10">
-        {/* Top Right - Player Results (Auto-scrolling) */}
-        <div className="absolute top-4 right-56 space-y-2 w-52 max-h-[300px] overflow-hidden">
-          <div className="space-y-2 animate-scroll">
-            {recentResults.concat(recentResults).map((result, i) => (
-              <div 
-                key={i}
-                className="bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2 flex items-center justify-between text-xs border border-green-900/30"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-green-600/30 flex items-center justify-center">
-                    <User className="w-3 h-3 text-green-400" />
-                  </div>
-                  <span className="text-green-300">{result.player}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-yellow-400 font-bold">{result.multiplier}</div>
-                  {result.amount > 0 && (
-                    <div className="text-green-400 text-[10px]">{result.amount.toFixed(2)}</div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Top Right Icons */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <button className="w-12 h-12 rounded-full bg-green-900/50 backdrop-blur-sm border-2 border-green-600/30 flex items-center justify-center hover:bg-green-800/50 transition-colors">
-            <User className="w-5 h-5 text-green-400" />
+    <div className="casino-bg" style={{ minHeight: '100vh', overflow: 'hidden' }}>
+      <div id="game-container" className="relative">
+        {/* Top Right Icons - Grid 2x2 */}
+        <div className="absolute top-4 right-4 grid grid-cols-2 gap-3 z-[25]">
+          <button 
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
+            data-testid="button-profile"
+          >
+            <User className="w-5 h-5" />
           </button>
-          <button className="w-12 h-12 rounded-full bg-green-900/50 backdrop-blur-sm border-2 border-green-600/30 flex items-center justify-center hover:bg-green-800/50 transition-colors">
-            <Volume2 className="w-5 h-5 text-green-400" />
+          <button 
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
+            data-testid="button-sound"
+          >
+            <Volume2 className="w-5 h-5" />
+          </button>
+          <button 
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all"
+            data-testid="button-help"
+          >
+            <HelpCircle className="w-5 h-5" />
           </button>
           <button 
             onClick={() => setShowDeposit(true)}
-            className="w-12 h-12 rounded-full bg-green-900/50 backdrop-blur-sm border-2 border-green-600/30 flex items-center justify-center hover:bg-green-800/50 transition-colors"
+            className="w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all animate-pulse"
+            data-testid="button-deposit"
           >
-            <Wallet className="w-5 h-5 text-green-400" />
-          </button>
-          <button className="w-12 h-12 rounded-full bg-green-900/50 backdrop-blur-sm border-2 border-green-600/30 flex items-center justify-center hover:bg-green-800/50 transition-colors">
-            <Settings className="w-5 h-5 text-green-400" />
+            <DollarSign className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Center - Roulette */}
-        <div className="flex flex-col items-center justify-center min-h-screen pt-20 pb-8">
+        {/* Roleta centralizada */}
+        <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1]" style={{ width: '88%' }}>
           <RouletteWheel
             isSpinning={isSpinning}
             finalMultiplier={finalMultiplier}
             onSpinComplete={handleSpinComplete}
           />
+        </div>
 
-          {/* Start Button - Azul brilhante como na imagem */}
-          <div className="mt-12 mb-8">
-            <button
-              onClick={handleSpin}
-              disabled={isSpinning || playGameMutation.isPending}
-              data-testid="button-spin"
-              className="relative group"
+        {/* Controles inferiores */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[380px] flex flex-col items-center gap-4 z-[20]">
+          {/* Botão START */}
+          <button
+            onClick={handleSpin}
+            disabled={isSpinning || playGameMutation.isPending}
+            className="relative group disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="button-spin"
+          >
+            <div className="absolute inset-0 bg-[#8a2be2] rounded-[28px] blur-xl opacity-70" />
+            <div className="relative px-20 py-3 bg-gradient-to-b from-[#9370db] to-[#8a2be2] rounded-[28px] shadow-2xl">
+              <span className="text-white text-2xl font-black tracking-wider">
+                {isSpinning ? "Girando..." : "Start"}
+              </span>
+            </div>
+          </button>
+
+          {/* Linha de controles */}
+          <div className="flex items-center justify-center gap-3 w-full">
+            {/* Botão - */}
+            <button 
+              onClick={() => setBetAmount(Math.max(0.10, betAmount - 0.10))}
+              className="w-14 h-14 rounded-full border-3 border-green-600 bg-gradient-to-br from-green-900/90 to-green-900/75 text-green-400 flex items-center justify-center text-2xl font-bold shadow-lg hover:scale-105 transition-all"
+              data-testid="button-decrease-bet"
             >
-              <div className="absolute inset-0 bg-[#1ca3ec] rounded-[28px] blur-xl opacity-60 group-hover:opacity-80 transition-opacity" />
-              <div className="relative px-24 py-4 bg-gradient-to-b from-[#5ec5ff] to-[#1ca3ec] rounded-[28px] shadow-2xl border-t-4 border-white/30">
-                <span className="text-white text-3xl font-black tracking-wider drop-shadow-lg">
-                  {isSpinning ? "Girando..." : "Start"}
-                </span>
-              </div>
+              -
             </button>
-          </div>
 
-          {/* Bottom Controls - Com escamas de dragão */}
-          <div className="relative w-full max-w-md px-4">
-            {/* Background de escamas (usando a mesma textura do fundo) */}
-            <div className="relative bg-cover bg-center rounded-3xl overflow-hidden shadow-2xl border-4 border-green-900/50" style={{
-              backgroundImage: 'url("/casino-bg-2.png")',
-              backgroundSize: 'cover',
-              backgroundPosition: 'bottom'
-            }}>
-              {/* Overlay escuro */}
-              <div className="absolute inset-0 bg-gradient-to-b from-green-950/80 to-green-950/90" />
-              
-              <div className="relative py-6 px-8">
-                {/* GIRO com valor e controles */}
-                <div className="mb-4">
-                  <div className="text-green-400/70 text-sm font-medium text-center mb-2">
-                    GIRO
-                  </div>
-                  <div className="bg-green-900/40 rounded-2xl py-3 px-6 flex items-center justify-between border-2 border-green-700/30">
-                    <button 
-                      onClick={() => setBetAmount(Math.max(0.10, betAmount - 0.10))}
-                      className="w-12 h-12 rounded-full bg-green-800/60 border-2 border-green-600/40 flex items-center justify-center text-white text-2xl hover:bg-green-700/60 transition-all"
-                      data-testid="button-decrease-bet"
-                    >
-                      -
-                    </button>
-                    <div className="text-2xl font-bold text-white">
-                      R$ {betAmount.toFixed(2)}
-                    </div>
-                    <button 
-                      onClick={() => setBetAmount(betAmount + 0.10)}
-                      className="w-12 h-12 rounded-full bg-green-800/60 border-2 border-green-600/40 flex items-center justify-center text-white text-2xl hover:bg-green-700/60 transition-all"
-                      data-testid="button-increase-bet"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+            {/* GIRO e SALDO */}
+            <div className="flex flex-col gap-2">
+              {/* GIRO */}
+              <div className="bg-gradient-to-br from-green-900/85 to-green-900/70 border-3 border-green-600 rounded-xl px-4 py-2 text-center shadow-lg min-w-[95px]" data-testid="display-bet">
+                <p className="text-[10px] text-green-400 font-bold uppercase m-0 opacity-80">GIRO</p>
+                <p className="text-base text-green-400 font-bold m-0" data-testid="text-bet-amount">R$ {betAmount.toFixed(2)}</p>
+              </div>
 
-                {/* SALDO */}
-                <div>
-                  <div className="text-green-400/70 text-sm font-medium text-center mb-2">
-                    💰 SALDO
-                  </div>
-                  <div className="bg-green-900/40 rounded-2xl py-3 px-6 text-center border-2 border-green-700/30">
-                    <div className="text-2xl font-bold text-white">
-                      R$ {balance.toFixed(2)}
-                    </div>
-                  </div>
-                </div>
+              {/* SALDO */}
+              <div className="bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 rounded-lg px-3 py-1 text-center shadow-md min-w-[90px]" data-testid="display-balance">
+                <p className="text-[9px] text-green-400 font-bold uppercase m-0 opacity-75">SALDO</p>
+                <p className="text-sm text-green-400 font-bold m-0" data-testid="text-balance">R$ {balance.toFixed(2)}</p>
               </div>
             </div>
+
+            {/* Botão + */}
+            <button 
+              onClick={() => setBetAmount(betAmount + 0.10)}
+              className="w-14 h-14 rounded-full border-3 border-green-600 bg-gradient-to-br from-green-900/90 to-green-900/75 text-green-400 flex items-center justify-center text-2xl font-bold shadow-lg hover:scale-105 transition-all"
+              data-testid="button-increase-bet"
+            >
+              +
+            </button>
           </div>
         </div>
       </div>
