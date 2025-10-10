@@ -40,6 +40,8 @@ export const users = pgTable("users", {
   email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
+  phone: varchar("phone"),
+  password: varchar("password"),
   profileImageUrl: varchar("profile_image_url"),
   role: roleEnum("role").default('user').notNull(),
   balance: decimal("balance", { precision: 10, scale: 2 }).default('0.00').notNull(),

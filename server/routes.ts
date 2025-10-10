@@ -41,6 +41,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // User registration and login (for HTML game)
+  app.post('/ajax/auth.php', async (req, res) => {
+    try {
+      const { action, nome_completo, email, telefone, senha } = req.body;
+      
+      if (action === 'register') {
+        // Validações
+        if (!nome_completo || !email || !telefone || !senha) {
+          return res.json({ success: false, message: 'Preencha todos os campos' });
+        }
+        
+        if (senha.length < 6) {
+          return res.json({ success: false, message: 'Senha deve ter no mínimo 6 caracteres' });
+        }
+        
+        // Verificar se email já existe
+        const existingUser = await storage.getUserByEmail(email);
+        if (existingUser) {
+          return res.json({ success: false, message: 'Email já cadastrado' });
+        }
+        
+        // Separar nome completo em firstName e lastName
+        const nameParts = nome_completo.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Criar usuário
+        await storage.createUser({
+          email,
+          firstName,
+          lastName,
+          phone: telefone.replace(/\D/g, ''),
+          password: senha, // Em produção, usar hash
+        });
+        
+        res.json({ success: true, message: 'Conta criada com sucesso!' });
+      } else if (action === 'login') {
+        // Login
+        if (!email || !senha) {
+          return res.json({ success: false, message: 'Preencha todos os campos' });
+        }
+        
+        const user = await storage.getUserByEmail(email);
+        if (!user || user.password !== senha) {
+          return res.json({ success: false, message: 'Email ou senha incorretos' });
+        }
+        
+        res.json({ success: true, message: 'Login realizado com sucesso!' });
+      } else {
+        res.json({ success: false, message: 'Ação inválida' });
+      }
+    } catch (error) {
+      console.error('Error in auth:', error);
+      res.json({ success: false, message: 'Erro ao processar requisição' });
+    }
+  });
+
   // Admin login (password-based)
   app.post('/api/admin/login', async (req, res) => {
     try {
