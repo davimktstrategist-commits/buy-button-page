@@ -235,7 +235,7 @@
       /* GAME MODE BUTTONS */
       #game-mode-buttons {
           position: absolute;
-          bottom: 220px;
+          bottom: 140px;
           right: 15px;
           display: flex;
           flex-direction: column;
@@ -244,24 +244,28 @@
       }
 
       .mode-button {
-          width: 80px;
+          width: 50px;
           height: 50px;
           background: linear-gradient(135deg, rgba(var(--theme-bg-rgb), 0.9) 0%, rgba(var(--theme-bg-rgb), 0.75) 100%);
           border: 2px solid var(--theme-text);
-          border-radius: 10px;
+          border-radius: 50%;
           color: var(--theme-text);
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
           cursor: pointer;
           transition: all 0.3s ease;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-          gap: 2px;
+          padding: 0;
+      }
+
+      .mode-button svg {
+          width: 24px;
+          height: 24px;
       }
 
       .mode-button:hover {
-          transform: scale(1.05);
+          transform: scale(1.1);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
       }
 
@@ -270,17 +274,6 @@
           color: var(--theme-bg);
           border-color: #86efac;
           box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
-      }
-
-      .mode-icon {
-          font-size: 18px;
-          line-height: 1;
-      }
-
-      .mode-text {
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 0.5px;
       }
 
       /* BOTTOM CONTROLS */
@@ -1615,12 +1608,14 @@
         <!-- GAME MODE BUTTONS - Bottom Right -->
         <div id="game-mode-buttons">
             <button id="turbo-button" class="mode-button" title="Modo Turbo">
-                <span class="mode-icon">⚡</span>
-                <span class="mode-text">TURBO</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
+                </svg>
             </button>
             <button id="auto-button" class="mode-button" title="Modo Automático">
-                <span class="mode-icon">🔄</span>
-                <span class="mode-text">AUTO</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                </svg>
             </button>
         </div>
 
