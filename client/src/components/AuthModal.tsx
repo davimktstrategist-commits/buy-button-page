@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Mail, Lock, User, Phone } from "lucide-react";
@@ -125,6 +126,10 @@ export function AuthModal({ open, onClose, onSuccess }: AuthModalProps) {
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[400px] w-[79%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#ff9d2f]/30 p-8">
+        <VisuallyHidden>
+          <DialogTitle>Login/Cadastro</DialogTitle>
+          <DialogDescription>Entre ou cadastre-se para jogar</DialogDescription>
+        </VisuallyHidden>
         <button
           onClick={onClose}
           className="absolute top-2 right-4 text-[#888] hover:text-[#ff6c2f] text-3xl"

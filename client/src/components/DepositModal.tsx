@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -135,6 +136,10 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
         className="p-0 border-0 bg-transparent max-w-[420px] w-[90%] overflow-hidden"
         data-testid="modal-deposit"
       >
+        <VisuallyHidden>
+          <DialogTitle>Depositar via PIX</DialogTitle>
+          <DialogDescription>Gere um QR Code PIX para depositar</DialogDescription>
+        </VisuallyHidden>
         {/* Banner Superior */}
         <div className="relative">
           <img 

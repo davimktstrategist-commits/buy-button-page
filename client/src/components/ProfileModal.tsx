@@ -1,4 +1,5 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { X, DollarSign, LogOut } from "lucide-react";
 
@@ -25,6 +26,10 @@ export function ProfileModal({
         className="sm:max-w-[400px] w-[90%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#ff9d2f]/30 p-8"
         data-testid="modal-profile"
       >
+        <VisuallyHidden>
+          <DialogTitle>Perfil do Usuário</DialogTitle>
+          <DialogDescription>Veja seu perfil e saldo</DialogDescription>
+        </VisuallyHidden>
         <button
           onClick={onClose}
           className="absolute top-2 right-4 text-[#888] hover:text-[#ff6c2f] text-3xl"

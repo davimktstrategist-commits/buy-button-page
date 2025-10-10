@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -105,6 +106,10 @@ export function WithdrawalModal({ open, onClose, maxAmount, sessionId }: Withdra
         className="p-0 border-0 bg-transparent max-w-[420px] w-[90%] overflow-hidden"
         data-testid="modal-withdrawal"
       >
+        <VisuallyHidden>
+          <DialogTitle>Solicitar Saque</DialogTitle>
+          <DialogDescription>Preencha os dados para solicitar um saque</DialogDescription>
+        </VisuallyHidden>
         {/* Banner Superior */}
         <div className="relative">
           <img 

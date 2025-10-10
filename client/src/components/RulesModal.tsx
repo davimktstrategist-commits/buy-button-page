@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { X, Info, DollarSign, Banknote, Users } from "lucide-react";
 
 interface RulesModalProps {
@@ -25,6 +26,10 @@ export function RulesModal({ open, onClose }: RulesModalProps) {
         className="sm:max-w-[500px] w-[90%] bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] border-2 border-[#ff9d2f]/30 p-0 max-h-[80vh] overflow-hidden"
         data-testid="modal-rules"
       >
+        <VisuallyHidden>
+          <DialogTitle>Regras e Informações</DialogTitle>
+          <DialogDescription>Saiba como jogar, depositar, sacar e mais</DialogDescription>
+        </VisuallyHidden>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-[#888] hover:text-[#ff6c2f] text-2xl z-10"
