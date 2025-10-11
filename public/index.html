@@ -4062,7 +4062,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             toggleSpinButtons(false);
             const formData = new FormData();
-            formData.append('aposta', state.aposta);
+            formData.append('betAmount', state.aposta);
 
             try {
                 const response = await fetch('ajax/start_spin.php', { method: 'POST', body: formData });
