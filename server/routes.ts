@@ -85,6 +85,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
         
         // Criar usuário
+        console.log('👤 Criando novo usuário:', {
+          email,
+          hasReferralCode: !!referralCode,
+          affiliateUserId: affiliateUser?.id,
+          newReferralCode
+        });
+        
         const newUser = await storage.createUser({
           email,
           firstName,
@@ -93,6 +100,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           password: senha, // Em produção, usar hash
           referralCode: newReferralCode,
           referredByUserId: affiliateUser?.id || null,
+        });
+        
+        console.log('✅ Usuário criado com sucesso:', {
+          userId: newUser.id,
+          email: newUser.email,
+          referralCode: newUser.referralCode,
+          referredByUserId: newUser.referredByUserId
         });
         
         // Se foi indicado por alguém, criar registro de afiliado
@@ -105,7 +119,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             totalCommissionEarned: '0.00',
             isActive: true,
           });
-          console.log('✅ Referral criado:', affiliateUser.id, '→', newUser.id);
+          console.log('✅ Referral criado:', {
+            affiliateUserId: affiliateUser.id,
+            referredUserId: newUser.id,
+            referralCode: referralCode
+          });
         }
         
         // Migrate anonymous user data if exists
@@ -1472,14 +1490,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             // 💰 PROCESSAR COMISSÃO DE AFILIADO (CPA)
+            console.log('🔍 Verificando comissão de afiliado para userId:', userId, 'referredByUserId:', user?.referredByUserId);
+            
             if (user?.referredByUserId) {
               try {
+                console.log('✅ Usuário foi referido! Iniciando processo de comissão...');
                 const { systemConfig, affiliateCommissions, affiliateReferrals } = await import('@shared/schema');
                 
                 // Buscar configurações de CPA
                 const configs = await db.select().from(systemConfig).where(
                   sql`${systemConfig.key} IN ('affiliate_cpa_percent', 'affiliate_cpa_fixed')`
                 );
+                
+                console.log('📋 Configurações CPA encontradas:', configs);
                 
                 let cpaPercent = 0;
                 let cpaFixed = 0;
@@ -1488,12 +1511,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   if (config.key === 'affiliate_cpa_fixed') cpaFixed = parseFloat(config.value || '0');
                 });
                 
+                console.log('💵 Valores CPA:', { cpaPercent, cpaFixed });
+                
                 // Calcular comissão
                 const depositAmount = parseFloat(transaction.amount);
                 const commissionPercent = (depositAmount * cpaPercent) / 100;
                 const totalCommission = commissionPercent + cpaFixed;
                 
+                console.log('🧮 Cálculo da comissão:', {
+                  depositAmount,
+                  commissionPercent,
+                  cpaFixed,
+                  totalCommission
+                });
+                
                 if (totalCommission > 0) {
+                  console.log('💰 Criando registro de comissão...');
+                  
                   // Criar registro de comissão
                   await db.insert(affiliateCommissions).values({
                     affiliateUserId: user.referredByUserId,
@@ -1505,8 +1539,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     status: 'paid',
                   });
                   
+                  console.log('✅ Registro de comissão criado!');
+                  
                   // Creditar comissão no saldo do afiliado
                   await storage.updateUserBalance(user.referredByUserId, totalCommission);
+                  console.log('✅ Saldo do afiliado creditado!');
                   
                   // Atualizar total ganho no affiliateReferrals
                   await db.update(affiliateReferrals)
@@ -1518,18 +1555,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       sql`${affiliateReferrals.affiliateUserId} = ${user.referredByUserId} AND ${affiliateReferrals.referredUserId} = ${userId}`
                     );
                   
-                  console.log('💰 Comissão CPA creditada!', {
+                  console.log('✅ Total de comissões do afiliado atualizado!');
+                  
+                  console.log('💰 Comissão CPA creditada COM SUCESSO!', {
                     affiliateUserId: user.referredByUserId,
                     referredUserId: userId,
                     depositAmount,
                     commission: totalCommission,
                     type: `${cpaPercent}% + R$ ${cpaFixed}`
                   });
+                } else {
+                  console.log('⚠️ Comissão total é zero, pulando criação de registro');
                 }
               } catch (commissionError) {
-                console.error('❌ Erro ao processar comissão de afiliado:', commissionError);
+                console.error('❌ ERRO CRÍTICO ao processar comissão de afiliado:', commissionError);
+                console.error('❌ Stack trace:', (commissionError as Error).stack);
                 // Não falhar a transação principal se houver erro na comissão
               }
+            } else {
+              console.log('ℹ️ Usuário não foi referido por ninguém, sem comissão a processar');
             }
           } else {
             console.log('ℹ️ Transação já foi creditada anteriormente (race condition evitada)');
