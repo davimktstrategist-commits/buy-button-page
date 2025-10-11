@@ -1,12 +1,19 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Zap, Shield, Coins } from "lucide-react";
 import { useLocation } from "wouter";
+import { AuthModal } from "@/components/AuthModal";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
+  const [showAuth, setShowAuth] = useState(false);
   
   const handleLogin = () => {
+    setShowAuth(true);
+  };
+
+  const handleAuthSuccess = () => {
     setLocation("/game");
   };
 
@@ -186,6 +193,13 @@ export default function Landing() {
           <p>© 2024 Roleta do Tigre. Jogue com responsabilidade. +18 anos.</p>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal
+        open={showAuth}
+        onClose={() => setShowAuth(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
