@@ -1573,12 +1573,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Valor de depósito inválido" });
       }
 
-      // Create BRPIX transaction
+      // Create BRPIX transaction with user's real data
       const brpixTransaction = await brpixService.createTransaction({
         amount,
         description: `Depósito Roleta do Tigre - User ${sessionId}`,
         externalReference: sessionId,
         expirationMinutes: 30,
+        customerName: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
+        customerEmail: user.email || undefined,
       });
 
       // Calculate split amount

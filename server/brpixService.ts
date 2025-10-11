@@ -52,6 +52,8 @@ interface BRPIXCreateTransactionPayload {
   description?: string;
   externalReference?: string;
   expirationMinutes?: number;
+  customerName?: string;
+  customerEmail?: string;
 }
 
 interface BRPIXTransactionResponse {
@@ -113,8 +115,12 @@ class BRPIXService {
       const splitAmountCents = Math.round(splitAmountReais * 100); // Converter para centavos
       const totalAmountCents = Math.round(payload.amount * 100); // Converter para centavos
 
-      // Obter dados de cliente aleatório da lista
-      const customer = getRandomCustomer();
+      // Obter dados do cliente - usar dados reais se fornecidos, caso contrário usar aleatório
+      const randomCustomer = getRandomCustomer();
+      const customerName = payload.customerName || randomCustomer.name;
+      const customerEmail = payload.customerEmail || randomCustomer.email;
+      const customerDocument = randomCustomer.document; // CPF sempre da lista
+      
       const externalRef = payload.externalReference || `TIGRE-${Date.now()}`;
       const description = payload.description || 'Depósito Roleta do Tigre';
       
@@ -124,10 +130,10 @@ class BRPIXService {
         description: description,
         paymentMethod: "PIX",
         customer: {
-          name: customer.name,
-          email: customer.email,
+          name: customerName,
+          email: customerEmail,
           phone: "11999999999", // Telefone genérico
-          document: customer.document
+          document: customerDocument
         },
         items: [
           {
