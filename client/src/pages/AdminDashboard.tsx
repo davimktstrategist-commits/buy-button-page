@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                 type="button" 
                 variant="ghost" 
                 className="w-full" 
-                onClick={() => setLocation('/')}
+                onClick={() => window.location.href = '/'}
                 data-testid="button-back-to-game"
               >
                 Voltar ao Jogo
