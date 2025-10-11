@@ -108,11 +108,33 @@ export default function Game() {
     }, 3000);
   };
 
-  const handleLogout = () => {
-    // Remove all session data
+  const handleLogout = async () => {
+    let newSessionId: string | null = null;
+    
+    try {
+      // Try to get new anonymous sessionId from API
+      const response = await fetch('/api/logout', { method: 'POST' });
+      const data = await response.json();
+      
+      if (data.success && data.sessionId) {
+        newSessionId = data.sessionId;
+      }
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
+    
+    // ALWAYS clear session data, even if API failed
     localStorage.removeItem('tiger_session_id');
     localStorage.removeItem('sessionId');
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('loggedUser');
+    
+    // Set new session if API succeeded
+    if (newSessionId) {
+      localStorage.setItem('tiger_session_id', newSessionId);
+      localStorage.setItem('sessionId', newSessionId);
+    }
+    
     window.location.href = '/';
   };
 
