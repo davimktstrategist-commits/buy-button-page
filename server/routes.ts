@@ -1869,19 +1869,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Rota raiz - servir o jogo
-  app.get('/', (req, res) => {
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
-  });
-
-  // Rota admin - servir painel administrativo
-  app.get('/admin', (req, res) => {
-    res.sendFile(path.join(process.cwd(), 'public', 'admin.html'));
-  });
-
   const httpServer = createServer(app);
+
+  // Setup Vite for development or serve static files for production
+  if (process.env.NODE_ENV === 'development') {
+    const { setupVite } = await import('./vite');
+    await setupVite(app, httpServer);
+  } else {
+    const { serveStatic } = await import('./vite');
+    serveStatic(app);
+  }
+
   return httpServer;
 }
