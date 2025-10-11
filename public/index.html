@@ -3149,7 +3149,7 @@
 <div id="history-modal-overlay" class="modal-overlay">
     <div class="history-modal-content">
         <div class="history-modal-header">
-            <h2 class="history-modal-title">Histórico de Jogos</h2>
+            <h2 class="history-modal-title">Histórico Completo</h2>
             <button id="close-history-button" class="history-modal-close">�</button>
         </div>
         <div id="history-list">
@@ -4269,22 +4269,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('ajax/get_history.php');
                 const result = await response.json();
                 DOMElements.historyList.innerHTML = '';
-                if (result.success && result.history.length > 0) {
+                if (result.history && result.history.length > 0) {
                     result.history.forEach(item => {
-                        const resultado = parseFloat(item.resultado);
-                        const isLoss = resultado < 0;
-                        const itemHTML = `
-                            <div class="history-item ${isLoss ? 'loss' : ''}">
-                                <p class="label">Aposta</p>
-                                <p class="value">${formatCurrency(item.valor_aposta)}</p>
-                                <p class="label">Resultado</p>
-                                <p class="value ${isLoss ? 'result-loss' : 'result-win'}">${resultado >= 0 ? '+' : ''}${formatCurrency(resultado)}</p>
-                                <p class="timestamp">${item.data_jogo_formatada}</p>
-                            </div>`;
+                        const resultado = parseFloat(item.resultado || 0);
+                        const valor = parseFloat(item.valor || 0);
+                        const tipo = item.tipo || 'jogo';
+                        
+                        let itemHTML = '';
+                        
+                        if (tipo === 'jogo') {
+                            // Item de jogo
+                            const isLoss = resultado < 0;
+                            itemHTML = `
+                                <div class="history-item ${isLoss ? 'loss' : ''}">
+                                    <p class="label">🎮 Jogo (${item.multiplier}x)</p>
+                                    <p class="value">${formatCurrency(valor)}</p>
+                                    <p class="label">Resultado</p>
+                                    <p class="value ${isLoss ? 'result-loss' : 'result-win'}">${resultado >= 0 ? '+' : ''}${formatCurrency(resultado)}</p>
+                                    <p class="timestamp">${item.data_jogo_formatada}</p>
+                                </div>`;
+                        } else if (tipo === 'deposito') {
+                            // Item de depósito
+                            itemHTML = `
+                                <div class="history-item">
+                                    <p class="label">💰 Depósito</p>
+                                    <p class="value result-win">+${formatCurrency(valor)}</p>
+                                    <p class="label">Status</p>
+                                    <p class="value" style="color: #48bb78;">✓ Confirmado</p>
+                                    <p class="timestamp">${item.data_jogo_formatada}</p>
+                                </div>`;
+                        } else if (tipo === 'saque') {
+                            // Item de saque
+                            const statusLabels = {
+                                'pending': '⏳ Pendente',
+                                'completed': '✓ Aprovado',
+                                'cancelled': '✗ Rejeitado',
+                                'processing': '⏳ Processando'
+                            };
+                            const statusColors = {
+                                'pending': '#fbbf24',
+                                'completed': '#48bb78',
+                                'cancelled': '#e53e3e',
+                                'processing': '#fbbf24'
+                            };
+                            const statusLabel = statusLabels[item.status] || item.status;
+                            const statusColor = statusColors[item.status] || '#888';
+                            
+                            itemHTML = `
+                                <div class="history-item loss">
+                                    <p class="label">📤 Saque</p>
+                                    <p class="value result-loss">-${formatCurrency(valor)}</p>
+                                    <p class="label">Status</p>
+                                    <p class="value" style="color: ${statusColor};">${statusLabel}</p>
+                                    <p class="timestamp">${item.data_jogo_formatada}</p>
+                                </div>`;
+                        }
+                        
                         DOMElements.historyList.insertAdjacentHTML('beforeend', itemHTML);
                     });
                 } else {
-                    DOMElements.historyList.innerHTML = '<p id="no-history-message">Nenhum jogo encontrado no seu histórico.</p>';
+                    DOMElements.historyList.innerHTML = '<p id="no-history-message">Nenhuma transação encontrada no seu histórico.</p>';
                 }
             } catch (error) {
                 DOMElements.historyList.innerHTML = '<p id="no-history-message" class="result-loss">Erro ao carregar o histórico.</p>';

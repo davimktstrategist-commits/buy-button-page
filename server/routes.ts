@@ -752,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Histórico de jogos do usuário
+  // Histórico completo do usuário (jogos, depósitos, saques)
   app.get('/ajax/get_history.php', async (req, res) => {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
@@ -761,18 +761,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Session ID required" });
       }
 
-      const games = await storage.getGamesByUserId(sessionId, 20);
+      // Buscar jogos, depósitos e saques
+      const [games, transactions, withdrawals] = await Promise.all([
+        storage.getGamesByUserId(sessionId, 50),
+        storage.getTransactionsByUserId(sessionId),
+        storage.getWithdrawalsByUserId(sessionId)
+      ]);
       
-      // Format games for frontend
-      const history = games.map(game => ({
-        id: game.id,
-        betAmount: parseFloat(game.betAmount),
-        multiplier: game.multiplier,
-        winAmount: parseFloat(game.winAmount),
-        createdAt: game.createdAt,
-      }));
+      // Combinar tudo em um histórico unificado
+      const history: any[] = [];
+      
+      // Adicionar jogos
+      games.forEach(game => {
+        const winAmount = parseFloat(game.winAmount);
+        const betAmount = parseFloat(game.betAmount);
+        const profit = winAmount - betAmount;
+        
+        history.push({
+          id: game.id,
+          tipo: 'jogo',
+          valor: betAmount,
+          resultado: profit,
+          multiplier: game.multiplier,
+          createdAt: game.createdAt,
+          data_jogo_formatada: new Date(game.createdAt).toLocaleString('pt-BR')
+        });
+      });
+      
+      // Adicionar depósitos confirmados
+      transactions.filter(t => t.status === 'completed').forEach(transaction => {
+        history.push({
+          id: transaction.id,
+          tipo: 'deposito',
+          valor: parseFloat(transaction.amount),
+          resultado: parseFloat(transaction.amount), // Depósito é sempre positivo
+          createdAt: transaction.createdAt,
+          data_jogo_formatada: new Date(transaction.createdAt).toLocaleString('pt-BR')
+        });
+      });
+      
+      // Adicionar saques (todos os status)
+      withdrawals.forEach(withdrawal => {
+        history.push({
+          id: withdrawal.id,
+          tipo: 'saque',
+          valor: parseFloat(withdrawal.amount),
+          resultado: -parseFloat(withdrawal.amount), // Saque é sempre negativo
+          status: withdrawal.status,
+          pixKey: withdrawal.pixKey,
+          createdAt: withdrawal.createdAt,
+          data_jogo_formatada: new Date(withdrawal.createdAt).toLocaleString('pt-BR')
+        });
+      });
+      
+      // Ordenar por data (mais recente primeiro)
+      history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      res.json({ history });
+      res.json({ history: history.slice(0, 50) }); // Limitar a 50 itens
     } catch (error) {
       console.error("Error getting history:", error);
       res.status(500).json({ error: "Erro ao obter histórico" });
