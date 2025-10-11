@@ -2705,44 +2705,14 @@
                             Notiflix.Notify.success('💰 Depósito confirmado! Seu saldo foi creditado!');
                         }
                         
-                        setTimeout(async () => {
-                            // Fechar overlay de QR Code pago
-                            document.getElementById('qrPaidOverlay').classList.remove('active');
-                            
-                            // Fechar área do QR Code
-                            const qrArea = document.getElementById('qrArea');
-                            if (qrArea) qrArea.classList.remove('active');
-                            
-                            // Fechar modal de depósito
-                            closeModal('depositModal');
-                            
-                            // Buscar saldo atualizado do servidor
-                            const sessionId = localStorage.getItem('sessionId');
-                            console.log('🔍 Buscando saldo para sessionId:', sessionId);
-                            
-                            const saldoRes = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}&t=${Date.now()}`);
-                            console.log('📡 Resposta recebida, status:', saldoRes.status);
-                            
-                            const saldoResult = await saldoRes.json();
-                            console.log('📊 Dados do saldo:', saldoResult);
-                            
-                            if (saldoResult.saldo !== undefined) {
-                                state.saldo = parseFloat(saldoResult.saldo);
-                                updateDisplay();
-                                console.log('✅ Saldo atualizado na tela:', state.saldo);
-                            } else {
-                                console.error('❌ Campo saldo não encontrado:', saldoResult);
+                        setTimeout(() => {
+                            // Recarregar página para atualizar saldo (força clear do cache)
+                            if (typeof Notiflix !== 'undefined') {
+                                Notiflix.Notify.success('💰 Depósito confirmado! Recarregando...');
                             }
-                            
-                            // Rolar suavemente para o jogo
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            
-                            // Notificar usuário para jogar
                             setTimeout(() => {
-                                if (typeof Notiflix !== 'undefined') {
-                                    Notiflix.Notify.success('🎰 Agora você pode jogar! Boa sorte!');
-                                }
-                            }, 800);
+                                window.location.reload(true);
+                            }, 1000);
                         }, 2000);
                     }
                 } catch (error) {
