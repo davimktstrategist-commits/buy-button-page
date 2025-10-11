@@ -926,8 +926,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Criar pagamento PIX
   app.post('/api/payment.php', async (req, res) => {
     try {
+      console.log('📥 Payment request body:', req.body);
       const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
       const amount = parseFloat(req.body.amount || req.body.valor);
+
+      console.log('🔍 Parsed values:', { sessionId, amount, amountRaw: req.body.amount, valorRaw: req.body.valor });
 
       if (!sessionId) {
         return res.status(400).json({ error: "Session ID required" });
@@ -946,6 +949,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!amount || amount <= 0) {
+        console.log('❌ Invalid amount:', { amount, isNaN: isNaN(amount), isLessThanZero: amount <= 0 });
         return res.status(400).json({ error: "Valor de depósito inválido" });
       }
 
