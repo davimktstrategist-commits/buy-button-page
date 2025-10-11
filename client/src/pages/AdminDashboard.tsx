@@ -313,7 +313,7 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-display font-bold">Dashboard</h1>
               {activeSection === 'dashboard' && (
                 <p className="text-sm text-muted-foreground">
-                  Olá, NextSistemas!
+                  Olá, Strategist!
                 </p>
               )}
             </div>
@@ -323,7 +323,7 @@ export default function AdminDashboard() {
                 <span className="text-muted-foreground">Usuários Online: 1</span>
               </div>
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
-                NE
+                ST
               </div>
             </div>
           </div>
