@@ -3558,6 +3558,33 @@ document.addEventListener('DOMContentLoaded', () => {
             roleta2Map: [2, 3, 4, 1],
             isSoundOn: false
         };
+        
+        // FORÇA ATUALIZAÇÃO DO SALDO AO CARREGAR A PÁGINA
+        const forceUpdateBalance = async () => {
+            try {
+                const sessionId = localStorage.getItem('sessionId');
+                if (!sessionId) return;
+                
+                const response = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}&nocache=${Date.now()}`);
+                const data = await response.json();
+                
+                if (data && data.saldo !== undefined) {
+                    state.saldo = parseFloat(data.saldo);
+                    console.log('💰 Saldo carregado do servidor:', state.saldo);
+                    // Aguardar DOM estar pronto antes de atualizar display
+                    setTimeout(() => {
+                        if (typeof updateDisplay === 'function') {
+                            updateDisplay();
+                        }
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar saldo:', error);
+            }
+        };
+        
+        // Executar imediatamente
+        forceUpdateBalance();
 
         const DOMElements = {
             playButton: document.getElementById('play-button'),
