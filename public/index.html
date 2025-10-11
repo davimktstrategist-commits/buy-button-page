@@ -4005,10 +4005,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hideModalAndResume = () => {
             state.isSpinning = false;
             toggleSpinButtons(true);
-            DOMElements.roleta1.classList.add('swaying'); 
-            DOMElements.roleta1Labels.classList.add('swaying');
-            DOMElements.roleta2.classList.add('swaying'); 
-            DOMElements.roleta2Labels.classList.add('swaying');
+            // Não adicionar swaying - manter parado onde está
             DOMElements.bonusMultiplierImg.classList.remove('visible');
             
             // Modo Automático: continuar girando APÓS liberar isSpinning
@@ -4056,6 +4053,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 DOMElements.spinSound.play().catch(e => {});
             }
 
+            // Remover swaying se existir, mas não é mais usado
             [DOMElements.roleta1, DOMElements.roleta1Labels, DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.classList.remove('swaying'));
             void DOMElements.roleta1.offsetWidth;
             
@@ -4075,12 +4073,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const numSegments1 = state.roleta1Map.length;
             const segmentAngle1 = 360 / numSegments1;
             const targetAngle1 = 360 - (winningPos1 * segmentAngle1);
-            state.currentRotation1 = (Math.floor(state.currentRotation1 / 360) + 5) * 360 + targetAngle1 - (Math.random() * (segmentAngle1 * 0.8) + (segmentAngle1 * 0.1));
+            const randomOffset1 = Math.random() * (segmentAngle1 * 0.8) + (segmentAngle1 * 0.1);
+            
+            // Continuar de onde parou + 5 voltas + posição alvo
+            const currentAngle1 = state.currentRotation1 % 360;
+            state.currentRotation1 += (5 * 360) + (targetAngle1 - currentAngle1) - randomOffset1;
             
             const numSegments2 = state.roleta2Map.length;
             const segmentAngle2 = 360 / numSegments2;
             const targetAngle2 = winningPos2 * segmentAngle2;
-            state.currentRotation2 = (Math.floor(state.currentRotation2 / 360) - 5) * 360 - targetAngle2 - (Math.random() * (segmentAngle2 * 0.8) + (segmentAngle2 * 0.1));
+            const randomOffset2 = Math.random() * (segmentAngle2 * 0.8) + (segmentAngle2 * 0.1);
+            
+            // Roleta 2 gira no sentido contrário (negativo)
+            // Normalizar para positivo pois % em JS pode retornar negativo
+            const currentAngle2 = ((state.currentRotation2 % 360) + 360) % 360;
+            state.currentRotation2 -= (5 * 360) + currentAngle2 + targetAngle2 + randomOffset2;
 
             DOMElements.roleta1.style.transform = `translate(-50%, -50%) rotate(${state.currentRotation1}deg)`;
             DOMElements.roleta1Labels.style.transform = `translate(-50%, -50%) rotate(${state.currentRotation1}deg)`;
