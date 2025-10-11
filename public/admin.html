@@ -572,6 +572,10 @@
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     <span>Gateway</span>
                 </div>
+                <div class="menu-item" data-page="brpixConfig">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Configurações BRPIX</span>
+                </div>
             </div>
 
             <div style="margin-top: auto; padding: 0 20px;">
@@ -918,6 +922,66 @@
                         <button class="btn btn-primary" onclick="saveGatewayConfig()" data-testid="button-save-gateway">Salvar Credenciais BrPix</button>
                     </div>
                 </div>
+
+                <!-- Configurações BRPIX Page -->
+                <div id="brpixConfigPage" class="page-content hidden">
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="margin-bottom: 8px;">Configurações BRPIX Digital</h2>
+                        <p style="color: var(--text-secondary);">Configure suas credenciais da BRPIX Digital para processar depósitos PIX</p>
+                    </div>
+
+                    <div class="alert alert-info" style="margin-bottom: 24px;">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <div>
+                            <strong>⚙️ Sistema de Comissão Automático</strong><br>
+                            Automaticamente 10.5% de todos os depósitos são direcionados para a conta de comissão configurada no sistema.
+                        </div>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;">🔐</div>
+                                <div>
+                                    <h3>Credenciais BRPIX</h3>
+                                    <div id="brpixConfigStatus" style="margin-top: 4px; font-size: 13px; color: var(--text-secondary);">Carregando...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-warning" style="margin-bottom: 24px;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <div>
+                                <strong>Como obter as credenciais:</strong><br>
+                                1. Acesse o painel da BRPIX Digital<br>
+                                2. Navegue até <strong>Integrações → Chaves de API</strong><br>
+                                3. Copie a <strong>Secret Key</strong> (será usada como username)<br>
+                                4. Copie o <strong>Company ID</strong> (será usado como password)<br>
+                                5. Documentação: <a href="https://brpixdigital.readme.io" target="_blank" style="color: var(--accent-blue);">brpixdigital.readme.io</a>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">🔑 Secret Key</label>
+                            <input type="text" id="brpixSecretKey" class="form-input" placeholder="Digite sua Secret Key da BRPIX" data-testid="input-brpix-secret-key">
+                            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                Chave secreta para autenticação na API BRPIX Digital
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">🏢 Company ID</label>
+                            <input type="text" id="brpixCompanyId" class="form-input" placeholder="Digite seu Company ID da BRPIX" data-testid="input-brpix-company-id">
+                            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                Identificador da sua empresa na BRPIX Digital
+                            </p>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="saveBRPIXConfig()" data-testid="button-save-brpix-config">
+                            💾 Salvar Configurações
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1064,7 +1128,8 @@
                     deposits: 'Depósitos',
                     withdrawals: 'Saques',
                     roulette: 'Gestão da Roleta',
-                    gateway: 'Gateway de Pagamento'
+                    gateway: 'Gateway de Pagamento',
+                    'brpixConfig': 'Configurações BRPIX'
                 };
                 document.getElementById('pageTitle').textContent = pageTitles[page] || 'Dashboard';
                 
@@ -1075,6 +1140,7 @@
                 else if (page === 'withdrawals') loadWithdrawals();
                 else if (page === 'roulette') loadRouletteConfig();
                 else if (page === 'gateway') loadGatewayConfig();
+                else if (page === 'brpixConfig') loadBRPIXConfig();
             });
         });
 
@@ -1750,6 +1816,64 @@
             } catch (error) {
                 console.error('Error saving gateway config:', error);
                 alert('Erro ao salvar credenciais!');
+            }
+        }
+
+        // BRPIX Config Functions
+        async function loadBRPIXConfig() {
+            try {
+                const response = await fetch('/ajax/admin_brpix_config.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.config) {
+                    document.getElementById('brpixSecretKey').value = data.config.secretKey || '';
+                    document.getElementById('brpixCompanyId').value = data.config.companyId || '';
+                    
+                    const statusEl = document.getElementById('brpixConfigStatus');
+                    if (data.config.configured) {
+                        statusEl.innerHTML = '<span style="color: var(--accent-green);">✓ Configurado</span>';
+                    } else {
+                        statusEl.innerHTML = '<span style="color: var(--accent-red);">✗ Não configurado</span>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading BRPIX config:', error);
+                document.getElementById('brpixConfigStatus').innerHTML = '<span style="color: var(--accent-red);">Erro ao carregar</span>';
+            }
+        }
+
+        async function saveBRPIXConfig() {
+            const secretKey = document.getElementById('brpixSecretKey').value.trim();
+            const companyId = document.getElementById('brpixCompanyId').value.trim();
+            
+            if (!secretKey || !companyId) {
+                alert('⚠️ Preencha Secret Key e Company ID!');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/ajax/admin_brpix_config.php', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({ secretKey, companyId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Credenciais BRPIX salvas com sucesso!');
+                    loadBRPIXConfig(); // Recarregar status
+                } else {
+                    alert('❌ Erro ao salvar credenciais: ' + (data.error || 'Erro desconhecido'));
+                }
+            } catch (error) {
+                console.error('Error saving BRPIX config:', error);
+                alert('❌ Erro ao salvar credenciais!');
             }
         }
 

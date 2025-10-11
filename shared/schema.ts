@@ -110,6 +110,18 @@ export const transactions = pgTable("transactions", {
   index("transactions_brpix_id_idx").on(table.brpixTransactionId),
 ]);
 
+// System configuration table (for storing BRPIX credentials and other settings)
+export const systemConfig = pgTable("system_config", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  key: varchar("key").unique().notNull(),
+  value: text("value"),
+  encrypted: boolean("encrypted").default(false).notNull(),
+  description: text("description"),
+  updatedBy: varchar("updated_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Withdrawals table (for tracking withdrawal requests)
 export const withdrawals = pgTable("withdrawals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

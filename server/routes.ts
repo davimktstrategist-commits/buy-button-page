@@ -1543,6 +1543,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Rotas admin para configuração BRPIX
+  app.get('/ajax/admin_brpix_config.php', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const { systemConfig } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      const secretKeyConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_secret_key'))
+        .limit(1);
+
+      const companyIdConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_company_id'))
+        .limit(1);
+
+      res.json({
+        success: true,
+        config: {
+          secretKey: secretKeyConfig[0]?.value || '',
+          companyId: companyIdConfig[0]?.value || '',
+          configured: !!(secretKeyConfig[0]?.value && companyIdConfig[0]?.value)
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching BRPIX config:", error);
+      res.status(500).json({ error: "Erro ao buscar configurações BRPIX" });
+    }
+  });
+
+  app.post('/ajax/admin_brpix_config.php', async (req, res) => {
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const { secretKey, companyId } = req.body;
+      
+      if (!secretKey || !companyId) {
+        return res.status(400).json({ error: "Secret Key e Company ID são obrigatórios" });
+      }
+
+      const { systemConfig } = await import('@shared/schema');
+      const { eq } = await import('drizzle-orm');
+
+      // Atualizar ou criar Secret Key
+      const existingSecretKey = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_secret_key'))
+        .limit(1);
+
+      if (existingSecretKey.length > 0) {
+        await db.update(systemConfig)
+          .set({ value: secretKey, updatedAt: new Date() })
+          .where(eq(systemConfig.key, 'brpix_secret_key'));
+      } else {
+        await db.insert(systemConfig).values({
+          key: 'brpix_secret_key',
+          value: secretKey,
+          description: 'BRPIX API Secret Key',
+          encrypted: false,
+        });
+      }
+
+      // Atualizar ou criar Company ID
+      const existingCompanyId = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_company_id'))
+        .limit(1);
+
+      if (existingCompanyId.length > 0) {
+        await db.update(systemConfig)
+          .set({ value: companyId, updatedAt: new Date() })
+          .where(eq(systemConfig.key, 'brpix_company_id'));
+      } else {
+        await db.insert(systemConfig).values({
+          key: 'brpix_company_id',
+          value: companyId,
+          description: 'BRPIX Company ID',
+          encrypted: false,
+        });
+      }
+
+      console.log('✅ BRPIX credentials configured successfully');
+      
+      res.json({ 
+        success: true, 
+        message: "Credenciais BRPIX configuradas com sucesso" 
+      });
+    } catch (error) {
+      console.error("Error saving BRPIX config:", error);
+      res.status(500).json({ error: "Erro ao salvar configurações BRPIX" });
+    }
+  });
+
   // Servir arquivos estáticos da pasta public
   app.use(express.static(path.join(process.cwd(), 'public')));
 
