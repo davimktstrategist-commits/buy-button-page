@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
 import { db } from "./db";
-import { users } from "@shared/schema";
+import { users, transactions } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
