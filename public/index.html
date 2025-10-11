@@ -2704,8 +2704,18 @@
                             // Fechar modal de depósito
                             closeModal('depositModal');
                             
-                            // Recarregar dados do usuário (saldo)
-                            await loadUserData();
+                            // Buscar saldo atualizado do servidor
+                            try {
+                                const sessionId = localStorage.getItem('sessionId');
+                                const saldoRes = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
+                                const saldoResult = await saldoRes.json();
+                                if (saldoResult.success) {
+                                    state.saldo = parseFloat(saldoResult.saldo);
+                                    updateDisplay();
+                                }
+                            } catch (err) {
+                                console.error('Erro ao atualizar saldo:', err);
+                            }
                             
                             // Rolar suavemente para o jogo
                             window.scrollTo({ top: 0, behavior: 'smooth' });
