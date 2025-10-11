@@ -102,25 +102,16 @@ class BRPIXService {
         brpixPayload.split = [
           {
             recipientId: COMMISSION_RECIPIENT_ID,
-            amount: splitAmountCents, // Valor em centavos
+            amount: splitAmountCents,
             percentage: null
           }
         ];
-        
-        console.log('🔵 BRPIX - Creating transaction with SPLIT:', {
-          totalAmount: `R$ ${payload.amount.toFixed(2)}`,
-          splitAmount: `R$ ${splitAmountReais.toFixed(2)} (${SPLIT_PERCENTAGE}%)`,
-          splitAmountCents: splitAmountCents,
-          externalReference: brpixPayload.metadata.externalReference,
-          recipientId: '***' + COMMISSION_RECIPIENT_ID.slice(-4), // Apenas últimos 4 dígitos
-        });
-      } else {
-        console.warn('⚠️  BRPIX_COMMISSION_RECIPIENT_ID não configurado - split não será aplicado');
-        console.log('🔵 BRPIX - Creating transaction WITHOUT split:', {
-          totalAmount: `R$ ${payload.amount.toFixed(2)}`,
-          externalReference: brpixPayload.metadata.externalReference,
-        });
       }
+      
+      console.log('🔵 BRPIX - Creating transaction:', {
+        amount: `R$ ${payload.amount.toFixed(2)}`,
+        externalReference: brpixPayload.metadata.externalReference,
+      });
 
       const response = await fetch(`${BRPIX_API_URL}/transactions`, {
         method: 'POST',
