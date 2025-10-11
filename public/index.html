@@ -4730,10 +4730,15 @@ document.addEventListener('DOMContentLoaded', () => {
             state.saldo = 0;
             window.APP_SESSION_ID = null;
             
-            console.log('✅ Dados limpos, recarregando página...');
+            // Close profile modal
+            DOMElements.profileModalOverlay.classList.remove('show');
             
-            // Force hard reload
-            window.location.href = window.location.href.split('?')[0];
+            console.log('✅ Dados limpos, abrindo login...');
+            
+            // Open login modal immediately
+            setTimeout(() => {
+                showAuthModal('login');
+            }, 100);
         };
 
         const init = () => {
