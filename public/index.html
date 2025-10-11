@@ -4718,10 +4718,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const handleLogout = () => {
-            // Remove all session data
+        const handleLogout = async () => {
+            try {
+                // Call logout API to get new anonymous sessionId
+                const response = await fetch('/api/logout', { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success && data.sessionId) {
+                    // Update with new anonymous sessionId
+                    localStorage.setItem('sessionId', data.sessionId);
+                    window.APP_SESSION_ID = data.sessionId;
+                }
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+            }
+            
+            // Remove all user data
             localStorage.removeItem('loggedUser');
-            localStorage.removeItem('sessionId');
             localStorage.removeItem('tiger_session_id');
             localStorage.removeItem('adminToken');
             state.isLoggedIn = false;
