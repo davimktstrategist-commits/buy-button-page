@@ -212,6 +212,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Logout route - generates new anonymous sessionId
+  app.post('/api/logout', async (req, res) => {
+    try {
+      const newSessionId = randomBytes(16).toString('hex');
+      console.log('🚪 Logout - Novo sessionId gerado:', newSessionId);
+      
+      res.json({ 
+        success: true, 
+        sessionId: newSessionId 
+      });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      res.status(500).json({ success: false, message: "Logout failed" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
