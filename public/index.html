@@ -2709,9 +2709,10 @@
                                 const sessionId = localStorage.getItem('sessionId');
                                 const saldoRes = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
                                 const saldoResult = await saldoRes.json();
-                                if (saldoResult.success) {
+                                if (saldoResult.saldo !== undefined) {
                                     state.saldo = parseFloat(saldoResult.saldo);
                                     updateDisplay();
+                                    console.log('✅ Saldo atualizado:', state.saldo);
                                 }
                             } catch (err) {
                                 console.error('Erro ao atualizar saldo:', err);
