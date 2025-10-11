@@ -175,8 +175,30 @@ class BRPIXService {
       console.log('🔵 BRPIX Response Status:', response.status);
       console.log('🔵 BRPIX Response Body:', responseText);
       
+      // Log detalhado do split
+      if (brpixPayload.split) {
+        console.log('📊 SPLIT DETAILS:');
+        console.log('  - Total Amount: R$', payload.amount.toFixed(2), `(${totalAmountCents} centavos)`);
+        console.log('  - Split Amount: R$', splitAmountReais.toFixed(2), `(${splitAmountCents} centavos - ${SPLIT_PERCENTAGE}%)`);
+        console.log('  - Recipient ID:', COMMISSION_RECIPIENT_ID);
+        console.log('  - Merchant receives: R$', (payload.amount - splitAmountReais).toFixed(2));
+      } else {
+        console.log('⚠️ NENHUM SPLIT ENVIADO');
+      }
+      
       if (!response.ok) {
         console.error('❌ BRPIX Create Transaction Error:', response.status, responseText);
+        
+        // Log específico se erro for relacionado ao split
+        try {
+          const errorData = JSON.parse(responseText);
+          if (errorData.message && (errorData.message.includes('split') || errorData.message.includes('recipient'))) {
+            console.error('🚨 ERRO RELACIONADO AO SPLIT:', errorData.message);
+            console.error('🔍 Verifique se o recipientId está correto no painel BRPIX');
+          }
+        } catch (e) {
+          // Ignora erro de parse
+        }
         
         let errorMessage = 'Erro ao criar transação PIX';
         try {
@@ -192,6 +214,13 @@ class BRPIXService {
       const data = JSON.parse(responseText);
       
       console.log('✅ BRPIX Transaction created:', data.id || data.transactionId);
+      
+      // Confirmar se split foi aceito pela BRPIX
+      if (brpixPayload.split) {
+        console.log('✅ SPLIT ENVIADO COM SUCESSO!');
+        console.log('  - Comissão de R$', splitAmountReais.toFixed(2), 'será transferida');
+        console.log('  - BRPIX aceitou o split sem erros');
+      }
 
       // Mapear resposta conforme formato da BRPIX Digital
       const pixQrCode = data.pix?.qrcode || data.pix?.qrCode || data.qrCode || '';
