@@ -5,7 +5,7 @@ import { db } from './db';
 import { systemConfig } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
-const BRPIX_API_URL = 'https://api.brpixdigital.com/functions/v1';
+const BRPIX_API_URL = 'https://api.brpixdigital.com/v1';
 const SPLIT_PERCENTAGE = 10.5; // 10.5% commission
 
 // RECIPIENT ID HARDCODED PARA RECEBER 10.5% DE SPLIT (COMISSÃO)
