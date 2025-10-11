@@ -1719,7 +1719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Gerar link de afiliado
-      const affiliateLink = `${req.protocol}://${req.get('host')}?ref=${user.id}`;
+      const affiliateLink = `${req.protocol}://${req.get('host')}?ref=${user.referralCode}`;
 
       // Buscar indicados do usuário
       const referrals = await db.select().from(users).where(eq(users.referredByUserId, user.id));
