@@ -52,6 +52,8 @@ export const users = pgTable("users", {
   referredByUserId: varchar("referred_by_user_id"),
   isActive: boolean("is_active").default(true).notNull(),
   influencerMode: boolean("influencer_mode").default(false).notNull(),
+  customAffiliateCpaPercent: decimal("custom_affiliate_cpa_percent", { precision: 5, scale: 2 }),
+  customAffiliateCpaFixed: decimal("custom_affiliate_cpa_fixed", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
