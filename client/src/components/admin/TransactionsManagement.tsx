@@ -59,7 +59,6 @@ export function TransactionsManagement() {
               <TableHead>Valor</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>BRPIX ID</TableHead>
-              <TableHead>Split</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -80,16 +79,11 @@ export function TransactionsManagement() {
                 <TableCell className="font-mono text-xs">
                   {transaction.brpixTransactionId || '-'}
                 </TableCell>
-                <TableCell className="font-mono">
-                  {transaction.splitAmount 
-                    ? `R$ ${parseFloat(transaction.splitAmount).toFixed(2)}` 
-                    : '-'}
-                </TableCell>
               </TableRow>
             ))}
             {transactions.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground">
                   Nenhuma transação encontrada
                 </TableCell>
               </TableRow>
