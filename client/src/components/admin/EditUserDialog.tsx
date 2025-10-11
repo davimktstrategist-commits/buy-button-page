@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,14 +19,14 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const [balance, setBalance] = useState(user?.balance || "0.00");
-  const [influencerMode, setInfluencerMode] = useState(user?.influencerMode || false);
-  const [customCpaPercent, setCustomCpaPercent] = useState(user?.customAffiliateCpaPercent || "");
-  const [customCpaFixed, setCustomCpaFixed] = useState(user?.customAffiliateCpaFixed || "");
+  const [balance, setBalance] = useState("0.00");
+  const [influencerMode, setInfluencerMode] = useState(false);
+  const [customCpaPercent, setCustomCpaPercent] = useState("");
+  const [customCpaFixed, setCustomCpaFixed] = useState("");
   const [password, setPassword] = useState("");
 
   // Reset form when user changes
-  useState(() => {
+  useEffect(() => {
     if (user) {
       setBalance(user.balance || "0.00");
       setInfluencerMode(user.influencerMode || false);
@@ -34,7 +34,7 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       setCustomCpaFixed(user.customAffiliateCpaFixed || "");
       setPassword("");
     }
-  });
+  }, [user]);
 
   const updateUserMutation = useMutation({
     mutationFn: async (data: any) => {
