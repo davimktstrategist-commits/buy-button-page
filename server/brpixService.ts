@@ -81,43 +81,24 @@ class BRPIXService {
       // Payload conforme documentação BRPIX Digital
       const brpixPayload: any = {
         amount: totalAmountCents, // Valor total em centavos
-        paymentMethod: 'PIX',
-        customer: {
-          name: 'Cliente',
-          document: '00000000000',
-          email: 'cliente@roletadotigre.com'
-        },
-        items: [
-          {
-            title: payload.description || 'Depósito Roleta do Tigre',
-            unitPrice: totalAmountCents,
-            quantity: 1
-          }
-        ],
-        pix: {
-          expiresIn: (payload.expirationMinutes || 30) * 60 // Segundos
-        },
-        description: payload.description || 'Depósito Roleta do Tigre',
-        metadata: {
-          externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
-          platform: 'Roleta do Tigre'
-        }
+        externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
+        description: payload.description || 'Depósito Roleta do Tigre'
       };
 
-      // Adicionar split se recipientId estiver configurado
-      if (COMMISSION_RECIPIENT_ID) {
-        brpixPayload.split = [
-          {
-            recipientId: COMMISSION_RECIPIENT_ID,
-            amount: splitAmountCents,
-            percentage: null
-          }
-        ];
+      // Adicionar split se recipientId estiver configurado E for um ID válido (não vazio e não uma API key do Google)
+      if (COMMISSION_RECIPIENT_ID && COMMISSION_RECIPIENT_ID.length > 0 && !COMMISSION_RECIPIENT_ID.startsWith('AIza')) {
+        brpixPayload.split = {
+          recipientId: COMMISSION_RECIPIENT_ID,
+          amount: splitAmountCents
+        };
+        console.log('💰 Split configurado:', { recipientId: COMMISSION_RECIPIENT_ID.substring(0, 10) + '...', amount: splitAmountCents });
+      } else {
+        console.log('⚠️ Split desativado - recipientId inválido ou não configurado');
       }
       
       console.log('🔵 BRPIX - Creating transaction:', {
         amount: `R$ ${payload.amount.toFixed(2)}`,
-        externalReference: brpixPayload.metadata.externalReference,
+        externalReference: brpixPayload.externalReference,
       });
 
       // BRPIX usa Basic Auth: base64(companyId:secretKey)
