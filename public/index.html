@@ -1684,7 +1684,7 @@
      const urlParams = new URLSearchParams(window.location.search);
      const restoreSessionId = urlParams.get('restore');
      
-     // Obter ou criar sessionId
+     // Obter sessionId (NÃO criar automaticamente)
      let sessionId = localStorage.getItem('sessionId');
      
      if (restoreSessionId) {
@@ -1694,12 +1694,10 @@
        console.log('✅ Sessão restaurada via URL:', sessionId);
        // Remover parâmetro da URL sem recarregar
        window.history.replaceState({}, document.title, window.location.pathname);
-     } else if (!sessionId) {
-       sessionId = generateUUID();
-       localStorage.setItem('sessionId', sessionId);
-       console.log('Novo sessionId criado:', sessionId);
-     } else {
+     } else if (sessionId) {
        console.log('SessionId recuperado:', sessionId);
+     } else {
+       console.log('⚠️ Nenhuma sessão - login obrigatório');
      }
 
      // Armazenar sessionId globalmente
@@ -4698,9 +4696,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 userNameElement.textContent = userName || user.email;
             }
             
-            // Habilitar botões de aposta
+            // Habilitar TODOS os botões de jogo
             DOMElements.plusButton.disabled = false;
             DOMElements.minusButton.disabled = false;
+            if (DOMElements.spinButton) {
+                DOMElements.spinButton.disabled = false;
+            }
             
             updateDisplay();
         };
@@ -4738,8 +4739,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const init = () => {
             checkUserSession();
-            // Sistema anônimo - sempre ativar como "logado"
-            state.isLoggedIn = true;
+            
+            // OBRIGATÓRIO: Se não está logado, mostrar modal de login
+            if (!state.isLoggedIn) {
+                setTimeout(() => {
+                    showAuthModal('login');
+                    showNotification('Faça login ou crie uma conta para jogar! 🎮');
+                }, 500);
+                
+                // Desabilitar botões até fazer login
+                DOMElements.plusButton.disabled = true;
+                DOMElements.minusButton.disabled = true;
+                DOMElements.spinButton.disabled = true;
+            }
+            
             updateDisplay();
             initEventListeners();
             createLabels('roleta1-labels', state.roleta1Map.length, 35);
