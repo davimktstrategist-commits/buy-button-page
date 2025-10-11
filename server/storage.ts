@@ -18,7 +18,7 @@ import {
   type InsertRouletteConfig,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, sql, and } from "drizzle-orm";
+import { eq, desc, sql, and, or, ilike, count } from "drizzle-orm";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -62,6 +62,7 @@ export interface IStorage {
   
   // Admin stats
   getAllUsers(): Promise<User[]>;
+  getUsersPaginated(page: number, limit: number, search?: string): Promise<{ users: User[]; total: number }>;
   getDashboardStats(): Promise<any>;
   getDeposits7Days(): Promise<any>;
   getTopBalances(): Promise<any>;
@@ -366,6 +367,40 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(users)
       .orderBy(desc(users.createdAt));
+  }
+
+  async getUsersPaginated(page: number, limit: number, search?: string): Promise<{ users: User[]; total: number }> {
+    const offset = (page - 1) * limit;
+    
+    // Build WHERE clause for search - includes email, firstName, lastName, and full name
+    const searchCondition = search 
+      ? or(
+          ilike(users.email, `%${search}%`),
+          ilike(users.firstName, `%${search}%`),
+          ilike(users.lastName, `%${search}%`),
+          sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) ILIKE ${`%${search}%`}`
+        )
+      : undefined;
+    
+    // Get total count
+    const [{ count: totalCount }] = await db
+      .select({ count: count() })
+      .from(users)
+      .where(searchCondition);
+    
+    // Get paginated users
+    const usersList = await db
+      .select()
+      .from(users)
+      .where(searchCondition)
+      .orderBy(desc(users.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      users: usersList,
+      total: Number(totalCount)
+    };
   }
 
   async getDashboardStats(): Promise<any> {

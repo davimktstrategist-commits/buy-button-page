@@ -3,33 +3,88 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil } from "lucide-react";
+import { Pencil, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { EditUserDialog } from "./EditUserDialog";
 import type { User } from "@shared/schema";
 
 export function UsersManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const limit = 20;
 
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ['/api/admin/users'],
+  const { data, isLoading } = useQuery<{ users: User[]; total: number }>({
+    queryKey: ['/api/admin/users', page, search],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: limit.toString(),
+        ...(search && { search }),
+      });
+      const response = await fetch(`/api/admin/users?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch users');
+      return response.json();
+    },
   });
+
+  const users = data?.users || [];
+  const totalPages = Math.ceil((data?.total || 0) / limit);
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
     setDialogOpen(true);
   };
 
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setPage(1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Usuários Cadastrados</CardTitle>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <CardTitle>Usuários Cadastrados</CardTitle>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por email ou nome..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="pl-9 w-64"
+                  data-testid="input-search-users"
+                />
+              </div>
+              <Button onClick={handleSearch} size="default" data-testid="button-search">
+                Buscar
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <Table>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+          ) : (
+            <>
+              <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
@@ -91,6 +146,38 @@ export function UsersManagement() {
               )}
             </TableBody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between gap-4 mt-4">
+              <div className="text-sm text-muted-foreground">
+                Página {page} de {totalPages} ({data?.total || 0} usuários)
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  data-testid="button-prev-page"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Anterior
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  data-testid="button-next-page"
+                >
+                  Próxima
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+            </>
+          )}
         </CardContent>
       </Card>
 
