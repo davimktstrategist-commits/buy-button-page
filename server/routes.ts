@@ -1416,6 +1416,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Listar afiliados e estatísticas
+  app.get('/ajax/admin_affiliates.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      // Buscar todos os usuários que têm indicados
+      const allUsers = await db.select().from(users);
+      
+      const affiliatesData = [];
+      
+      for (const user of allUsers) {
+        // Buscar indicados deste usuário
+        const referrals = await db.select().from(users).where(eq(users.referredByUserId, user.id));
+        
+        if (referrals.length > 0) {
+          // Contar depositantes (usuários que fizeram depósito)
+          const depositantes = referrals.filter(r => parseFloat(r.totalDeposited || '0') > 0).length;
+          
+          // Calcular comissões (3% dos depósitos dos indicados)
+          let totalCommission = 0;
+          for (const referral of referrals) {
+            const depositValue = parseFloat(referral.totalDeposited || '0');
+            totalCommission += depositValue * 0.03;
+          }
+          
+          affiliatesData.push({
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            referralCode: user.referralCode || user.id,
+            totalReferrals: referrals.length,
+            activeReferrals: depositantes,
+            totalCommission: totalCommission.toFixed(2),
+            affiliateLink: `${req.protocol}://${req.get('host')}?ref=${user.id}`,
+            createdAt: user.createdAt
+          });
+        }
+      }
+      
+      // Ordenar por total de comissões (maior para menor)
+      affiliatesData.sort((a, b) => parseFloat(b.totalCommission) - parseFloat(a.totalCommission));
+      
+      res.json(affiliatesData);
+    } catch (error) {
+      console.error("Error loading affiliates:", error);
+      res.status(500).json({ error: "Erro ao carregar afiliados" });
+    }
+  });
+
   // Servir arquivos estáticos da pasta public
   app.use(express.static(path.join(process.cwd(), 'public')));
 

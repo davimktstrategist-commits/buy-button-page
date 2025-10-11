@@ -296,9 +296,11 @@
             font-weight: 500;
         }
 
-        .badge-pending { background: rgba(245, 158, 11, 0.1); color: var(--accent-yellow); }
-        .badge-completed { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); }
-        .badge-failed { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); }
+        .badge-pending { background: rgba(245, 158, 11, 0.1); color: var(--accent-yellow); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-processing { background: rgba(59, 130, 246, 0.1); color: var(--accent-blue); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-completed { background: rgba(16, 185, 129, 0.1); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-failed { background: rgba(239, 68, 68, 0.1); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-cancelled { background: rgba(148, 163, 184, 0.1); color: var(--text-secondary); border: 1px solid rgba(148, 163, 184, 0.3); }
 
         /* Forms */
         .form-group {
@@ -625,6 +627,9 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Lista de Usuários</h3>
+                            <button class="btn btn-secondary" onclick="exportUsersCSV()" style="padding: 8px 16px;">
+                                📊 Exportar CSV
+                            </button>
                         </div>
                         <table>
                             <thead>
@@ -650,11 +655,31 @@
                 <div id="affiliatesPage" class="page-content hidden">
                     <div class="table-container">
                         <div class="table-header">
-                            <h3>Sistema de Afiliados</h3>
+                            <div>
+                                <h3>Sistema de Afiliados</h3>
+                                <p style="color: var(--text-secondary); margin-top: 8px;">Gerencie afiliados e suas comissões (3% sobre depósitos dos indicados)</p>
+                            </div>
+                            <button class="btn btn-secondary" onclick="exportAffiliatesCSV()" style="padding: 8px 16px;">
+                                📊 Exportar CSV
+                            </button>
                         </div>
-                        <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
-                            Sistema de afiliados em desenvolvimento
-                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Afiliado</th>
+                                    <th>Email</th>
+                                    <th>Código Referência</th>
+                                    <th>Total Indicados</th>
+                                    <th>Depositantes Ativos</th>
+                                    <th>Comissões Geradas</th>
+                                    <th>Link de Afiliado</th>
+                                    <th>Data Cadastro</th>
+                                </tr>
+                            </thead>
+                            <tbody id="affiliatesTableBody">
+                                <tr><td colspan="8" style="text-align: center;">Carregando...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -663,6 +688,9 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Depósitos</h3>
+                            <button class="btn btn-secondary" onclick="exportDepositsCSV()" style="padding: 8px 16px;">
+                                📊 Exportar CSV
+                            </button>
                         </div>
                         <table>
                             <thead>
@@ -687,6 +715,9 @@
                     <div class="table-container">
                         <div class="table-header">
                             <h3>Solicitações de Saque</h3>
+                            <button class="btn btn-secondary" onclick="exportWithdrawalsCSV()" style="padding: 8px 16px;">
+                                📊 Exportar CSV
+                            </button>
                         </div>
                         <table>
                             <thead>
@@ -905,6 +936,7 @@
                 
                 // Load data for each page
                 if (page === 'users') loadUsers();
+                else if (page === 'affiliates') loadAffiliates();
                 else if (page === 'deposits') loadDeposits();
                 else if (page === 'withdrawals') loadWithdrawals();
                 else if (page === 'roulette') loadRouletteConfig();
@@ -1143,6 +1175,50 @@
             } catch (error) {
                 console.error('Error loading users:', error);
             }
+        }
+
+        // Load Affiliates
+        async function loadAffiliates() {
+            try {
+                const response = await fetch('/ajax/admin_affiliates.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const affiliates = await response.json();
+                
+                const tbody = document.getElementById('affiliatesTableBody');
+                
+                if (affiliates.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">Nenhum afiliado encontrado</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = affiliates.map(aff => `
+                    <tr>
+                        <td>${aff.firstName || '-'} ${aff.lastName || ''}</td>
+                        <td>${aff.email || '<span style="color: var(--text-secondary);">-</span>'}</td>
+                        <td><code style="color: var(--accent-purple);">${aff.referralCode.substring(0, 12)}...</code></td>
+                        <td><strong style="color: var(--accent-blue);">${aff.totalReferrals}</strong></td>
+                        <td><strong style="color: var(--accent-green);">${aff.activeReferrals}</strong></td>
+                        <td><strong style="color: var(--accent-yellow);">${formatMoney(aff.totalCommission)}</strong></td>
+                        <td>
+                            <button class="btn btn-secondary" onclick="copyToClipboard('${aff.affiliateLink}')" style="padding: 6px 12px; font-size: 12px;">
+                                📋 Copiar Link
+                            </button>
+                        </td>
+                        <td style="color: var(--text-secondary);">${formatDate(aff.createdAt)}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading affiliates:', error);
+            }
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Link copiado para a área de transferência!');
+            }).catch(err => {
+                console.error('Erro ao copiar:', err);
+            });
         }
 
         // Load Deposits
@@ -1435,6 +1511,100 @@
                 'cancelled': 'Cancelado'
             };
             return labels[status] || status;
+        }
+
+        // CSV Export Functions
+        function downloadCSV(filename, csvContent) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function exportUsersCSV() {
+            try {
+                const response = await fetch('/ajax/admin_users.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const users = await response.json();
+                
+                let csv = 'ID,Email,Nome,Sobrenome,Saldo,Total Depositado,Total Apostado,Total Ganho,Data Cadastro\n';
+                
+                users.forEach(user => {
+                    csv += `"${user.id}","${user.email || 'Anônimo'}","${user.firstName || ''}","${user.lastName || ''}","${user.balance}","${user.totalDeposited}","${user.totalBet}","${user.totalWon}","${formatDate(user.createdAt)}"\n`;
+                });
+                
+                downloadCSV(`usuarios_${new Date().toISOString().split('T')[0]}.csv`, csv);
+            } catch (error) {
+                console.error('Error exporting users:', error);
+                alert('Erro ao exportar usuários!');
+            }
+        }
+
+        async function exportAffiliatesCSV() {
+            try {
+                const response = await fetch('/ajax/admin_affiliates.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const affiliates = await response.json();
+                
+                let csv = 'Nome,Email,Código Referência,Total Indicados,Depositantes Ativos,Comissões Geradas,Link Afiliado,Data Cadastro\n';
+                
+                affiliates.forEach(aff => {
+                    csv += `"${aff.firstName || ''} ${aff.lastName || ''}","${aff.email || ''}","${aff.referralCode}","${aff.totalReferrals}","${aff.activeReferrals}","${aff.totalCommission}","${aff.affiliateLink}","${formatDate(aff.createdAt)}"\n`;
+                });
+                
+                downloadCSV(`afiliados_${new Date().toISOString().split('T')[0]}.csv`, csv);
+            } catch (error) {
+                console.error('Error exporting affiliates:', error);
+                alert('Erro ao exportar afiliados!');
+            }
+        }
+
+        async function exportDepositsCSV() {
+            try {
+                const response = await fetch('/ajax/admin_transactions.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const transactions = await response.json();
+                const deposits = transactions.filter(t => t.type === 'deposit');
+                
+                let csv = 'ID,Usuário ID,Valor,Status,ID BRPIX,Data\n';
+                
+                deposits.forEach(tx => {
+                    csv += `"${tx.id}","${tx.userId}","${tx.amount}","${getStatusLabel(tx.status)}","${tx.brpixTransactionId || '-'}","${formatDate(tx.createdAt)}"\n`;
+                });
+                
+                downloadCSV(`depositos_${new Date().toISOString().split('T')[0]}.csv`, csv);
+            } catch (error) {
+                console.error('Error exporting deposits:', error);
+                alert('Erro ao exportar depósitos!');
+            }
+        }
+
+        async function exportWithdrawalsCSV() {
+            try {
+                const response = await fetch('/ajax/admin_withdrawals.php', {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                const withdrawals = await response.json();
+                
+                let csv = 'ID,Usuário ID,Valor,Chave PIX,Status,Data\n';
+                
+                withdrawals.forEach(w => {
+                    csv += `"${w.id}","${w.userId}","${w.amount}","${w.pixKey}","${getStatusLabel(w.status)}","${formatDate(w.createdAt)}"\n`;
+                });
+                
+                downloadCSV(`saques_${new Date().toISOString().split('T')[0]}.csv`, csv);
+            } catch (error) {
+                console.error('Error exporting withdrawals:', error);
+                alert('Erro ao exportar saques!');
+            }
         }
     </script>
 </body>
