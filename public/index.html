@@ -2934,7 +2934,7 @@
             const value = parseFloat(amountInput.value.replace(/[^\d,]/g, '').replace(',', '.'));
             if (isNaN(value) || value < DEPOSITO_MIN) {
                 if (typeof Notiflix !== 'undefined') {
-                    Notiflix.Notify.failure(`O valor mínimo para depósito é R$ ${DEPOSITO_MIN.toFixed(2).replace('.', ',')}`);
+                    Notiflix.Notify.failure(`❌ O valor mínimo para depósito é R$ ${DEPOSITO_MIN.toFixed(2).replace('.', ',')}`);
                 }
                 return;
             }
@@ -2983,13 +2983,13 @@
                     startPaymentPolling(data.transactionId);
                 } else {
                     if (typeof Notiflix !== 'undefined') {
-                        Notiflix.Notify.failure(data.error || 'Erro ao gerar QR Code.');
+                        Notiflix.Notify.failure('❌ ' + (data.error || 'Erro ao gerar QR Code.'));
                     }
                     form.style.display = 'block';
                 }
             } catch (err) {
                 if (typeof Notiflix !== 'undefined') {
-                    Notiflix.Notify.failure('Erro de comunicação com o servidor.');
+                    Notiflix.Notify.failure('❌ Erro de comunicação com o servidor.');
                 }
                 form.style.display = 'block';
             } finally {
@@ -3032,15 +3032,15 @@
                 });
                 const result = await response.json();
                 if (result.success) {
-                    if (typeof Notiflix !== 'undefined') Notiflix.Notify.success(result.message);
+                    if (typeof Notiflix !== 'undefined') Notiflix.Notify.success('✅ ' + result.message);
                     setTimeout(() => {
                         window.location.reload();
                     }, 2000);
                 } else {
-                    if (typeof Notiflix !== 'undefined') Notiflix.Notify.failure(result.message || 'Erro desconhecido.');
+                    if (typeof Notiflix !== 'undefined') Notiflix.Notify.failure('❌ ' + (result.message || 'Erro desconhecido.'));
                 }
             } catch (error) {
-                if (typeof Notiflix !== 'undefined') Notiflix.Notify.failure(error.message || 'Erro de conexão.');
+                if (typeof Notiflix !== 'undefined') Notiflix.Notify.failure('❌ ' + (error.message || 'Erro de conexão.'));
             } finally {
                 if (typeof Notiflix !== 'undefined') Notiflix.Loading.remove();
             }
@@ -3056,14 +3056,14 @@
             navigator.clipboard.writeText(qrCodeInput.value).then(() => {
                 copyButton.innerHTML = '<i class="bi bi-check-lg"></i> Copiado!';
                 if (typeof Notiflix !== 'undefined') {
-                    Notiflix.Notify.success('Código PIX copiado com sucesso!');
+                    Notiflix.Notify.success('✅ Código PIX copiado com sucesso!');
                 }
                 setTimeout(() => {
                     copyButton.innerHTML = originalButtonHTML;
                 }, 2500);
             }).catch(err => {
                 if (typeof Notiflix !== 'undefined') {
-                    Notiflix.Notify.failure('Não foi possível copiar o código. Tente manualmente.');
+                    Notiflix.Notify.failure('❌ Não foi possível copiar o código. Tente manualmente.');
                 }
             });
         });
@@ -3466,7 +3466,12 @@
 window.showNotification = (message, isError = false) => {
     const notificationElement = document.getElementById('notification');
     if (notificationElement) {
-        notificationElement.textContent = message;
+        // Adicionar emoji se a mensagem ainda não tiver
+        const hasEmoji = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|✅|❌|⚠️|💰|🎉|🏆|✨/u.test(message);
+        const icon = isError ? '❌ ' : '✅ ';
+        const finalMessage = hasEmoji ? message : icon + message;
+        
+        notificationElement.textContent = finalMessage;
         notificationElement.className = isError ? 'error' : '';
         notificationElement.style.display = 'block';
         setTimeout(() => { notificationElement.style.display = 'none'; }, 3000);
