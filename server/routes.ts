@@ -7,7 +7,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
 import { db } from "./db";
 import { users, transactions } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Admin token storage (in-memory)
@@ -45,7 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User registration and login (for HTML game)
   app.post('/ajax/auth.php', async (req, res) => {
     try {
-      const { action, nome_completo, email, telefone, senha } = req.body;
+      const { action, nome_completo, email, telefone, senha, referralCode } = req.body;
       
       if (action === 'register') {
         // Validações
@@ -63,10 +63,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json({ success: false, message: 'Email já cadastrado' });
         }
         
+        // Verificar se há código de afiliado e se é válido
+        let affiliateUser = null;
+        if (referralCode) {
+          const { users } = await import('@shared/schema');
+          const affiliateUsers = await db.select().from(users)
+            .where(eq(users.referralCode, referralCode))
+            .limit(1);
+          
+          if (affiliateUsers.length > 0) {
+            affiliateUser = affiliateUsers[0];
+          }
+        }
+        
         // Separar nome completo em firstName e lastName
         const nameParts = nome_completo.trim().split(' ');
         const firstName = nameParts[0] || '';
         const lastName = nameParts.slice(1).join(' ') || '';
+        
+        // Gerar código de afiliado único para o novo usuário
+        const newReferralCode = randomBytes(4).toString('hex').toUpperCase();
         
         // Criar usuário
         const newUser = await storage.createUser({
@@ -75,7 +91,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           lastName,
           phone: telefone.replace(/\D/g, ''),
           password: senha, // Em produção, usar hash
+          referralCode: newReferralCode,
+          referredByUserId: affiliateUser?.id || null,
         });
+        
+        // Se foi indicado por alguém, criar registro de afiliado
+        if (affiliateUser) {
+          const { affiliateReferrals } = await import('@shared/schema');
+          await db.insert(affiliateReferrals).values({
+            affiliateUserId: affiliateUser.id,
+            referredUserId: newUser.id,
+            referralCode: referralCode,
+            totalCommissionEarned: '0.00',
+            isActive: true,
+          });
+          console.log('✅ Referral criado:', affiliateUser.id, '→', newUser.id);
+        }
         
         // Migrate anonymous user data if exists
         const oldSessionId = req.body.sessionId || req.headers['x-session-id'] as string;
@@ -790,6 +821,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ROTAS DE AFILIADOS =====
+  
+  // Estatísticas de afiliados
+  app.get('/api/admin/affiliates/stats', requireAdminToken, async (req: any, res) => {
+    try {
+      const { affiliateReferrals, affiliateCommissions, users } = await import('@shared/schema');
+      
+      // Total de afiliados (usuários com referralCode)
+      const allUsers = await db.select().from(users);
+      const totalAffiliates = allUsers.filter(u => u.referralCode).length;
+      
+      // Afiliados ativos (que têm indicações)
+      const activeReferrals = await db.select({ affiliateUserId: affiliateReferrals.affiliateUserId })
+        .from(affiliateReferrals)
+        .groupBy(affiliateReferrals.affiliateUserId);
+      const activeAffiliates = activeReferrals.length;
+      
+      // Total de indicações
+      const totalReferralsData = await db.select().from(affiliateReferrals);
+      const totalReferrals = totalReferralsData.length;
+      
+      // Total de comissões pagas
+      const paidCommissions = await db.select().from(affiliateCommissions)
+        .where(eq(affiliateCommissions.status, 'paid'));
+      const totalCommissionsPaid = paidCommissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
+      
+      // Comissões pendentes
+      const pendingCommissions = await db.select().from(affiliateCommissions)
+        .where(eq(affiliateCommissions.status, 'pending'));
+      const totalPendingCommissions = pendingCommissions.reduce((sum, c) => sum + parseFloat(c.commissionAmount), 0);
+      
+      res.json({
+        totalAffiliates,
+        activeAffiliates,
+        totalCommissionsPaid: totalCommissionsPaid.toFixed(2).replace('.', ','),
+        totalReferrals,
+        pendingCommissions: totalPendingCommissions.toFixed(2).replace('.', ','),
+      });
+    } catch (error) {
+      console.error("Error fetching affiliate stats:", error);
+      res.status(500).json({ error: "Erro ao buscar estatísticas de afiliados" });
+    }
+  });
+
+  // Lista de afiliados
+  app.get('/api/admin/affiliates/list', requireAdminToken, async (req: any, res) => {
+    try {
+      const { users, affiliateReferrals } = await import('@shared/schema');
+      
+      // Buscar todos os usuários com código de afiliado
+      const allUsers = await db.select().from(users);
+      const affiliateUsers = allUsers.filter(u => u.referralCode);
+      
+      const affiliatesList = await Promise.all(affiliateUsers.map(async (user) => {
+        // Buscar todas as indicações deste afiliado
+        const referrals = await db.select()
+          .from(affiliateReferrals)
+          .where(eq(affiliateReferrals.affiliateUserId, user.id));
+        
+        const activeReferrals = referrals.filter(r => r.isActive).length;
+        const totalCommission = referrals.reduce((sum, r) => sum + parseFloat(r.totalCommissionEarned || '0'), 0);
+        
+        return {
+          userId: user.id,
+          userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+          email: user.email || '',
+          referralCode: user.referralCode || '',
+          totalReferrals: referrals.length,
+          totalCommissionEarned: totalCommission.toFixed(2).replace('.', ','),
+          activeReferrals,
+          createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+        };
+      }));
+      
+      res.json(affiliatesList);
+    } catch (error) {
+      console.error("Error fetching affiliates list:", error);
+      res.status(500).json({ error: "Erro ao buscar lista de afiliados" });
+    }
+  });
+
+  // Histórico de comissões
+  app.get('/api/admin/affiliates/commissions', requireAdminToken, async (req: any, res) => {
+    try {
+      const { affiliateCommissions, users } = await import('@shared/schema');
+      
+      const commissions = await db.select().from(affiliateCommissions)
+        .orderBy(desc(affiliateCommissions.createdAt))
+        .limit(50);
+      
+      const commissionsWithNames = await Promise.all(commissions.map(async (commission) => {
+        const affiliateUser = await db.select().from(users).where(eq(users.id, commission.affiliateUserId)).limit(1);
+        const referredUser = await db.select().from(users).where(eq(users.id, commission.referredUserId)).limit(1);
+        
+        const affiliateName = affiliateUser[0] ? 
+          `${affiliateUser[0].firstName || ''} ${affiliateUser[0].lastName || ''}`.trim() || affiliateUser[0].email : 
+          'Desconhecido';
+        
+        const referredName = referredUser[0] ? 
+          `${referredUser[0].firstName || ''} ${referredUser[0].lastName || ''}`.trim() || referredUser[0].email : 
+          'Desconhecido';
+        
+        return {
+          id: commission.id,
+          affiliateUserName: affiliateName,
+          referredUserName: referredName,
+          commissionAmount: parseFloat(commission.commissionAmount).toFixed(2).replace('.', ','),
+          depositAmount: parseFloat(commission.depositAmount || '0').toFixed(2).replace('.', ','),
+          commissionType: commission.commissionType,
+          createdAt: commission.createdAt.toISOString(),
+          status: commission.status,
+        };
+      }));
+      
+      res.json(commissionsWithNames);
+    } catch (error) {
+      console.error("Error fetching commissions history:", error);
+      res.status(500).json({ error: "Erro ao buscar histórico de comissões" });
+    }
+  });
+
   // ===== ROTAS COMPATÍVEIS COM FRONTEND HTML ORIGINAL =====
   
   // Lista de ganhadores recentes (winners carousel)
@@ -1232,6 +1384,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
               newBalance: user?.balance,
               newTotalDeposited: user?.totalDeposited
             });
+            
+            // 💰 PROCESSAR COMISSÃO DE AFILIADO (CPA)
+            if (user?.referredByUserId) {
+              try {
+                const { systemConfig, affiliateCommissions, affiliateReferrals } = await import('@shared/schema');
+                
+                // Buscar configurações de CPA
+                const configs = await db.select().from(systemConfig).where(
+                  sql`${systemConfig.key} IN ('affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+                );
+                
+                let cpaPercent = 0;
+                let cpaFixed = 0;
+                configs.forEach(config => {
+                  if (config.key === 'affiliate_cpa_percent') cpaPercent = parseFloat(config.value || '0');
+                  if (config.key === 'affiliate_cpa_fixed') cpaFixed = parseFloat(config.value || '0');
+                });
+                
+                // Calcular comissão
+                const depositAmount = parseFloat(transaction.amount);
+                const commissionPercent = (depositAmount * cpaPercent) / 100;
+                const totalCommission = commissionPercent + cpaFixed;
+                
+                if (totalCommission > 0) {
+                  // Criar registro de comissão
+                  await db.insert(affiliateCommissions).values({
+                    affiliateUserId: user.referredByUserId,
+                    referredUserId: userId,
+                    transactionId: transactionId,
+                    commissionAmount: totalCommission.toFixed(2),
+                    depositAmount: depositAmount.toFixed(2),
+                    commissionType: `${cpaPercent}% + R$ ${cpaFixed.toFixed(2)}`,
+                    status: 'paid',
+                  });
+                  
+                  // Creditar comissão no saldo do afiliado
+                  await storage.updateUserBalance(user.referredByUserId, totalCommission);
+                  
+                  // Atualizar total ganho no affiliateReferrals
+                  await db.update(affiliateReferrals)
+                    .set({
+                      totalCommissionEarned: sql`${affiliateReferrals.totalCommissionEarned} + ${totalCommission}`,
+                      updatedAt: new Date()
+                    })
+                    .where(
+                      sql`${affiliateReferrals.affiliateUserId} = ${user.referredByUserId} AND ${affiliateReferrals.referredUserId} = ${userId}`
+                    );
+                  
+                  console.log('💰 Comissão CPA creditada!', {
+                    affiliateUserId: user.referredByUserId,
+                    referredUserId: userId,
+                    depositAmount,
+                    commission: totalCommission,
+                    type: `${cpaPercent}% + R$ ${cpaFixed}`
+                  });
+                }
+              } catch (commissionError) {
+                console.error('❌ Erro ao processar comissão de afiliado:', commissionError);
+                // Não falhar a transação principal se houver erro na comissão
+              }
+            }
           } else {
             console.log('ℹ️ Transação já foi creditada anteriormente (race condition evitada)');
           }

@@ -172,8 +172,9 @@ export const affiliateCommissions = pgTable("affiliate_commissions", {
   referredUserId: varchar("referred_user_id").notNull().references(() => users.id),
   transactionId: varchar("transaction_id").notNull().references(() => transactions.id),
   commissionAmount: decimal("commission_amount", { precision: 10, scale: 2 }).notNull(),
-  commissionPercentage: decimal("commission_percentage", { precision: 5, scale: 2 }).default('5.00').notNull(),
-  isPaid: boolean("is_paid").default(false).notNull(),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  commissionType: varchar("commission_type"), // Ex: "10% + R$ 5.00"
+  status: varchar("status").default('paid').notNull(), // 'paid' or 'pending'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [

@@ -24,6 +24,7 @@ import { UsersManagement } from "@/components/admin/UsersManagement";
 import { TransactionsManagement } from "@/components/admin/TransactionsManagement";
 import { WithdrawalsManagement } from "@/components/admin/WithdrawalsManagement";
 import { GeneralSettings } from "@/components/admin/GeneralSettings";
+import { AffiliatesManagement } from "@/components/admin/AffiliatesManagement";
 
 interface DashboardStats {
   totalUsers: number;
@@ -442,16 +443,7 @@ export default function AdminDashboard() {
           )}
 
           {activeSection === 'users' && <UsersManagement />}
-          {activeSection === 'affiliates' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Gestão de Afiliados</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Sistema de afiliados em desenvolvimento</p>
-              </CardContent>
-            </Card>
-          )}
+          {activeSection === 'affiliates' && <AffiliatesManagement />}
           {activeSection === 'deposits' && <TransactionsManagement />}
           {activeSection === 'withdrawals' && <WithdrawalsManagement />}
           {activeSection === 'roulette' && <RouletteSettings />}
