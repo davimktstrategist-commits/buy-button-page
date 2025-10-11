@@ -194,14 +194,16 @@ class BRPIXService {
       console.log('✅ BRPIX Transaction created:', data.id || data.transactionId);
 
       // Mapear resposta conforme formato da BRPIX Digital
+      const pixQrCode = data.pix?.qrcode || data.pix?.qrCode || data.qrCode || '';
+      
       return {
-        id: data.id || data.transactionId || data.transaction?.id,
+        id: data.id || data.transactionId,
         amount: payload.amount, // Retornar em reais (não centavos)
         status: data.status || 'pending',
-        qrCode: data.qrCode || data.pix?.qrCode || data.pixQrCode || '',
-        qrCodeImage: data.qrCodeImage || data.pix?.qrCodeImage || data.pixQrCodeImage || '',
-        copyPaste: data.copyPaste || data.pix?.copyPaste || data.pix?.brcode || data.pixCopyPaste || '',
-        expiresAt: data.expiresAt || data.pix?.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        qrCode: pixQrCode, // Código PIX copia e cola
+        qrCodeImage: pixQrCode ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(pixQrCode)}` : '',
+        copyPaste: pixQrCode, // Mesmo valor do qrCode
+        expiresAt: data.pix?.expirationDate || data.pix?.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       };
     } catch (error) {
       console.error('❌ BRPIX create transaction error:', error);
