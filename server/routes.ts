@@ -716,7 +716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { systemConfig } = await import('@shared/schema');
       
       const configs = await db.select().from(systemConfig).where(
-        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed', 'brpix_secret_key', 'brpix_company_id')`
       );
 
       const configMap: any = {
@@ -726,17 +726,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         withdrawalMax: 50000,
         affiliateCpaPercent: 10,
         affiliateCpaFixed: 0,
+        brpixSecretKey: '',
+        brpixCompanyId: '',
       };
 
       configs.forEach(config => {
-        const value = parseFloat(config.value || '0');
         switch(config.key) {
-          case 'deposit_min': configMap.depositMin = value; break;
-          case 'deposit_max': configMap.depositMax = value; break;
-          case 'withdrawal_min': configMap.withdrawalMin = value; break;
-          case 'withdrawal_max': configMap.withdrawalMax = value; break;
-          case 'affiliate_cpa_percent': configMap.affiliateCpaPercent = value; break;
-          case 'affiliate_cpa_fixed': configMap.affiliateCpaFixed = value; break;
+          case 'deposit_min': configMap.depositMin = parseFloat(config.value || '0'); break;
+          case 'deposit_max': configMap.depositMax = parseFloat(config.value || '0'); break;
+          case 'withdrawal_min': configMap.withdrawalMin = parseFloat(config.value || '0'); break;
+          case 'withdrawal_max': configMap.withdrawalMax = parseFloat(config.value || '0'); break;
+          case 'affiliate_cpa_percent': configMap.affiliateCpaPercent = parseFloat(config.value || '0'); break;
+          case 'affiliate_cpa_fixed': configMap.affiliateCpaFixed = parseFloat(config.value || '0'); break;
+          case 'brpix_secret_key': configMap.brpixSecretKey = config.value || ''; break;
+          case 'brpix_company_id': configMap.brpixCompanyId = config.value || ''; break;
         }
       });
 
@@ -749,7 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/general-config', requireAdminToken, async (req: any, res) => {
     try {
-      const { depositMin, depositMax, withdrawalMin, withdrawalMax, affiliateCpaPercent, affiliateCpaFixed } = req.body;
+      const { depositMin, depositMax, withdrawalMin, withdrawalMax, affiliateCpaPercent, affiliateCpaFixed, brpixSecretKey, brpixCompanyId } = req.body;
       const { systemConfig } = await import('@shared/schema');
 
       const configsToSave = [
@@ -759,6 +762,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { key: 'withdrawal_max', value: withdrawalMax.toString(), description: 'Saque máximo' },
         { key: 'affiliate_cpa_percent', value: affiliateCpaPercent.toString(), description: 'Percentual CPA afiliados' },
         { key: 'affiliate_cpa_fixed', value: affiliateCpaFixed.toString(), description: 'Valor fixo CPA afiliados' },
+        { key: 'brpix_secret_key', value: brpixSecretKey || '', description: 'BRPIX Secret Key', encrypted: true },
+        { key: 'brpix_company_id', value: brpixCompanyId || '', description: 'BRPIX Company ID', encrypted: true },
       ];
 
       for (const config of configsToSave) {
@@ -773,7 +778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             key: config.key,
             value: config.value,
             description: config.description,
-            encrypted: false,
+            encrypted: (config as any).encrypted || false,
           });
         }
       }

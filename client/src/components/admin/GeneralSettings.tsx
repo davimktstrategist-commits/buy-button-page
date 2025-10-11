@@ -15,6 +15,8 @@ interface GeneralConfig {
   withdrawalMax: number;
   affiliateCpaPercent: number;
   affiliateCpaFixed: number;
+  brpixSecretKey?: string;
+  brpixCompanyId?: string;
 }
 
 export function GeneralSettings() {
@@ -26,6 +28,8 @@ export function GeneralSettings() {
   const [withdrawalMax, setWithdrawalMax] = useState("50000");
   const [affiliateCpaPercent, setAffiliateCpaPercent] = useState("10");
   const [affiliateCpaFixed, setAffiliateCpaFixed] = useState("0");
+  const [brpixSecretKey, setBrpixSecretKey] = useState("");
+  const [brpixCompanyId, setBrpixCompanyId] = useState("");
 
   const { data: config, isLoading } = useQuery<GeneralConfig>({
     queryKey: ['/api/admin/general-config'],
@@ -39,6 +43,8 @@ export function GeneralSettings() {
       setWithdrawalMax(config.withdrawalMax.toString());
       setAffiliateCpaPercent(config.affiliateCpaPercent.toString());
       setAffiliateCpaFixed(config.affiliateCpaFixed.toString());
+      setBrpixSecretKey(config.brpixSecretKey || "");
+      setBrpixCompanyId(config.brpixCompanyId || "");
     }
   }, [config]);
 
@@ -131,6 +137,8 @@ export function GeneralSettings() {
       withdrawalMax: withdrawalMaxNum,
       affiliateCpaPercent: affiliateCpaPercentNum,
       affiliateCpaFixed: affiliateCpaFixedNum,
+      brpixSecretKey: brpixSecretKey.trim(),
+      brpixCompanyId: brpixCompanyId.trim(),
     });
   };
 
@@ -251,6 +259,41 @@ export function GeneralSettings() {
               />
               <p className="text-xs text-muted-foreground">
                 Valor fixo por indicado que depositar
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Credenciais BRPIX */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Credenciais BRPIX</h3>
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="brpixSecretKey">Secret Key</Label>
+              <Input
+                id="brpixSecretKey"
+                type="password"
+                value={brpixSecretKey}
+                onChange={(e) => setBrpixSecretKey(e.target.value)}
+                placeholder="Digite a Secret Key da BRPIX"
+                data-testid="input-brpix-secret-key"
+              />
+              <p className="text-xs text-muted-foreground">
+                Chave secreta da API BRPIX para transações PIX
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="brpixCompanyId">Company ID</Label>
+              <Input
+                id="brpixCompanyId"
+                type="text"
+                value={brpixCompanyId}
+                onChange={(e) => setBrpixCompanyId(e.target.value)}
+                placeholder="Digite o Company ID da BRPIX"
+                data-testid="input-brpix-company-id"
+              />
+              <p className="text-xs text-muted-foreground">
+                Identificador da empresa na plataforma BRPIX
               </p>
             </div>
           </div>
