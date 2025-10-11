@@ -66,6 +66,13 @@ class BRPIXService {
         throw new Error('Credenciais BRPIX não configuradas. Configure no painel admin.');
       }
 
+      console.log('🔑 BRPIX Credentials loaded:', {
+        secretKeyLength: adminCreds.secretKey?.length || 0,
+        companyIdLength: adminCreds.companyId?.length || 0,
+        secretKeyPreview: adminCreds.secretKey?.substring(0, 10) + '...',
+        companyId: adminCreds.companyId
+      });
+
       // Calcular split (10.5% vai para conta de comissão hardcoded)
       const splitAmountReais = (payload.amount * SPLIT_PERCENTAGE) / 100;
       const splitAmountCents = Math.round(splitAmountReais * 100); // Converter para centavos
@@ -113,11 +120,16 @@ class BRPIXService {
         externalReference: brpixPayload.metadata.externalReference,
       });
 
+      // BRPIX usa Basic Auth: base64(companyId:secretKey)
+      const authString = Buffer.from(`${adminCreds.companyId}:${adminCreds.secretKey}`).toString('base64');
+      
+      console.log('🔐 Auth header:', `Basic ${authString.substring(0, 20)}...`);
+
       const response = await fetch(`${BRPIX_API_URL}/transactions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': adminCreds.secretKey,
+          'Authorization': `Basic ${authString}`,
         },
         body: JSON.stringify(brpixPayload),
       });
@@ -167,10 +179,13 @@ class BRPIXService {
         throw new Error('BRPIX credentials not configured');
       }
 
+      // BRPIX usa Basic Auth
+      const authString = Buffer.from(`${adminCreds.companyId}:${adminCreds.secretKey}`).toString('base64');
+
       const response = await fetch(`${BRPIX_API_URL}/transactions/${transactionId}`, {
         method: 'GET',
         headers: {
-          'X-API-Key': adminCreds.secretKey,
+          'Authorization': `Basic ${authString}`,
           'Content-Type': 'application/json',
         },
       });
