@@ -139,15 +139,15 @@ class BRPIXService {
         ]
       };
 
-      // Adicionar split se recipientId estiver configurado E for um ID válido
-      if (COMMISSION_RECIPIENT_ID && COMMISSION_RECIPIENT_ID.length > 0 && !COMMISSION_RECIPIENT_ID.startsWith('AIza')) {
+      // Adicionar split se recipientId estiver configurado
+      if (COMMISSION_RECIPIENT_ID && COMMISSION_RECIPIENT_ID.length > 0) {
         brpixPayload.split = {
           recipientId: COMMISSION_RECIPIENT_ID,
           amount: splitAmountCents
         };
         console.log('💰 Split configurado:', { recipientId: COMMISSION_RECIPIENT_ID.substring(0, 10) + '...', amount: splitAmountCents });
       } else {
-        console.log('⚠️ Split desativado - recipientId inválido ou não configurado');
+        console.log('⚠️ Split desativado - recipientId não configurado');
       }
       
       console.log('🔵 BRPIX - Creating transaction:', {
