@@ -757,7 +757,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
+      console.log('📊 Get history request - sessionId:', sessionId);
+      
       if (!sessionId) {
+        console.log('❌ No sessionId provided');
         return res.status(400).json({ error: "Session ID required" });
       }
 
@@ -767,6 +770,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getTransactionsByUserId(sessionId),
         storage.getWithdrawalsByUserId(sessionId)
       ]);
+      
+      console.log(`📊 Found: ${games.length} games, ${transactions.length} transactions, ${withdrawals.length} withdrawals`);
       
       // Combinar tudo em um histórico unificado
       const history: any[] = [];
@@ -817,7 +822,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ordenar por data (mais recente primeiro)
       history.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      res.json({ history: history.slice(0, 50) }); // Limitar a 50 itens
+      const limitedHistory = history.slice(0, 50);
+      console.log(`📊 Returning ${limitedHistory.length} items in history`);
+      
+      res.json({ success: true, history: limitedHistory });
     } catch (error) {
       console.error("Error getting history:", error);
       res.status(500).json({ error: "Erro ao obter histórico" });
