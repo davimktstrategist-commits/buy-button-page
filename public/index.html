@@ -344,43 +344,57 @@
           transform: translateY(0px) scale(0.98);
       }
       
-      /* BOTÃO REDONDO DE GIRO */
+      /* BOTÃO SLOT TRADICIONAL */
       .spin-round-button {
-          width: 55px;
-          height: 55px;
+          width: 65px;
+          height: 65px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
-          border: 3px solid #fff;
-          box-shadow: 0 4px 15px rgba(147, 51, 234, 0.5),
-                      inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+          background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #7c3aed 100%);
+          border: 4px solid #fff;
+          box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6),
+                      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                      inset 0 -4px 8px rgba(0, 0, 0, 0.25);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           position: relative;
           overflow: visible;
       }
       
+      .spin-round-button::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent);
+          z-index: -1;
+      }
+      
       .spin-round-button svg {
-          width: 28px;
-          height: 28px;
+          width: 32px;
+          height: 32px;
           fill: #fff;
-          filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
       }
       
       .spin-round-button:hover {
-          transform: scale(1.08);
-          box-shadow: 0 6px 20px rgba(147, 51, 234, 0.6),
-                      inset 0 -2px 6px rgba(0, 0, 0, 0.3);
+          transform: scale(1.1);
+          box-shadow: 0 8px 25px rgba(168, 85, 247, 0.8),
+                      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+                      inset 0 -4px 8px rgba(0, 0, 0, 0.25);
+          background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #9333ea 100%);
       }
       
       .spin-round-button:active {
-          transform: scale(0.95);
+          transform: scale(0.92);
+          box-shadow: 0 4px 15px rgba(168, 85, 247, 0.5),
+                      inset 0 4px 8px rgba(0, 0, 0, 0.3);
       }
       
       .spin-round-button.spinning {
-          animation: spinButton 0.5s ease-out;
+          animation: spinButton 0.6s ease-out;
       }
       
       .spin-round-button.disabled {
@@ -390,29 +404,30 @@
       }
       
       @keyframes spinButton {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% { transform: rotate(0deg) scale(1); }
+          50% { transform: rotate(180deg) scale(1.05); }
+          100% { transform: rotate(360deg) scale(1); }
       }
       
       @media (max-width: 768px) {
           .spin-round-button {
-              width: 50px;
-              height: 50px;
+              width: 58px;
+              height: 58px;
           }
           .spin-round-button svg {
-              width: 24px;
-              height: 24px;
+              width: 28px;
+              height: 28px;
           }
       }
       
       @media (max-width: 480px) {
           .spin-round-button {
-              width: 45px;
-              height: 45px;
+              width: 52px;
+              height: 52px;
           }
           .spin-round-button svg {
-              width: 22px;
-              height: 22px;
+              width: 25px;
+              height: 25px;
           }
       }
 
@@ -1741,7 +1756,7 @@
                 <button id="start-button" class="start-game-button">START</button>
                 <button id="spin-button" class="spin-round-button" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                        <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z"/>
                     </svg>
                 </button>
             </div>
