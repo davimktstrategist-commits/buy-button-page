@@ -3,6 +3,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import type { RouletteConfig } from "@shared/schema";
@@ -109,8 +110,12 @@ export function RouletteSettings() {
               Roleta Principal
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {mainConfigs.map(renderConfigRow)}
+          <CardContent className="p-0">
+            <ScrollArea className="h-[500px] px-6 py-4">
+              <div className="space-y-4">
+                {mainConfigs.map(renderConfigRow)}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 
@@ -123,8 +128,12 @@ export function RouletteSettings() {
               Roleta Bônus
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {bonusConfigs.map(renderConfigRow)}
+          <CardContent className="p-0">
+            <ScrollArea className="h-[500px] px-6 py-4">
+              <div className="space-y-4">
+                {bonusConfigs.map(renderConfigRow)}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
