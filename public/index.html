@@ -3620,15 +3620,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const MAX_ITEMS_ON_SCREEN = 5;
         
         function addWinnerToList(winner) {
-            const winnerHTML = `
-                <li class="winner-item">
-                    <img src="favicon.png" class="status-dot" alt="">
-                    <span class="winner-name">${winner.name}</span>
-                    <span class="winner-prize">${winner.prize}</span>
-                </li>
+            const li = document.createElement('li');
+            li.className = 'winner-item entering';
+            li.innerHTML = `
+                <img src="favicon.png" class="status-dot" alt="">
+                <span class="winner-name">${winner.name}</span>
+                <span class="winner-prize">${winner.prize}</span>
             `;
-            winnersListElement.insertAdjacentHTML('beforeend', winnerHTML);
-            winnersListElement.lastElementChild.classList.add('entering');
+            winnersListElement.appendChild(li);
         }
         
         function generateRandomWinner() {
@@ -3648,7 +3647,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return {
                 name: username,
-                prize: `${multiplier}x - R$ ${amount.toFixed(2)}`
+                prize: `<img src="favicon.png" style="width: 12px; height: 12px; vertical-align: middle; margin-right: 2px;" alt="">${multiplier} - R$ ${amount.toFixed(2)}`
             };
         }
         
