@@ -731,6 +731,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sincronizar pagamentos pendentes com BRPIX
+  app.post('/api/admin/sync-payments', requireAdminToken, async (req: any, res) => {
+    try {
+      console.log('🔄 Iniciando sincronização de pagamentos...');
+      
+      // Buscar todas as transações de depósito pendentes do dia
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const pendingTransactions = await db.select()
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.type, 'deposit'),
+            eq(transactions.status, 'pending'),
+            sql`${transactions.createdAt} >= ${today.toISOString()}`
+          )
+        );
+
+      console.log(`📋 Encontradas ${pendingTransactions.length} transações pendentes do dia`);
+
+      let syncedCount = 0;
+
+      // Para cada transação pendente, verificar status na BRPIX
+      for (const transaction of pendingTransactions) {
+        if (!transaction.brpixTransactionId) {
+          console.log(`⏭️ Transação ${transaction.id} sem BRPIX ID, pulando...`);
+          continue;
+        }
+
+        try {
+          // Consultar status na BRPIX
+          const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
+          console.log(`🔍 Transação ${transaction.id} (BRPIX: ${transaction.brpixTransactionId}): status na BRPIX = ${brpixStatus}`);
+
+          // Se está paga na BRPIX mas pendente no sistema, creditar
+          if (brpixStatus === 'paid' || brpixStatus === 'approved') {
+            console.log(`💰 Creditando saldo para transação ${transaction.id}...`);
+
+            // Usar transação do banco para garantir atomicidade e evitar duplicação
+            await db.transaction(async (tx) => {
+              // Atualizar status APENAS se ainda estiver pending (atomic guard)
+              // Se outra parte do sistema já processou, returning será vazio
+              const updated = await tx.update(transactions)
+                .set({ status: 'completed' })
+                .where(
+                  and(
+                    eq(transactions.id, transaction.id),
+                    eq(transactions.status, 'pending')
+                  )
+                )
+                .returning();
+
+              // Se não atualizou nada, outra parte do sistema já processou
+              if (updated.length === 0) {
+                console.log(`⚠️ Transação ${transaction.id} já foi processada, pulando...`);
+                return;
+              }
+
+              const currentTransaction = updated[0];
+              const depositAmount = parseFloat(currentTransaction.amount);
+
+              // Creditar saldo usando SQL atomic increment
+              await tx.update(users)
+                .set({ 
+                  balance: sql`${users.balance}::numeric + ${depositAmount}`,
+                  totalDeposited: sql`${users.totalDeposited}::numeric + ${depositAmount}`
+                })
+                .where(eq(users.id, currentTransaction.userId));
+
+              // Se houver afiliado, creditar comissão CPA
+              const [user] = await tx.select()
+                .from(users)
+                .where(eq(users.id, currentTransaction.userId))
+                .limit(1);
+
+              if (user?.referredByUserId) {
+                const { affiliateReferrals, systemConfig: systemConfigTable } = await import('@shared/schema');
+                
+                // Buscar CPA percentage
+                const cpaConfigResult = await tx.select()
+                  .from(systemConfigTable)
+                  .where(eq(systemConfigTable.key, 'affiliate_cpa_percent'))
+                  .limit(1);
+                
+                const cpaPercent = cpaConfigResult[0]?.value ? parseFloat(cpaConfigResult[0].value) : 25;
+                const commissionAmount = (depositAmount * cpaPercent) / 100;
+
+                // Verificar se já existe referral
+                const existingReferral = await tx.select()
+                  .from(affiliateReferrals)
+                  .where(
+                    and(
+                      eq(affiliateReferrals.affiliateUserId, user.referredByUserId),
+                      eq(affiliateReferrals.referredUserId, user.id)
+                    )
+                  )
+                  .limit(1);
+
+                if (existingReferral.length > 0) {
+                  // Atualizar comissão total atomicamente
+                  await tx.update(affiliateReferrals)
+                    .set({
+                      totalCommissionEarned: sql`${affiliateReferrals.totalCommissionEarned}::numeric + ${commissionAmount}`
+                    })
+                    .where(eq(affiliateReferrals.id, existingReferral[0].id));
+
+                  // Creditar na affiliateBalance atomicamente
+                  await tx.update(users)
+                    .set({ 
+                      affiliateBalance: sql`COALESCE(${users.affiliateBalance}::numeric, 0) + ${commissionAmount}`
+                    })
+                    .where(eq(users.id, user.referredByUserId));
+
+                  console.log(`💸 Comissão CPA creditada: R$ ${commissionAmount.toFixed(2)} para afiliado ${user.referredByUserId}`);
+                }
+              }
+
+              syncedCount++;
+              console.log(`✅ Transação ${currentTransaction.id} sincronizada com sucesso`);
+            });
+          }
+        } catch (error) {
+          console.error(`❌ Erro ao verificar transação ${transaction.id}:`, error);
+        }
+      }
+
+      console.log(`✅ Sincronização concluída: ${syncedCount} transação(ões) sincronizada(s)`);
+      res.json({ 
+        success: true, 
+        syncedCount,
+        message: `${syncedCount} transação(ões) sincronizada(s) com sucesso` 
+      });
+    } catch (error) {
+      console.error("❌ Erro na sincronização de pagamentos:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Erro ao sincronizar pagamentos" 
+      });
+    }
+  });
+
   app.get('/api/admin/withdrawals', requireAdminToken, async (req: any, res) => {
     try {
       const withdrawals = await storage.getAllWithdrawals();

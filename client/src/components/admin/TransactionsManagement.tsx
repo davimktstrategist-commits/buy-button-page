@@ -1,14 +1,41 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshCw } from "lucide-react";
 import type { Transaction } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export function TransactionsManagement() {
+  const { toast } = useToast();
   const { data: transactions = [] } = useQuery<Transaction[]>({
     queryKey: ['/api/admin/transactions'],
+  });
+
+  const syncPaymentsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/admin/sync-payments');
+      return await response.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      toast({
+        title: "Sincronização Completa",
+        description: `${data.syncedCount || 0} transação(ões) sincronizada(s) com sucesso.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Não foi possível sincronizar os pagamentos.",
+        variant: "destructive",
+      });
+    },
   });
 
   const getTypeLabel = (type: string) => {
@@ -47,8 +74,18 @@ export function TransactionsManagement() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
         <CardTitle>Transações</CardTitle>
+        <Button
+          onClick={() => syncPaymentsMutation.mutate()}
+          disabled={syncPaymentsMutation.isPending}
+          size="sm"
+          variant="outline"
+          data-testid="button-sync-payments"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${syncPaymentsMutation.isPending ? 'animate-spin' : ''}`} />
+          Sincronizar Pagamentos
+        </Button>
       </CardHeader>
       <CardContent>
         <Table>
