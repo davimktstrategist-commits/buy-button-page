@@ -4730,15 +4730,10 @@ document.addEventListener('DOMContentLoaded', () => {
             state.saldo = 0;
             window.APP_SESSION_ID = null;
             
-            // Close profile modal
-            DOMElements.profileModalOverlay.classList.remove('show');
+            console.log('✅ Dados limpos, recarregando...');
             
-            console.log('✅ Dados limpos, abrindo login...');
-            
-            // Open login modal immediately
-            setTimeout(() => {
-                showAuthModal('login');
-            }, 100);
+            // Force page reload to create NEW sessionId
+            window.location.reload();
         };
 
         const init = () => {
