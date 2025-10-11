@@ -43,6 +43,7 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getTransactionsByUserId(userId: string): Promise<Transaction[]>;
   getAllTransactions(): Promise<Transaction[]>;
+  getTransactionsPaginated(page: number, limit: number, search?: string, type?: string, status?: string): Promise<{ transactions: Transaction[]; total: number }>;
   getTransactionById(id: string): Promise<Transaction | undefined>;
   updateTransaction(id: string, data: Partial<Transaction>): Promise<Transaction>;
   
@@ -221,6 +222,79 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(transactions)
       .orderBy(desc(transactions.createdAt));
+  }
+
+  async getTransactionsPaginated(page: number, limit: number, search?: string, type?: string, status?: string): Promise<{ transactions: Transaction[]; total: number }> {
+    const offset = (page - 1) * limit;
+    
+    // Build WHERE conditions
+    const conditions = [];
+    
+    // Search by ID, user email, or user name
+    if (search) {
+      conditions.push(
+        or(
+          ilike(transactions.id, `%${search}%`),
+          ilike(transactions.brpixTransactionId, `%${search}%`),
+          ilike(users.email, `%${search}%`),
+          ilike(users.firstName, `%${search}%`),
+          ilike(users.lastName, `%${search}%`),
+          sql`CONCAT(${users.firstName}, ' ', ${users.lastName}) ILIKE ${`%${search}%`}`
+        )
+      );
+    }
+    
+    // Filter by type
+    if (type && type !== 'all') {
+      conditions.push(sql`${transactions.type} = ${type}`);
+    }
+    
+    // Filter by status
+    if (status && status !== 'all') {
+      conditions.push(sql`${transactions.status} = ${status}`);
+    }
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    // Get total count with join
+    const [{ count: totalCount }] = await db
+      .select({ count: count() })
+      .from(transactions)
+      .leftJoin(users, eq(transactions.userId, users.id))
+      .where(whereClause);
+    
+    // Get paginated transactions with join
+    const transactionsList = await db
+      .select({
+        id: transactions.id,
+        userId: transactions.userId,
+        type: transactions.type,
+        amount: transactions.amount,
+        status: transactions.status,
+        brpixTransactionId: transactions.brpixTransactionId,
+        brpixQrCode: transactions.brpixQrCode,
+        brpixQrCodeImage: transactions.brpixQrCodeImage,
+        brpixCopyPaste: transactions.brpixCopyPaste,
+        brpixExpiresAt: transactions.brpixExpiresAt,
+        splitAmount: transactions.splitAmount,
+        splitPercentage: transactions.splitPercentage,
+        metadata: transactions.metadata,
+        gameId: transactions.gameId,
+        description: transactions.description,
+        createdAt: transactions.createdAt,
+        updatedAt: transactions.updatedAt,
+      })
+      .from(transactions)
+      .leftJoin(users, eq(transactions.userId, users.id))
+      .where(whereClause)
+      .orderBy(desc(transactions.createdAt))
+      .limit(limit)
+      .offset(offset);
+    
+    return {
+      transactions: transactionsList,
+      total: Number(totalCount)
+    };
   }
 
   async getTransactionById(id: string): Promise<Transaction | undefined> {

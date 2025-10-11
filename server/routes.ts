@@ -732,8 +732,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/transactions', requireAdminToken, async (req: any, res) => {
     try {
-      const transactions = await storage.getAllTransactions();
-      res.json(transactions);
+      // Validate and sanitize pagination params
+      let page = parseInt(req.query.page || '1');
+      let limit = parseInt(req.query.limit || '20');
+      const search = req.query.search || '';
+      const type = req.query.type || 'all';
+      const status = req.query.status || 'all';
+      
+      // Ensure positive integers
+      page = Math.max(1, isNaN(page) ? 1 : page);
+      limit = Math.max(1, Math.min(100, isNaN(limit) ? 20 : limit));
+      
+      const result = await storage.getTransactionsPaginated(page, limit, search, type, status);
+      res.json(result);
     } catch (error) {
       console.error("Error fetching transactions:", error);
       res.status(500).json({ message: "Failed to fetch transactions" });
