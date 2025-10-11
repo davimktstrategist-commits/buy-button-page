@@ -645,6 +645,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put('/api/admin/users/:id', requireAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { balance, influencerMode, customAffiliateCpaPercent, customAffiliateCpaFixed, password } = req.body;
+
+      const updateData: any = {};
+
+      if (balance !== undefined) {
+        updateData.balance = balance.toString();
+      }
+
+      if (influencerMode !== undefined) {
+        updateData.influencerMode = influencerMode;
+      }
+
+      if (customAffiliateCpaPercent !== undefined) {
+        updateData.customAffiliateCpaPercent = customAffiliateCpaPercent ? customAffiliateCpaPercent.toString() : null;
+      }
+
+      if (customAffiliateCpaFixed !== undefined) {
+        updateData.customAffiliateCpaFixed = customAffiliateCpaFixed ? customAffiliateCpaFixed.toString() : null;
+      }
+
+      if (password) {
+        updateData.password = password;
+      }
+
+      updateData.updatedAt = new Date();
+
+      await db.update(users).set(updateData).where(eq(users.id, id));
+
+      const updatedUser = await db.select().from(users).where(eq(users.id, id)).limit(1);
+
+      res.json({ success: true, user: updatedUser[0] });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Erro ao atualizar usuário" });
+    }
+  });
+
   app.get('/api/admin/transactions', requireAdminToken, async (req: any, res) => {
     try {
       const transactions = await storage.getAllTransactions();
