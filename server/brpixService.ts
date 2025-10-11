@@ -1,15 +1,16 @@
 // BRPIX API Integration Service
-// Documentation: https://brpixdigital.readme.io/reference/introdução
+// Baseado no exemplo funcional fornecido pelo cliente
 
-const BRPIX_API_URL = 'https://api.brpixdigital.com/functions/v1';
+const BRPIX_API_URL = 'https://api.brpix.com.br/v1';
 const SPLIT_PERCENTAGE = 10.5; // 10.5% split
 
 interface BRPIXCreateTransactionPayload {
   amount: number;
   description?: string;
   externalReference?: string;
-  pixType?: 'static' | 'dynamic';
   expirationMinutes?: number;
+  cpf?: string;
+  nome?: string;
 }
 
 interface BRPIXTransactionResponse {
@@ -20,67 +21,134 @@ interface BRPIXTransactionResponse {
   qrCodeImage: string;
   copyPaste: string;
   expiresAt: string;
+  txid: string;
+}
+
+interface BRPIXAuthResponse {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
 }
 
 class BRPIXService {
-  private secretKey: string;
-  private companyId: string;
+  private apiKey: string;
+  private apiSecret: string;
+  private chavePix: string;
+  private cachedToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   constructor() {
-    this.secretKey = process.env.BRPIX_SECRET_KEY || '';
-    this.companyId = process.env.BRPIX_COMPANY_ID || '';
+    this.apiKey = process.env.BRPIX_SECRET_KEY || '';
+    this.apiSecret = process.env.BRPIX_COMPANY_ID || '';
+    this.chavePix = process.env.BRPIX_CHAVE_PIX || '';
 
-    if (!this.secretKey || !this.companyId) {
+    if (!this.apiKey || !this.apiSecret) {
       console.warn('BRPIX credentials not configured');
     }
   }
 
-  private getAuthHeader(): string {
-    const credentials = Buffer.from(`${this.secretKey}:${this.companyId}`).toString('base64');
-    return `Basic ${credentials}`;
-  }
+  private async getAuthToken(): Promise<string> {
+    // Retornar token em cache se ainda válido
+    if (this.cachedToken && Date.now() < this.tokenExpiry) {
+      return this.cachedToken;
+    }
 
-  async createTransaction(payload: BRPIXCreateTransactionPayload): Promise<BRPIXTransactionResponse> {
     try {
-      // Calculate split amount (10.5% goes to split account)
-      const splitAmount = (payload.amount * SPLIT_PERCENTAGE) / 100;
-      const mainAmount = payload.amount;
-
-      const response = await fetch(`${BRPIX_API_URL}/transactions`, {
+      const response = await fetch(`${BRPIX_API_URL}/auth/token`, {
         method: 'POST',
         headers: {
-          'Authorization': this.getAuthHeader(),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: mainAmount,
-          description: payload.description || 'Depósito Roleta do Tigre',
-          externalReference: payload.externalReference,
-          pixType: payload.pixType || 'dynamic',
-          expirationMinutes: payload.expirationMinutes || 30,
-          // Split configuration - 10.5% automatically goes to the split account
-          split: {
-            percentage: SPLIT_PERCENTAGE,
-            amount: splitAmount,
-          },
+          client_id: this.apiKey,
+          client_secret: this.apiSecret,
+          grant_type: 'client_credentials'
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `BRPIX API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('BRPIX Auth Error:', response.status, errorText);
+        throw new Error(`Erro ao obter token BRPIX: ${response.status}`);
+      }
+
+      const data: BRPIXAuthResponse = await response.json();
+      this.cachedToken = data.access_token;
+      // Token expira em expires_in segundos, menos 5 minutos de margem
+      this.tokenExpiry = Date.now() + ((data.expires_in - 300) * 1000);
+      
+      return data.access_token;
+    } catch (error) {
+      console.error('BRPIX auth error:', error);
+      throw new Error('Falha na autenticação com BRPIX');
+    }
+  }
+
+  async createTransaction(payload: BRPIXCreateTransactionPayload): Promise<BRPIXTransactionResponse> {
+    try {
+      const token = await this.getAuthToken();
+      
+      // Gerar ID único da transação
+      const txid = `TIGRE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Calcular split (10.5% de comissão)
+      const splitAmount = (payload.amount * SPLIT_PERCENTAGE) / 100;
+      const mainAmount = payload.amount;
+
+      // Montar payload no formato correto da BRPIX
+      const brpixPayload = {
+        calendario: {
+          expiracao: (payload.expirationMinutes || 30) * 60 // converter minutos para segundos
+        },
+        devedor: payload.cpf ? {
+          cpf: payload.cpf.replace(/[^0-9]/g, ''),
+          nome: payload.nome || 'Cliente'
+        } : undefined,
+        valor: {
+          original: mainAmount.toFixed(2)
+        },
+        chave: this.chavePix,
+        solicitacaoPagador: payload.description || 'Depósito Roleta do Tigre',
+        infoAdicionais: [
+          {
+            nome: 'Plataforma',
+            valor: 'Roleta do Tigre'
+          },
+          {
+            nome: 'Split',
+            valor: `${SPLIT_PERCENTAGE}% (R$ ${splitAmount.toFixed(2)})`
+          }
+        ]
+      };
+
+      // Criar cobrança usando PUT (como no exemplo fornecido)
+      const response = await fetch(`${BRPIX_API_URL}/cob/${txid}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(brpixPayload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('BRPIX Create Transaction Error:', response.status, errorText);
+        throw new Error(`Erro BRPIX: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
       
+      // Mapear resposta para o formato esperado
       return {
-        id: data.id,
-        amount: data.amount,
-        status: data.status,
-        qrCode: data.qrCode || data.pix?.qrCode,
-        qrCodeImage: data.qrCodeImage || data.pix?.qrCodeImage,
-        copyPaste: data.copyPaste || data.pix?.copyPaste || data.pix?.brcode,
-        expiresAt: data.expiresAt || data.pix?.expiresAt,
+        id: data.txid || txid,
+        txid: data.txid || txid,
+        amount: mainAmount,
+        status: data.status || 'ATIVA',
+        qrCode: data.pixCopiaECola || '',
+        qrCodeImage: data.qrcodeUrl || data.imagemQrcode || '',
+        copyPaste: data.pixCopiaECola || '',
+        expiresAt: data.calendario?.criacao || new Date().toISOString(),
       };
     } catch (error) {
       console.error('BRPIX create transaction error:', error);
@@ -90,15 +158,18 @@ class BRPIXService {
 
   async getTransactionStatus(transactionId: string): Promise<string> {
     try {
-      const response = await fetch(`${BRPIX_API_URL}/transactions/${transactionId}`, {
+      const token = await this.getAuthToken();
+      
+      const response = await fetch(`${BRPIX_API_URL}/cob/${transactionId}`, {
         method: 'GET',
         headers: {
-          'Authorization': this.getAuthHeader(),
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
+        console.error('BRPIX Get Status Error:', response.status);
         throw new Error(`BRPIX API Error: ${response.status}`);
       }
 
@@ -112,14 +183,16 @@ class BRPIXService {
 
   async listTransactions(params?: { limit?: number; offset?: number }): Promise<any[]> {
     try {
+      const token = await this.getAuthToken();
+      
       const queryParams = new URLSearchParams();
       if (params?.limit) queryParams.append('limit', params.limit.toString());
       if (params?.offset) queryParams.append('offset', params.offset.toString());
 
-      const response = await fetch(`${BRPIX_API_URL}/transactions?${queryParams.toString()}`, {
+      const response = await fetch(`${BRPIX_API_URL}/cob?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
-          'Authorization': this.getAuthHeader(),
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
@@ -129,7 +202,7 @@ class BRPIXService {
       }
 
       const data = await response.json();
-      return data.transactions || data.data || [];
+      return data.cobs || data.data || [];
     } catch (error) {
       console.error('BRPIX list transactions error:', error);
       throw error;
