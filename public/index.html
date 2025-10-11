@@ -2723,7 +2723,9 @@
             loadingOverlay.classList.add('active');
 
             const formData = new FormData(form);
+            formData.set('amount', value.toString()); // Sobrescrever com valor numérico parseado
             formData.append('tipo_deposito', document.getElementById('aceitarPromocao').checked ? 'bonus' : 'normal');
+            formData.append('sessionId', getSessionId()); // Adicionar sessionId
             try {
                 const res = await fetch('/api/payment.php', {
                     method: 'POST',
