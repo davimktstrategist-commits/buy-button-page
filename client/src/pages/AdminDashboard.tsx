@@ -201,7 +201,7 @@ export default function AdminDashboard() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <Dices className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display font-bold text-lg">Roleta do Tigre</span>
+            <span className="font-display font-bold text-lg">Roleta CashGiro</span>
           </div>
         </div>
 
