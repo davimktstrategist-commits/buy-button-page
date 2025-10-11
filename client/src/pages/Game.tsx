@@ -12,12 +12,14 @@ import { WinAnimation } from "@/components/WinAnimation";
 import { RecentWinners } from "@/components/RecentWinners";
 import { useToast } from "@/hooks/use-toast";
 import { useSound } from "@/contexts/SoundContext";
-import { User, Volume2, VolumeX, HelpCircle, DollarSign } from "lucide-react";
+import { User, Volume2, VolumeX, HelpCircle, DollarSign, ArrowLeft } from "lucide-react";
 import type { Game as GameType } from "@shared/schema";
+import { useLocation } from "wouter";
 
 export default function Game() {
   const { sessionId } = useSession();
   const { isMuted, toggleSound, playSound } = useSound();
+  const [, setLocation] = useLocation();
   const [showAuth, setShowAuth] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -118,6 +120,18 @@ export default function Game() {
   return (
     <div className="casino-bg flex items-center justify-center" style={{ height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div id="game-container" className="relative w-full h-full flex flex-col">
+        {/* Botão Voltar - Topo Esquerdo */}
+        <button 
+          onClick={() => {
+            playSound('click');
+            setLocation('/');
+          }}
+          className="absolute top-4 left-4 w-11 h-11 rounded-full bg-gradient-to-br from-green-900/85 to-green-900/70 border-2 border-green-600 text-green-400 flex items-center justify-center shadow-lg hover:scale-110 transition-all z-[25]"
+          data-testid="button-back"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+
         {/* Lista de Ganhadores Simulados - Topo Esquerdo */}
         <RecentWinners />
 
