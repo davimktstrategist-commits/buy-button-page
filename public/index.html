@@ -287,6 +287,72 @@
           50% { box-shadow: 0 0 30px rgba(16, 185, 129, 1), 0 0 50px rgba(16, 185, 129, 0.6); }
       }
 
+      /* AUTO SPINS POPUP */
+      .auto-spins-popup {
+          position: fixed;
+          bottom: 120px;
+          right: 20px;
+          z-index: 999;
+          opacity: 0;
+          transform: translateY(20px) scale(0.9);
+          transition: all 0.3s ease;
+          pointer-events: none;
+      }
+
+      .auto-spins-popup.show {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          pointer-events: all;
+      }
+
+      .auto-spins-content {
+          background: linear-gradient(135deg, rgba(20, 30, 50, 0.98) 0%, rgba(10, 15, 30, 0.98) 100%);
+          border: 2px solid #10b981;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4),
+                      0 0 60px rgba(16, 185, 129, 0.2);
+          backdrop-filter: blur(10px);
+      }
+
+      .auto-spins-content h3 {
+          color: #10b981;
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0 0 15px 0;
+          text-align: center;
+          text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+      }
+
+      .auto-spins-options {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+      }
+
+      .auto-spin-option {
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+          border: 2px solid #10b981;
+          border-radius: 10px;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 12px 20px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .auto-spin-option:hover {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+      }
+
+      .auto-spin-option:active {
+          transform: translateY(0);
+      }
+
       /* BOTTOM CONTROLS */
       .bottom-game-controls {
           position: absolute;
@@ -1747,6 +1813,19 @@
                     <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
                 </svg>
             </button>
+        </div>
+
+        <!-- AUTO SPINS SELECTOR POPUP -->
+        <div id="auto-spins-popup" class="auto-spins-popup" style="display: none;">
+            <div class="auto-spins-content">
+                <h3>Selecione os Giros Automáticos</h3>
+                <div class="auto-spins-options">
+                    <button class="auto-spin-option" data-spins="10">10 Giros</button>
+                    <button class="auto-spin-option" data-spins="30">30 Giros</button>
+                    <button class="auto-spin-option" data-spins="50">50 Giros</button>
+                    <button class="auto-spin-option" data-spins="100">100 Giros</button>
+                </div>
+            </div>
         </div>
 
         <!-- ROLETAS -->
@@ -4362,6 +4441,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
             
+            // Popup de seleção de giros automáticos
+            const autoSpinsPopup = document.getElementById('auto-spins-popup');
+            const autoSpinOptions = document.querySelectorAll('.auto-spin-option');
+
             if (autoButton) {
                 autoButton.addEventListener('click', () => {
                     if (state.isAuto) {
@@ -4373,18 +4456,49 @@ document.addEventListener('DOMContentLoaded', () => {
                             Notiflix.Notify.info('🛑 Modo Automático DESATIVADO');
                         }
                     } else {
-                        // Ativar auto com 10 giros
-                        state.isAuto = true;
-                        state.autoSpinsRemaining = 10;
-                        autoButton.classList.add('active');
-                        if (typeof Notiflix !== 'undefined') {
-                            Notiflix.Notify.success('🔄 Modo Automático: 10 giros');
+                        // Mostrar popup de seleção
+                        if (autoSpinsPopup) {
+                            autoSpinsPopup.classList.add('show');
                         }
-                        // Iniciar primeiro giro automático
-                        setTimeout(() => handlePlay(), 500);
                     }
                 });
             }
+
+            // Event listeners para opções de giros automáticos
+            autoSpinOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    const spins = parseInt(option.getAttribute('data-spins'));
+                    
+                    // Esconder popup
+                    if (autoSpinsPopup) {
+                        autoSpinsPopup.classList.remove('show');
+                    }
+                    
+                    // Ativar auto com número de giros selecionado
+                    state.isAuto = true;
+                    state.autoSpinsRemaining = spins;
+                    if (autoButton) {
+                        autoButton.classList.add('active');
+                    }
+                    
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.success(`🔄 Modo Automático: ${spins} giros`);
+                    }
+                    
+                    // Iniciar primeiro giro automático
+                    setTimeout(() => handlePlay(), 500);
+                });
+            });
+
+            // Fechar popup ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (autoSpinsPopup && 
+                    !autoSpinsPopup.contains(e.target) && 
+                    !autoButton.contains(e.target) &&
+                    autoSpinsPopup.classList.contains('show')) {
+                    autoSpinsPopup.classList.remove('show');
+                }
+            });
             
             document.querySelectorAll('.password-toggle').forEach(btn => {
                 btn.addEventListener('click', () => {
