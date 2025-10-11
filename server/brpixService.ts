@@ -124,6 +124,7 @@ class BRPIXService {
       const authString = Buffer.from(`${adminCreds.companyId}:${adminCreds.secretKey}`).toString('base64');
       
       console.log('🔐 Auth header:', `Basic ${authString.substring(0, 20)}...`);
+      console.log('📤 Request payload:', JSON.stringify(brpixPayload, null, 2));
 
       const response = await fetch(`${BRPIX_API_URL}/transactions`, {
         method: 'POST',
@@ -136,6 +137,7 @@ class BRPIXService {
 
       const responseText = await response.text();
       console.log('🔵 BRPIX Response Status:', response.status);
+      console.log('🔵 BRPIX Response Body:', responseText);
       
       if (!response.ok) {
         console.error('❌ BRPIX Create Transaction Error:', response.status, responseText);
