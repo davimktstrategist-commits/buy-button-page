@@ -109,8 +109,11 @@ export default function Game() {
   };
 
   const handleLogout = () => {
+    // Remove all session data
+    localStorage.removeItem('tiger_session_id');
     localStorage.removeItem('sessionId');
-    window.location.reload();
+    localStorage.removeItem('adminToken');
+    window.location.href = '/';
   };
 
   if (!sessionId) {

@@ -1,20 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, Zap, Shield, Coins } from "lucide-react";
+import { Trophy, Zap, Shield, Coins, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
 import { AuthModal } from "@/components/AuthModal";
 
 export default function Landing() {
   const [, setLocation] = useLocation();
   const [showAuth, setShowAuth] = useState(false);
+  const [hasSession, setHasSession] = useState(false);
   
+  useEffect(() => {
+    // Check if user has an active session
+    const sessionId = localStorage.getItem('tiger_session_id');
+    setHasSession(!!sessionId);
+  }, []);
+
   const handleLogin = () => {
     setShowAuth(true);
   };
 
   const handleAuthSuccess = () => {
     setLocation("/game");
+  };
+
+  const handleLogout = () => {
+    // Clear all session data
+    localStorage.removeItem('tiger_session_id');
+    localStorage.removeItem('sessionId');
+    localStorage.removeItem('adminToken');
+    setHasSession(false);
+    window.location.reload();
   };
 
   return (
@@ -28,13 +44,26 @@ export default function Landing() {
             </div>
             <h1 className="text-2xl font-display font-bold">Roleta do Tigre</h1>
           </div>
-          <Button 
-            size="lg" 
-            onClick={handleLogin}
-            data-testid="button-login"
-          >
-            Entrar / Cadastrar
-          </Button>
+          <div className="flex items-center gap-2">
+            {hasSession && (
+              <Button 
+                variant="outline"
+                size="lg" 
+                onClick={handleLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Trocar Conta
+              </Button>
+            )}
+            <Button 
+              size="lg" 
+              onClick={handleLogin}
+              data-testid="button-login"
+            >
+              Entrar / Cadastrar
+            </Button>
+          </div>
         </div>
       </header>
 
