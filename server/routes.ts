@@ -1023,16 +1023,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
         
         if (brpixStatus === 'paid' || brpixStatus === 'completed') {
-          // SÓ credita se a transação estava pending (primeira vez que confirmamos)
-          if (transaction.status === 'pending') {
-            console.log('💰 Pagamento confirmado pela PRIMEIRA VEZ! Creditando saldo...', {
+          // Usar UPDATE atômico: só atualiza se status='pending'
+          const result = await db.update(transactions)
+            .set({ 
+              status: 'completed',
+              updatedAt: new Date()
+            })
+            .where(
+              sql`${transactions.id} = ${transactionId} AND ${transactions.status} = 'pending'`
+            )
+            .returning();
+          
+          // Se retornou linha, significa que ERA pending e foi atualizado agora
+          if (result.length > 0) {
+            console.log('💰 Pagamento confirmado ATOMICAMENTE! Creditando saldo...', {
               transactionId,
               userId: transaction.userId,
               amount: transaction.amount
             });
-            
-            // Update transaction status PRIMEIRO (para evitar race conditions)
-            await storage.updateTransaction(transactionId, { status: 'completed' });
             
             // Update user balance and total deposited
             const userId = transaction.userId;
@@ -1044,22 +1052,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             // Update total deposited via SQL
+            await db.update(users)
+              .set({
+                totalDeposited: sql`${users.totalDeposited} + ${parseFloat(transaction.amount)}`,
+                updatedAt: new Date()
+              })
+              .where(eq(users.id, userId));
+            
             const user = await storage.getUser(userId);
-            if (user) {
-              await db.update(users)
-                .set({
-                  totalDeposited: sql`${users.totalDeposited} + ${parseFloat(transaction.amount)}`,
-                  updatedAt: new Date()
-                })
-                .where(eq(users.id, userId));
-              
-              console.log('📊 Total depositado atualizado!', {
-                userId,
-                newTotalDeposited: parseFloat(user.totalDeposited) + parseFloat(transaction.amount)
-              });
-            }
+            console.log('📊 Total depositado atualizado!', {
+              userId,
+              newBalance: user?.balance,
+              newTotalDeposited: user?.totalDeposited
+            });
           } else {
-            console.log('ℹ️ Transação já foi creditada anteriormente, ignorando...');
+            console.log('ℹ️ Transação já foi creditada anteriormente (race condition evitada)');
           }
 
           res.json({ 
