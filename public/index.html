@@ -3941,8 +3941,72 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         checkImagesLoaded();
 
+        // Sistema de sons sintéticos usando Web Audio API
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        
+        const playClickSound = () => {
+            if (!state.isSoundOn) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        };
+        
+        const playSmallWinSound = () => {
+            if (!state.isSoundOn) return;
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.15);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.15);
+        };
+        
+        const playChestSound = () => {
+            if (!state.isSoundOn) return;
+            // Som de baú abrindo (mais complexo e satisfatório)
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc1.type = 'sine';
+            osc2.type = 'triangle';
+            
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            
+            osc1.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.3);
+            
+            osc2.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+            
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            
+            osc1.start(audioCtx.currentTime);
+            osc2.start(audioCtx.currentTime);
+            osc1.stop(audioCtx.currentTime + 0.5);
+            osc2.stop(audioCtx.currentTime + 0.5);
+        };
+        
         const unlockAllAudio = () => {
             if (audioUnlocked) return;
+            audioCtx.resume();
             const sounds = [DOMElements.backgroundMusic, DOMElements.spinSound, DOMElements.winSound, DOMElements.multiplierSound];
             sounds.forEach(sound => {
                 if(sound) {
@@ -4196,9 +4260,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
             setTimeout(async () => {
                 if (ganhoFinal > 0 && !state.isTurbo) {
-                    if(DOMElements.winSound) DOMElements.winSound.play().catch(e => {});
-                    jsConfetti.addConfetti({ confettiNumber: 100, confettiRadius: 5 });
-                    await showAndAwaitPrize(ganhoFinal);
+                    // Calcular o multiplicador total da jogada
+                    const mult1 = state.roleta1Map[winningPos1];
+                    const mult2 = state.roleta2Map[winningPos2];
+                    const multiplicadorTotal = mult1 * mult2;
+                    
+                    // Sons e animações diferentes baseados no multiplicador
+                    if (multiplicadorTotal >= 5) {
+                        // PRÊMIO GRANDE (5x ou mais) - Mostrar baú
+                        playChestSound();
+                        jsConfetti.addConfetti({ confettiNumber: 150, confettiRadius: 6, emojis: ['💎', '💰', '🏆', '✨'] });
+                        await showAndAwaitPrize(ganhoFinal);
+                    } else if (multiplicadorTotal >= 2) {
+                        // PRÊMIO PEQUENO (2x a 4x) - Som rápido, sem baú
+                        playSmallWinSound();
+                        jsConfetti.addConfetti({ confettiNumber: 50, confettiRadius: 4 });
+                        // Mostrar notificação em vez do modal
+                        if (typeof Notiflix !== 'undefined') {
+                            Notiflix.Notify.success(`🎉 Ganhou ${multiplicadorTotal}x: R$ ${ganhoFinal.toFixed(2)}`);
+                        }
+                        // Aguardar um pouco para o usuário ver o resultado
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                    } else {
+                        // Sem multiplicador ou perda - sem som especial
+                        if (typeof Notiflix !== 'undefined' && multiplicadorTotal > 0) {
+                            Notiflix.Notify.info(`Multiplicador: ${multiplicadorTotal}x`);
+                        }
+                    }
                 } else if (ganhoFinal > 0 && state.isTurbo) {
                     // No modo turbo, apenas mostra notificação rápida
                     if (typeof Notiflix !== 'undefined') {
@@ -4541,6 +4629,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Event listener para o botão redondo de giro
             if(DOMElements.spinButton) {
                 DOMElements.spinButton.addEventListener('click', () => {
+                    // Som de clique ao pressionar botão
+                    playClickSound();
+                    
                     // Adicionar animação de giro ao botão
                     DOMElements.spinButton.classList.add('spinning');
                     setTimeout(() => {
