@@ -328,6 +328,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public settings route (for deposit/withdrawal validation)
+  app.get('/api/public-settings', async (req: any, res) => {
+    try {
+      const { systemConfig } = await import('@shared/schema');
+      
+      const configs = await db.select().from(systemConfig).where(
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max')`
+      );
+
+      const settings = {
+        depositMin: 20,
+        depositMax: 10000,
+        withdrawalMin: 20,
+        withdrawalMax: 50000,
+      };
+
+      configs.forEach(config => {
+        switch(config.key) {
+          case 'deposit_min': settings.depositMin = parseFloat(config.value || '20'); break;
+          case 'deposit_max': settings.depositMax = parseFloat(config.value || '10000'); break;
+          case 'withdrawal_min': settings.withdrawalMin = parseFloat(config.value || '20'); break;
+          case 'withdrawal_max': settings.withdrawalMax = parseFloat(config.value || '50000'); break;
+        }
+      });
+
+      res.json(settings);
+    } catch (error) {
+      console.error("Error fetching public settings:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
   // Play game route (public - uses sessionId)
   app.post('/api/games/play', async (req: any, res) => {
     try {

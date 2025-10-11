@@ -2741,8 +2741,26 @@
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const DEPOSITO_MIN = 20;
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Buscar configurações do servidor
+        let DEPOSITO_MIN = 20;
+        let DEPOSITO_MAX = 10000;
+        let SAQUE_MIN = 20;
+        let SAQUE_MAX = 50000;
+        
+        try {
+            const response = await fetch('/api/public-settings');
+            if (response.ok) {
+                const settings = await response.json();
+                DEPOSITO_MIN = settings.depositMin;
+                DEPOSITO_MAX = settings.depositMax;
+                SAQUE_MIN = settings.withdrawalMin;
+                SAQUE_MAX = settings.withdrawalMax;
+            }
+        } catch (error) {
+            console.error('Erro ao buscar configurações:', error);
+        }
+        
         const BONUS_PERCENT = 0;
         const depositValueButtons = [20, 30, 50, 100];
         const grid = document.querySelector('#depositModal .values-grid');
@@ -2936,6 +2954,12 @@
                 }
                 return;
             }
+            if (value > DEPOSITO_MAX) {
+                if (typeof Notiflix !== 'undefined') {
+                    Notiflix.Notify.failure(`❌ O valor máximo para depósito é R$ ${DEPOSITO_MAX.toFixed(2).replace('.', ',')}`);
+                }
+                return;
+            }
             const form = e.target;
             const modalBody = form.closest('.modal-body');
             const formHeight = form.offsetHeight;
@@ -2997,6 +3021,25 @@
 
         document.getElementById('withdrawForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
+            
+            // Validar valor de saque
+            const withdrawAmountInput = document.getElementById('withdrawAmount');
+            const withdrawValue = parseFloat(withdrawAmountInput.value.replace(/[^\d,]/g, '').replace(',', '.'));
+            
+            if (isNaN(withdrawValue) || withdrawValue < SAQUE_MIN) {
+                if (typeof Notiflix !== 'undefined') {
+                    Notiflix.Notify.failure(`❌ O valor mínimo para saque é R$ ${SAQUE_MIN.toFixed(2).replace('.', ',')}`);
+                }
+                return;
+            }
+            
+            if (withdrawValue > SAQUE_MAX) {
+                if (typeof Notiflix !== 'undefined') {
+                    Notiflix.Notify.failure(`❌ O valor máximo para saque é R$ ${SAQUE_MAX.toFixed(2).replace('.', ',')}`);
+                }
+                return;
+            }
+            
             if (typeof Notiflix !== 'undefined') Notiflix.Loading.standard('Processando...');
             
             try {
