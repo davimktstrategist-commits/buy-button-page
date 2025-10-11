@@ -4526,7 +4526,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             DOMElements.authModalOverlay.addEventListener('click', e => {
-                if (e.target.classList.contains('modal-overlay') || e.target.classList.contains('auth-modal-close')) {
+                // Fechar se clicar no overlay ou no botão X (ou qualquer filho dele)
+                if (e.target.classList.contains('modal-overlay') || e.target.closest('.auth-modal-close')) {
                     DOMElements.authModalOverlay.classList.remove('show');
                 }
             });
