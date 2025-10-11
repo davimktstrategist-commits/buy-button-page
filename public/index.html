@@ -710,7 +710,7 @@
           opacity: 1;
       }
 
-      #rules-modal-content {
+      #rules-modal-content, #terms-modal-content {
           width: 79%;
           max-width: 400px;
           background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
@@ -2208,8 +2208,181 @@
                             <input type="text" name="referralCode" id="register-referralCode" class="form-input" placeholder="Código de indicação (opcional)" maxlength="8" style="text-transform: uppercase;">
                         </div>
                         <button type="submit" class="submit-btn">Criar Conta</button>
-                        <p class="form-footer">Ao criar uma conta, você concorda com nossos <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a>.</p>
+                        <p class="form-footer">Ao criar uma conta, você concorda com nossos <a href="#" id="open-terms-link">Termos de Uso</a> e <a href="#" id="open-privacy-link">Política de Privacidade</a>.</p>
                     </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- TERMOS E POLÍTICA MODAL -->
+        <div id="terms-modal-overlay" class="modal-overlay">
+            <div id="terms-modal-content">
+                <div class="modal-header">
+                    <h2>📋 Termos e Políticas</h2>
+                    <button class="modal-close2" id="close-terms-button"><img src="favicon.png" style="width: 22px; height: 22px;" alt="Fechar"></button>
+                </div>
+                
+                <div class="rules-tabs">
+                    <button class="rules-tab active" data-tab="termos">Termos de Uso</button>
+                    <button class="rules-tab" data-tab="privacidade">Política de Privacidade</button>
+                </div>
+
+                <div class="rules-content-wrapper">
+                    
+                    <div class="rules-tab-content active" id="tab-termos">
+                        <h3>📜 Termos de Uso</h3>
+                        <p>Bem-vindo à Roleta do Tigre. Ao utilizar nossa plataforma, você concorda com os seguintes termos:</p>
+                        
+                        <h3>1. Aceitação dos Termos</h3>
+                        <p>Ao criar uma conta e utilizar nossos serviços, você aceita estar vinculado a estes Termos de Uso e nossa Política de Privacidade.</p>
+
+                        <h3>2. Elegibilidade</h3>
+                        <ul>
+                            <li>Você deve ter pelo menos 18 anos de idade</li>
+                            <li>É responsável por fornecer informações verdadeiras e atualizadas</li>
+                            <li>Deve ser o titular da conta bancária/PIX utilizada</li>
+                        </ul>
+
+                        <h3>3. Uso da Plataforma</h3>
+                        <ul>
+                            <li>Você é responsável por manter a segurança da sua conta</li>
+                            <li>Não compartilhe suas credenciais de acesso</li>
+                            <li>É proibido criar múltiplas contas</li>
+                            <li>Não utilize a plataforma para fins fraudulentos</li>
+                        </ul>
+
+                        <h3>4. Depósitos e Saques</h3>
+                        <ul>
+                            <li>Todos os depósitos são processados via gateway de pagamento seguro</li>
+                            <li>Saques serão processados para a mesma titularidade do cadastro</li>
+                            <li>Reservamo-nos o direito de solicitar verificação de identidade</li>
+                            <li>Transações suspeitas podem ser bloqueadas para análise</li>
+                        </ul>
+
+                        <h3>5. 💰 Política de Reembolso</h3>
+                        <div class="warning-box" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.1)); border: 2px solid #22c55e; padding: 15px; border-radius: 10px; margin: 15px 0;">
+                            <p style="color: #86efac; font-weight: bold; margin-bottom: 10px;">🔄 Garantia de Reembolso em Caso de Falhas do Sistema:</p>
+                            <ul style="color: #d1fae5; margin: 0;">
+                                <li><strong>Em caso de erros técnicos do sistema, quedas de conexão, bugs ou falhas que afetem o funcionamento do jogo, o valor depositado será integralmente devolvido ao usuário.</strong></li>
+                                <li>O reembolso será processado automaticamente ou mediante solicitação ao suporte</li>
+                                <li>O prazo para devolução é de até 48 horas úteis</li>
+                                <li>Valores serão devolvidos via PIX para a mesma chave utilizada no depósito</li>
+                            </ul>
+                        </div>
+
+                        <h3>6. Jogo Responsável</h3>
+                        <ul>
+                            <li>Jogue apenas com valores que pode perder</li>
+                            <li>Estabeleça limites pessoais de gastos</li>
+                            <li>Não jogue para recuperar perdas</li>
+                            <li>Se sentir que tem problemas com jogo, busque ajuda profissional</li>
+                        </ul>
+
+                        <h3>7. Proibições</h3>
+                        <p>É estritamente proibido:</p>
+                        <ul>
+                            <li>Usar bots ou automação para jogar</li>
+                            <li>Explorar bugs ou falhas do sistema para obter vantagens</li>
+                            <li>Realizar lavagem de dinheiro ou outras atividades ilegais</li>
+                            <li>Criar contas falsas ou usar dados de terceiros</li>
+                        </ul>
+
+                        <h3>8. Suspensão e Cancelamento</h3>
+                        <p>Reservamo-nos o direito de suspender ou cancelar contas que violem estes termos, sem aviso prévio. Saldos de contas suspendidas por violação serão retidos.</p>
+
+                        <h3>9. Alterações nos Termos</h3>
+                        <p>Podemos atualizar estes termos periodicamente. Continuando a usar a plataforma após alterações, você aceita os novos termos.</p>
+
+                        <h3>10. Contato</h3>
+                        <p>Em caso de dúvidas sobre estes termos, entre em contato com nosso suporte.</p>
+                    </div>
+
+                    <div class="rules-tab-content" id="tab-privacidade">
+                        <h3>🔒 Política de Privacidade</h3>
+                        <p>Sua privacidade é importante para nós. Esta política descreve como coletamos, usamos e protegemos suas informações.</p>
+
+                        <h3>1. Informações Coletadas</h3>
+                        <p>Coletamos as seguintes informações:</p>
+                        <ul>
+                            <li><strong>Dados de Cadastro:</strong> Nome, email, telefone, CPF</li>
+                            <li><strong>Dados Financeiros:</strong> Informações de pagamento (processadas de forma segura)</li>
+                            <li><strong>Dados de Uso:</strong> Histórico de jogos, transações, interações na plataforma</li>
+                            <li><strong>Dados Técnicos:</strong> Endereço IP, tipo de dispositivo, navegador</li>
+                        </ul>
+
+                        <h3>2. Como Usamos Suas Informações</h3>
+                        <ul>
+                            <li>Processar transações e pagamentos</li>
+                            <li>Fornecer suporte ao cliente</li>
+                            <li>Prevenir fraudes e garantir segurança</li>
+                            <li>Melhorar nossos serviços</li>
+                            <li>Enviar notificações importantes sobre sua conta</li>
+                            <li>Cumprir obrigações legais e regulatórias</li>
+                        </ul>
+
+                        <h3>3. Compartilhamento de Dados</h3>
+                        <p>Suas informações podem ser compartilhadas com:</p>
+                        <ul>
+                            <li><strong>Processadores de Pagamento:</strong> Para processar transações (BRPIX e outros gateways certificados)</li>
+                            <li><strong>Autoridades:</strong> Quando exigido por lei ou para prevenir fraudes</li>
+                            <li><strong>Prestadores de Serviço:</strong> Que nos auxiliam a operar a plataforma (sob confidencialidade)</li>
+                        </ul>
+                        <p><strong>Nunca vendemos</strong> suas informações pessoais a terceiros para fins de marketing.</p>
+
+                        <h3>4. Segurança dos Dados</h3>
+                        <ul>
+                            <li>Utilizamos criptografia SSL/TLS em todas as comunicações</li>
+                            <li>Senhas são armazenadas com hash seguro</li>
+                            <li>Dados financeiros são processados por gateways certificados (PCI-DSS)</li>
+                            <li>Monitoramento contínuo contra acessos não autorizados</li>
+                            <li>Backups regulares e protegidos</li>
+                        </ul>
+
+                        <h3>5. Seus Direitos</h3>
+                        <p>De acordo com a LGPD (Lei Geral de Proteção de Dados), você tem direito a:</p>
+                        <ul>
+                            <li><strong>Acesso:</strong> Solicitar cópia dos seus dados pessoais</li>
+                            <li><strong>Correção:</strong> Atualizar informações incorretas</li>
+                            <li><strong>Exclusão:</strong> Solicitar remoção dos seus dados (sujeito a obrigações legais)</li>
+                            <li><strong>Portabilidade:</strong> Receber seus dados em formato estruturado</li>
+                            <li><strong>Revogação:</strong> Retirar consentimento a qualquer momento</li>
+                        </ul>
+
+                        <h3>6. Cookies e Tecnologias</h3>
+                        <p>Utilizamos cookies e tecnologias similares para:</p>
+                        <ul>
+                            <li>Manter você conectado à sua conta</li>
+                            <li>Lembrar suas preferências</li>
+                            <li>Analisar o uso da plataforma</li>
+                            <li>Melhorar a experiência do usuário</li>
+                        </ul>
+                        <p>Você pode gerenciar cookies nas configurações do seu navegador.</p>
+
+                        <h3>7. Retenção de Dados</h3>
+                        <p>Mantemos suas informações pelo tempo necessário para:</p>
+                        <ul>
+                            <li>Fornecer nossos serviços</li>
+                            <li>Cumprir obrigações legais (geralmente 5 anos para dados fiscais)</li>
+                            <li>Resolver disputas e fazer cumprir acordos</li>
+                        </ul>
+
+                        <h3>8. Menores de Idade</h3>
+                        <p>Não coletamos intencionalmente informações de menores de 18 anos. Se tomarmos conhecimento de dados de menores, eles serão excluídos imediatamente.</p>
+
+                        <h3>9. Transferência Internacional</h3>
+                        <p>Seus dados são armazenados em servidores seguros. Caso haja transferência internacional, garantimos proteções adequadas conforme LGPD.</p>
+
+                        <h3>10. Alterações na Política</h3>
+                        <p>Podemos atualizar esta política periodicamente. Mudanças significativas serão notificadas por email ou na plataforma.</p>
+
+                        <h3>11. Contato - Encarregado de Dados</h3>
+                        <p>Para exercer seus direitos ou tirar dúvidas sobre privacidade, entre em contato com nosso Encarregado de Proteção de Dados através do suporte.</p>
+
+                        <p style="margin-top: 20px; padding: 15px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; color: #86efac;">
+                            <strong>Última atualização:</strong> Outubro de 2025
+                        </p>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -3907,6 +4080,10 @@ document.addEventListener('DOMContentLoaded', () => {
             rulesBtn: document.getElementById('rules-btn'),
             rulesModalOverlay: document.getElementById('rules-modal-overlay'),
             closeRulesButton: document.getElementById('close-rules-button'),
+            termsModalOverlay: document.getElementById('terms-modal-overlay'),
+            closeTermsButton: document.getElementById('close-terms-button'),
+            openTermsLink: document.getElementById('open-terms-link'),
+            openPrivacyLink: document.getElementById('open-privacy-link'),
             openHistoryButton: document.getElementById('open-history-button'),
             historyModalOverlay: document.getElementById('history-modal-overlay'),
             closeHistoryButton: document.getElementById('close-history-button'),
@@ -4754,6 +4931,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (e.target === DOMElements.rulesModalOverlay) {
                         DOMElements.rulesModalOverlay.classList.remove('show');
                     }
+                });
+            }
+            
+            // Termos e Privacidade Modal
+            if (DOMElements.openTermsLink) {
+                DOMElements.openTermsLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOMElements.termsModalOverlay.classList.add('show');
+                    // Ativar aba de Termos
+                    const termsTab = DOMElements.termsModalOverlay.querySelector('[data-tab="termos"]');
+                    const termsContent = DOMElements.termsModalOverlay.querySelector('#tab-termos');
+                    DOMElements.termsModalOverlay.querySelectorAll('.rules-tab').forEach(t => t.classList.remove('active'));
+                    DOMElements.termsModalOverlay.querySelectorAll('.rules-tab-content').forEach(c => c.classList.remove('active'));
+                    if (termsTab) termsTab.classList.add('active');
+                    if (termsContent) termsContent.classList.add('active');
+                });
+            }
+            
+            if (DOMElements.openPrivacyLink) {
+                DOMElements.openPrivacyLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    DOMElements.termsModalOverlay.classList.add('show');
+                    // Ativar aba de Privacidade
+                    const privacyTab = DOMElements.termsModalOverlay.querySelector('[data-tab="privacidade"]');
+                    const privacyContent = DOMElements.termsModalOverlay.querySelector('#tab-privacidade');
+                    DOMElements.termsModalOverlay.querySelectorAll('.rules-tab').forEach(t => t.classList.remove('active'));
+                    DOMElements.termsModalOverlay.querySelectorAll('.rules-tab-content').forEach(c => c.classList.remove('active'));
+                    if (privacyTab) privacyTab.classList.add('active');
+                    if (privacyContent) privacyContent.classList.add('active');
+                });
+            }
+            
+            if (DOMElements.closeTermsButton) {
+                DOMElements.closeTermsButton.addEventListener('click', () => {
+                    DOMElements.termsModalOverlay.classList.remove('show');
+                });
+            }
+            
+            if (DOMElements.termsModalOverlay) {
+                DOMElements.termsModalOverlay.addEventListener('click', (e) => {
+                    if (e.target === DOMElements.termsModalOverlay) {
+                        DOMElements.termsModalOverlay.classList.remove('show');
+                    }
+                });
+                
+                // Troca de abas no modal de termos
+                DOMElements.termsModalOverlay.querySelectorAll('.rules-tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const targetTab = tab.dataset.tab;
+                        DOMElements.termsModalOverlay.querySelectorAll('.rules-tab').forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        DOMElements.termsModalOverlay.querySelectorAll('.rules-tab-content').forEach(content => {
+                            content.classList.toggle('active', content.id === `tab-${targetTab}`);
+                        });
+                    });
                 });
             }
             
