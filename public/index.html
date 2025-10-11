@@ -4303,6 +4303,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
             data.action = action;
+            
+            // Debug: verificar se referralCode está sendo enviado
+            if (action === 'register') {
+                console.log('📤 Dados do registro:', data);
+            }
+            
             try {
                 const response = await fetch('/ajax/auth.php', { 
                     method: 'POST', 
