@@ -98,6 +98,8 @@ export class DatabaseStorage implements IStorage {
         totalBet: '0.00',
         role: 'user',
         profileImageUrl: userData.profileImageUrl,
+        referralCode: userData.referralCode,
+        referredByUserId: userData.referredByUserId,
         isActive: true,
       })
       .returning();
