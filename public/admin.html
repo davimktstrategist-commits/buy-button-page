@@ -1279,6 +1279,9 @@
             }
         }
 
+        // Store users globally for editing
+        let usersData = [];
+
         // Load Users
         async function loadUsers() {
             try {
@@ -1287,8 +1290,11 @@
                 });
                 const users = await response.json();
                 
+                // Store users data
+                usersData = users;
+                
                 const tbody = document.getElementById('usersTableBody');
-                tbody.innerHTML = users.map(user => `
+                tbody.innerHTML = users.map((user, index) => `
                     <tr>
                         <td><code style="color: var(--accent-yellow);">${user.id.substring(0, 8)}...</code></td>
                         <td>${user.email || '<span style="color: var(--text-secondary);">Anônimo</span>'}</td>
@@ -1299,10 +1305,10 @@
                             ${user.influencerMode ? '<span class="badge badge-completed">⭐ Influencer</span>' : '<span class="badge badge-pending">Normal</span>'}
                         </td>
                         <td>
-                            ${user.isActive ? '<span class="badge badge-completed">✓ Ativo</span>' : '<span class="badge badge-failed">✗ Inativo</span>'}
+                            ${user.isActive !== false ? '<span class="badge badge-completed">✓ Ativo</span>' : '<span class="badge badge-failed">✗ Inativo</span>'}
                         </td>
                         <td>
-                            <button class="btn btn-secondary" onclick='editUser(${JSON.stringify(user)})' style="padding: 6px 12px; font-size: 12px;">
+                            <button class="btn btn-secondary" onclick="editUserByIndex(${index})" style="padding: 6px 12px; font-size: 12px;">
                                 ✏️ Editar
                             </button>
                         </td>
@@ -1310,6 +1316,13 @@
                 `).join('');
             } catch (error) {
                 console.error('Error loading users:', error);
+            }
+        }
+
+        // Edit user by index
+        function editUserByIndex(index) {
+            if (usersData[index]) {
+                editUser(usersData[index]);
             }
         }
 
