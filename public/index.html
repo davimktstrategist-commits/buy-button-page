@@ -4013,7 +4013,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (ganhoFinal > 0 && state.isTurbo) {
                     // No modo turbo, apenas mostra notificação rápida
                     if (typeof Notiflix !== 'undefined') {
-                        Notiflix.Notify.success(`💰 Ganhou: R$ ${ganhoFinal.toFixed(2)}`);
+                        Notiflix.Notify.success(`💰 Ganhou: R$ ${ganhoFinal}`);
                     }
                 }
                 await hideModalAndResume();
