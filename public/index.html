@@ -1512,9 +1512,21 @@
        });
      }
 
+     // Verificar se existe parâmetro ?restore= na URL para restaurar sessão
+     const urlParams = new URLSearchParams(window.location.search);
+     const restoreSessionId = urlParams.get('restore');
+     
      // Obter ou criar sessionId
      let sessionId = localStorage.getItem('sessionId');
-     if (!sessionId) {
+     
+     if (restoreSessionId) {
+       // Restaurar sessão específica via URL
+       sessionId = restoreSessionId;
+       localStorage.setItem('sessionId', sessionId);
+       console.log('✅ Sessão restaurada via URL:', sessionId);
+       // Remover parâmetro da URL sem recarregar
+       window.history.replaceState({}, document.title, window.location.pathname);
+     } else if (!sessionId) {
        sessionId = generateUUID();
        localStorage.setItem('sessionId', sessionId);
        console.log('Novo sessionId criado:', sessionId);
