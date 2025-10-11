@@ -737,6 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({ 
+        success: true,
         saldo: parseFloat(user.balance).toFixed(2),
         balance: parseFloat(user.balance).toFixed(2)
       });

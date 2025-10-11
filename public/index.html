@@ -2707,15 +2707,21 @@
                             // Buscar saldo atualizado do servidor
                             try {
                                 const sessionId = localStorage.getItem('sessionId');
+                                console.log('🔍 Buscando saldo para sessionId:', sessionId);
                                 const saldoRes = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
+                                console.log('📡 Resposta recebida, status:', saldoRes.status);
                                 const saldoResult = await saldoRes.json();
+                                console.log('📊 Dados do saldo:', saldoResult);
+                                
                                 if (saldoResult.saldo !== undefined) {
                                     state.saldo = parseFloat(saldoResult.saldo);
                                     updateDisplay();
-                                    console.log('✅ Saldo atualizado:', state.saldo);
+                                    console.log('✅ Saldo atualizado na tela:', state.saldo);
+                                } else {
+                                    console.error('❌ Campo saldo não encontrado:', saldoResult);
                                 }
                             } catch (err) {
-                                console.error('Erro ao atualizar saldo:', err);
+                                console.error('❌ Erro ao atualizar saldo:', err);
                             }
                             
                             // Rolar suavemente para o jogo
