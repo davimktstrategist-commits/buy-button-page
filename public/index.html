@@ -3946,7 +3946,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const audioCtx = new AudioContext();
         
         const playClickSound = () => {
-            if (!state.isSoundOn) return;
+            // Efeitos sonoros sempre tocam (não são afetados pelo botão de música)
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode);
@@ -3960,7 +3960,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const playSmallWinSound = () => {
-            if (!state.isSoundOn) return;
+            // Efeitos sonoros sempre tocam (não são afetados pelo botão de música)
             const oscillator = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode);
@@ -3975,7 +3975,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const playChestSound = () => {
-            if (!state.isSoundOn) return;
+            // Efeitos sonoros sempre tocam (não são afetados pelo botão de música)
             // Som de baú abrindo (mais complexo e satisfatório)
             const osc1 = audioCtx.createOscillator();
             const osc2 = audioCtx.createOscillator();
