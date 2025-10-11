@@ -1,0 +1,88 @@
+🎯 AQUI ESTÁ O CÓDIGO EXATO QUE FUNCIONA NO RISEFUND:
+1. AUTENTICAÇÃO (IMPORTANTE - ORDEM CORRETA!)
+// ⚠️ ATENÇÃO: É secretKey:companyId (NÃO companyId:secretKey)
+private getBasicAuthHeader(): string {
+  const credentials = Buffer.from(`${this.secretKey}:${this.companyId}`).toString('base64');
+  return `Basic ${credentials}`;
+}
+SEU ERRO: Você está fazendo companyId:secretKey mas o CORRETO é secretKey:companyId ‼️
+
+2. ENDPOINT EXATO
+POST https://api.brpixdigital.com/functions/v1/transactions
+✅ Está correto!
+
+3. HEADERS EXATOS
+headers: {
+  'Content-Type': 'application/json',
+  'Authorization': this.getBasicAuthHeader(), // Basic base64(secretKey:companyId)
+  'Accept': 'application/json'
+}
+4. PAYLOAD EXATO (EM CENTAVOS!)
+const payload = {
+  amount: Math.round(request.amount * 100), // ⚠️ CENTAVOS! 100.00 = 10000
+  description: request.description,
+  paymentMethod: "PIX",
+  postbackUrl: `${process.env.API_URL}/api/webhooks/brpix`,
+  customer: {
+    name: "João Silva",
+    email: "joao@email.com",
+    phone: "11999999999",
+    document: "12345678900" // CPF sem formatação
+  },
+  items: [
+    {
+      title: request.description,
+      unitPrice: Math.round(request.amount * 100), // ⚠️ CENTAVOS!
+      quantity: 1,
+      externalRef: userId
+    }
+  ]
+};
+5. CÓDIGO COMPLETO QUE FUNCIONA
+// Variáveis de ambiente
+BRPIX_BASE_URL=https://api.brpixdigital.com/functions/v1
+BRPIX_SECRET_KEY=sua_secret_key_aqui
+BRPIX_COMPANY_ID=sua_company_id_aqui
+// Função de criação
+const response = await fetch(`${this.baseUrl}/transactions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Basic ${Buffer.from(`${secretKey}:${companyId}`).toString('base64')}`,
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({
+    amount: 10000, // R$ 100.00 em centavos
+    description: "Depósito RiseFund",
+    paymentMethod: "PIX",
+    postbackUrl: "https://seusite.com/api/webhooks/brpix",
+    customer: {
+      name: "João Silva",
+      email: "joao@email.com",
+      phone: "11999999999",
+      document: "12345678900"
+    },
+    items: [{
+      title: "Depósito RiseFund",
+      unitPrice: 10000,
+      quantity: 1,
+      externalRef: "user123"
+    }]
+  })
+});
+🔥 CORRIJA ISSO NO SEU CÓDIGO:
+ERRADO (seu código atual):
+
+Authorization: Basic base64(companyId:secretKey)
+CORRETO:
+
+Authorization: Basic base64(secretKey:companyId)
+CHECKLIST DE DEBUGGING:
+✅ Endpoint: https://api.brpixdigital.com/functions/v1/transactions
+✅ Method: POST
+✅ Auth: Basic base64(secretKey:companyId) ← INVERTA A ORDEM!
+✅ Amount: EM CENTAVOS (R$ 20.00 = 2000)
+✅ Headers: Content-Type, Authorization, Accept
+✅ Campos obrigatórios: amount, customer, items
+
+Testa agora com a ordem correta da autenticação! 🚀

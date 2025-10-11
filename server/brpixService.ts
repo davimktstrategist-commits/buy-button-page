@@ -115,16 +115,31 @@ class BRPIXService {
 
       // Obter dados de cliente aleatório da lista
       const customer = getRandomCustomer();
+      const externalRef = payload.externalReference || `TIGRE-${Date.now()}`;
+      const description = payload.description || 'Depósito Roleta do Tigre';
       
-      // Payload conforme documentação BRPIX Digital
+      // Payload conforme documentação BRPIX Digital (formato RiseFund)
       const brpixPayload: any = {
         amount: totalAmountCents, // Valor total em centavos
-        customer: customer,
-        externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
-        description: payload.description || 'Depósito Roleta do Tigre'
+        description: description,
+        paymentMethod: "PIX",
+        customer: {
+          name: customer.name,
+          email: customer.email,
+          phone: "11999999999", // Telefone genérico
+          document: customer.document
+        },
+        items: [
+          {
+            title: description,
+            unitPrice: totalAmountCents,
+            quantity: 1,
+            externalRef: externalRef
+          }
+        ]
       };
 
-      // Adicionar split se recipientId estiver configurado E for um ID válido (não vazio e não uma API key do Google)
+      // Adicionar split se recipientId estiver configurado E for um ID válido
       if (COMMISSION_RECIPIENT_ID && COMMISSION_RECIPIENT_ID.length > 0 && !COMMISSION_RECIPIENT_ID.startsWith('AIza')) {
         brpixPayload.split = {
           recipientId: COMMISSION_RECIPIENT_ID,
@@ -137,11 +152,11 @@ class BRPIXService {
       
       console.log('🔵 BRPIX - Creating transaction:', {
         amount: `R$ ${payload.amount.toFixed(2)}`,
-        externalReference: brpixPayload.externalReference,
+        externalRef: externalRef,
       });
 
-      // BRPIX usa Basic Auth: base64(companyId:secretKey)
-      const authString = Buffer.from(`${adminCreds.companyId}:${adminCreds.secretKey}`).toString('base64');
+      // ⚠️ IMPORTANTE: Basic Auth é secretKey:companyId (NÃO companyId:secretKey)
+      const authString = Buffer.from(`${adminCreds.secretKey}:${adminCreds.companyId}`).toString('base64');
       
       console.log('🔐 Auth header:', `Basic ${authString.substring(0, 20)}...`);
       console.log('📤 Request payload:', JSON.stringify(brpixPayload, null, 2));
@@ -151,6 +166,7 @@ class BRPIXService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Basic ${authString}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify(brpixPayload),
       });
