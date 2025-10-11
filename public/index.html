@@ -2714,9 +2714,16 @@
             <div class="modal-body">
                 <form id="withdrawForm" class="withdraw-form">
                     <div class="input-group compact">
+                        <label class="input-label">Carteira de Origem</label>
+                        <select name="walletType" id="walletType" required="" class="pix-selector compact-select" style="width: 100%;">
+                            <option value="main" selected="">💰 Carteira Principal</option>
+                            <option value="affiliate">👥 Saldo de Afiliado</option>
+                        </select>
+                        <small id="wallet-balance-display" class="max-balance">Saldo disponível: R$ 0,00</small>
+                    </div>
+                    <div class="input-group compact">
                         <label class="input-label">Valor do saque</label>
                         <input type="text" name="amount" id="withdrawAmount" required="" class="amount-input" placeholder="R$ 0,00" inputmode="numeric">
-                        <small class="max-balance">Seu Saldo: R$ 0,00</small>
                     </div>
                     <div id="withdrawRolloverNotice" class="rollover-notice">
                         Você ainda precisa apostar <strong id="withdrawRolloverAmount">R$ 0,00</strong>.
@@ -2841,21 +2848,23 @@
         };
         window.closeDepositModal = () => closeModal('depositModal');
 
-        // FUNÇÃO ATUALIZADA PARA SUPORTAR INFLUENCERS
-        // Atualizar no modals.php
-        window.openWithdrawModal = async function(balance, isInfluencer = false) {
+        // FUNÇÃO ATUALIZADA PARA SUPORTAR INFLUENCERS E AFILIADOS
+        window.openWithdrawModal = async function(balance, isInfluencer = false, walletType = 'main') {
             const noticeEl = document.getElementById('withdrawRolloverNotice');
             const noticeAmountEl = document.getElementById('withdrawRolloverAmount');
             noticeEl.style.display = 'none';
             openModal('withdrawModal');
             
-            const balanceEl = document.querySelector('#withdrawModal .max-balance');
+            // Setar tipo de carteira no select
+            const walletTypeSelect = document.getElementById('walletType');
+            if (walletTypeSelect) {
+                walletTypeSelect.value = walletType;
+            }
             
-            // Determinar o label baseado no tipo de conta
-            const balanceLabel = isInfluencer ? 'Saldo de Comissão' : 'Seu Saldo';
-            
+            // Atualizar display de saldo
+            const balanceEl = document.getElementById('wallet-balance-display');
             if (balanceEl) {
-                balanceEl.textContent = `${balanceLabel}: R$ ${parseFloat(balance).toFixed(2).replace('.', ',')}`;
+                balanceEl.textContent = `Saldo disponível: R$ ${parseFloat(balance).toFixed(2).replace('.', ',')}`;
             }
             
             // Armazenar tipo de conta no formulário
@@ -3382,6 +3391,9 @@
                         <p class="label">Ganhos</p>
                     </div>
                 </div>
+                <button id="withdraw-affiliate-btn" class="profile-button" style="margin-top: 15px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border: 2px solid #a78bfa;">
+                    💰 Sacar Comissões
+                </button>
             </div>
 
             <div id="commission-section" class="affiliate-section" style="display: none;">
@@ -4722,6 +4734,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     DOMElements.profileModalOverlay.classList.remove('show');
                     if (typeof openWithdrawModal === 'function') {
                         openWithdrawModal(state.saldo, false);
+                    }
+                });
+            }
+            
+            // Listener para o botão de saque de afiliado
+            const withdrawAffiliateBtn = document.getElementById('withdraw-affiliate-btn');
+            if (withdrawAffiliateBtn) {
+                withdrawAffiliateBtn.addEventListener('click', async () => {
+                    DOMElements.affiliateModalOverlay.classList.remove('show');
+                    if (typeof openWithdrawModal === 'function') {
+                        // Buscar saldo de afiliado
+                        const sessionId = localStorage.getItem('sessionId');
+                        const response = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
+                        const result = await response.json();
+                        if (result.success) {
+                            const affiliateBalance = parseFloat(result.affiliateBalance || '0');
+                            openWithdrawModal(affiliateBalance, false, 'affiliate');
+                        }
+                    }
+                });
+            }
+            
+            // Listener para mudança de tipo de carteira
+            const walletTypeSelect = document.getElementById('walletType');
+            if (walletTypeSelect) {
+                walletTypeSelect.addEventListener('change', async () => {
+                    const sessionId = localStorage.getItem('sessionId');
+                    const response = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        const walletBalanceDisplay = document.getElementById('wallet-balance-display');
+                        if (walletTypeSelect.value === 'affiliate') {
+                            const affiliateBalance = parseFloat(result.affiliateBalance || '0');
+                            walletBalanceDisplay.textContent = `Saldo disponível: R$ ${affiliateBalance.toFixed(2).replace('.', ',')}`;
+                        } else {
+                            const mainBalance = parseFloat(result.balance || '0');
+                            walletBalanceDisplay.textContent = `Saldo disponível: R$ ${mainBalance.toFixed(2).replace('.', ',')}`;
+                        }
                     }
                 });
             }

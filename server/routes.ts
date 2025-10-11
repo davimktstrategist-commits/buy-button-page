@@ -1622,6 +1622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const amount = parseFloat(req.body.amount || req.body.valor);
       const pixKeyType = req.body.pixKeyType || req.body.tipo_chave;
       const pixKey = req.body.pixKey || req.body.chave_pix;
+      const walletType = req.body.walletType || 'main'; // 'main' ou 'affiliate'
 
       if (!sessionId) {
         return res.status(400).json({ error: "Session ID required" });
@@ -1637,12 +1638,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check user balance
       const user = await storage.getUser(sessionId);
-      if (!user || parseFloat(user.balance) < amount) {
+      if (!user) {
+        return res.status(400).json({ error: "Usuário não encontrado" });
+      }
+
+      // Verificar saldo baseado no tipo de carteira
+      const currentBalance = walletType === 'affiliate' 
+        ? parseFloat(user.affiliateBalance || '0')
+        : parseFloat(user.balance);
+
+      if (currentBalance < amount) {
         return res.status(400).json({ error: "Saldo insuficiente" });
       }
 
-      // Deduct amount from balance immediately
-      await storage.updateUserBalance(sessionId, -amount);
+      // Deduzir do saldo correto
+      if (walletType === 'affiliate') {
+        await storage.updateAffiliateBalance(sessionId, -amount);
+      } else {
+        await storage.updateUserBalance(sessionId, -amount);
+      }
 
       // Create withdrawal request
       const withdrawal = await storage.createWithdrawal({
