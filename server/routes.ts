@@ -1219,12 +1219,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Saldo insuficiente" });
       }
 
-      // Get roulette configuration
+      // Mapeamento das roletas (deve corresponder ao frontend)
+      const roleta1Map = [0, 5, 15, 2, 20, 100, 10, 50]; // Roleta grande
+      const roleta2Map = [2, 3, 4, 1]; // Roleta pequena
+      
+      // Get roulette configuration for roleta1 (main/big wheel)
       const configs = await storage.getRouletteConfigsByType('main');
       
-      let selectedMultiplier = 0;
+      let mult1 = 0;
+      let posicao1 = 0;
 
-      // Check if user is in influencer mode (70% win chance)
+      // Sortear multiplicador da roleta GRANDE (roleta1)
       if (user.influencerMode) {
         const influencerRandom = Math.random() * 100;
         
@@ -1232,7 +1237,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // 70% chance: Select a winning multiplier (> 0)
           const winningConfigs = configs.filter(c => c.multiplier > 0);
           if (winningConfigs.length > 0) {
-            // Select based on proportional probabilities among winning options
             const totalWinProb = winningConfigs.reduce((sum, c) => sum + parseFloat(c.probability), 0);
             const winRandom = Math.random() * totalWinProb;
             let cumulativeWinProb = 0;
@@ -1240,47 +1244,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
             for (const config of winningConfigs) {
               cumulativeWinProb += parseFloat(config.probability);
               if (winRandom <= cumulativeWinProb) {
-                selectedMultiplier = config.multiplier;
+                mult1 = config.multiplier;
                 break;
               }
             }
           }
         } else {
-          // 30% chance: Use normal probability distribution
           const random = Math.random() * 100;
           let cumulativeProbability = 0;
 
           for (const config of configs) {
             cumulativeProbability += parseFloat(config.probability);
             if (random <= cumulativeProbability) {
-              selectedMultiplier = config.multiplier;
+              mult1 = config.multiplier;
               break;
             }
           }
         }
       } else {
-        // Normal mode: Calculate result based on standard probabilities
+        // Normal mode
         const random = Math.random() * 100;
         let cumulativeProbability = 0;
 
         for (const config of configs) {
           cumulativeProbability += parseFloat(config.probability);
           if (random <= cumulativeProbability) {
-            selectedMultiplier = config.multiplier;
+            mult1 = config.multiplier;
             break;
           }
         }
       }
-
-      // Calculate win amount
-      const winAmount = betAmount * selectedMultiplier;
+      
+      // Mapear multiplicador para posição na roleta1
+      posicao1 = roleta1Map.indexOf(mult1);
+      if (posicao1 === -1) posicao1 = 0;
+      
+      // Sortear multiplicador da roleta PEQUENA (roleta2) - aleatório uniforme
+      const posicao2 = Math.floor(Math.random() * roleta2Map.length);
+      const mult2 = roleta2Map[posicao2];
+      
+      // CÁLCULO CORRETO: aposta × mult_roleta1 × mult_roleta2
+      const winAmount = betAmount * mult1 * mult2;
       const netChange = winAmount - betAmount;
+      
+      // Multiplicador total para registro
+      const totalMultiplier = mult1 * mult2;
 
       // Create game record
       const game = await storage.createGame({
         userId: sessionId,
         betAmount: betAmount.toString(),
-        multiplier: selectedMultiplier,
+        multiplier: totalMultiplier,
         winAmount: winAmount.toString(),
         rouletteType: 'main',
         status: 'completed',
@@ -1304,7 +1318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: winAmount.toString(),
           status: 'completed',
           gameId: game.id,
-          description: `Ganho no jogo ${game.id} - ${selectedMultiplier}x`,
+          description: `Ganho no jogo ${game.id} - ${mult1}x × ${mult2}x = ${totalMultiplier}x`,
         });
       }
 
@@ -1315,23 +1329,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get updated balance
       const updatedUser = await storage.getUserBalance(sessionId);
 
-      // Map multiplier to roulette position
-      const roleta1Map = [0, 5, 15, 2, 20, 100, 10, 50];
-      const roleta2Map = [2, 3, 4, 1];
-      
-      // Find the position of the selected multiplier in roleta1Map
-      let posicao1 = roleta1Map.indexOf(selectedMultiplier);
-      if (posicao1 === -1) {
-        // If not found (shouldn't happen), default to first position
-        posicao1 = 0;
-      }
-      
-      // Random position for bonus wheel (doesn't affect result)
-      const posicao2 = Math.floor(Math.random() * roleta2Map.length);
-
       res.json({
         success: true,
-        multiplier: selectedMultiplier,
+        multiplier: totalMultiplier,
+        mult1,
+        mult2,
         winAmount: winAmount.toFixed(2),
         balance: parseFloat(updatedUser?.balance || '0').toFixed(2),
         newBalance: parseFloat(updatedUser?.balance || '0').toFixed(2),
@@ -1339,7 +1341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ganhoFinal: winAmount.toFixed(2),
         posicao1,
         posicao2,
-        bonus_multiplier: null, // No bonus for now
+        bonus_multiplier: null,
       });
     } catch (error) {
       console.error("Error starting spin:", error);

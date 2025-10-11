@@ -492,23 +492,25 @@
       
       @media (max-width: 768px) {
           .spin-round-button {
-              width: 58px;
-              height: 58px;
+              width: 75px;
+              height: 75px;
+              margin-bottom: 8px;
           }
           .spin-round-button svg {
-              width: 28px;
-              height: 28px;
+              width: 36px;
+              height: 36px;
           }
       }
       
       @media (max-width: 480px) {
           .spin-round-button {
-              width: 52px;
-              height: 52px;
+              width: 68px;
+              height: 68px;
+              margin-bottom: 10px;
           }
           .spin-round-button svg {
-              width: 25px;
-              height: 25px;
+              width: 32px;
+              height: 32px;
           }
       }
 
@@ -3976,32 +3978,45 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const playChestSound = () => {
             // Efeitos sonoros sempre tocam (não são afetados pelo botão de música)
-            // Som de baú abrindo (mais complexo e satisfatório)
+            // Som de baú abrindo + prêmio (mais elaborado e celebratório)
             const osc1 = audioCtx.createOscillator();
             const osc2 = audioCtx.createOscillator();
+            const osc3 = audioCtx.createOscillator();
             const gainNode = audioCtx.createGain();
             
             osc1.connect(gainNode);
             osc2.connect(gainNode);
+            osc3.connect(gainNode);
             gainNode.connect(audioCtx.destination);
             
             osc1.type = 'sine';
             osc2.type = 'triangle';
+            osc3.type = 'square';
             
-            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
             
-            osc1.frequency.setValueAtTime(200, audioCtx.currentTime);
-            osc1.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.3);
+            // Primeira parte: baú abrindo (grave subindo)
+            osc1.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.2);
             
-            osc2.frequency.setValueAtTime(400, audioCtx.currentTime);
-            osc2.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3);
+            osc2.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
             
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            // Segunda parte: prêmio (agudo celebratório)
+            osc3.frequency.setValueAtTime(800, audioCtx.currentTime + 0.25);
+            osc3.frequency.exponentialRampToValueAtTime(1600, audioCtx.currentTime + 0.45);
+            osc3.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.65);
+            
+            gainNode.gain.exponentialRampToValueAtTime(0.5, audioCtx.currentTime + 0.3);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
             
             osc1.start(audioCtx.currentTime);
             osc2.start(audioCtx.currentTime);
-            osc1.stop(audioCtx.currentTime + 0.5);
-            osc2.stop(audioCtx.currentTime + 0.5);
+            osc3.start(audioCtx.currentTime + 0.25);
+            
+            osc1.stop(audioCtx.currentTime + 0.8);
+            osc2.stop(audioCtx.currentTime + 0.8);
+            osc3.stop(audioCtx.currentTime + 0.8);
         };
         
         const unlockAllAudio = () => {
