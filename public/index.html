@@ -2722,14 +2722,22 @@
             form.style.display = 'none';
             loadingOverlay.classList.add('active');
 
-            const formData = new FormData(form);
-            formData.set('amount', value.toString()); // Sobrescrever com valor numérico parseado
-            formData.append('tipo_deposito', document.getElementById('aceitarPromocao').checked ? 'bonus' : 'normal');
-            formData.append('sessionId', localStorage.getItem('sessionId')); // Adicionar sessionId
+            // Preparar dados como JSON
+            const paymentData = {
+                amount: value,
+                tipo_deposito: document.getElementById('aceitarPromocao').checked ? 'bonus' : 'normal',
+                sessionId: localStorage.getItem('sessionId')
+            };
+
+            console.log('💰 Enviando pagamento:', paymentData);
+
             try {
                 const res = await fetch('/api/payment.php', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(paymentData)
                 });
                 if (!res.ok) throw new Error('Falha na resposta da rede');
                 const data = await res.json();
