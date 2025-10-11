@@ -1165,13 +1165,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Por enquanto, sempre retorna rollover completo
       res.json({ 
+        success: true,
         rolloverCompleto: true,
+        rollover_completo: true, // compatibilidade
         rolloverRestante: 0,
-        rolloverTotal: 0
+        rollover_restante: 0, // compatibilidade
+        rolloverTotal: 0,
+        rollover_total: 0 // compatibilidade
       });
     } catch (error) {
       console.error("Error checking rollover:", error);
-      res.status(500).json({ error: "Erro ao verificar rollover" });
+      res.status(500).json({ 
+        success: false,
+        error: "Erro ao verificar rollover" 
+      });
     }
   });
 
