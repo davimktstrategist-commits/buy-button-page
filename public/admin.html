@@ -1328,16 +1328,25 @@
 
         // Edit User Modal Functions
         function editUser(user) {
-            document.getElementById('editUserId').value = user.id;
-            document.getElementById('editUserEmail').value = user.email || '';
-            document.getElementById('editUserFirstName').value = user.firstName || '';
-            document.getElementById('editUserLastName').value = user.lastName || '';
-            document.getElementById('editUserBalance').value = parseFloat(user.balance) || 0;
-            document.getElementById('editUserInfluencerMode').checked = user.influencerMode || false;
-            document.getElementById('editUserActive').checked = user.isActive !== false;
-            document.getElementById('editUserPassword').value = '';
+            if (!user || !user.id) {
+                console.error('editUser called without valid user data');
+                return;
+            }
             
-            document.getElementById('editUserModal').classList.remove('hidden');
+            try {
+                document.getElementById('editUserId').value = user.id;
+                document.getElementById('editUserEmail').value = user.email || '';
+                document.getElementById('editUserFirstName').value = user.firstName || '';
+                document.getElementById('editUserLastName').value = user.lastName || '';
+                document.getElementById('editUserBalance').value = parseFloat(user.balance) || 0;
+                document.getElementById('editUserInfluencerMode').checked = user.influencerMode || false;
+                document.getElementById('editUserActive').checked = user.isActive !== false;
+                document.getElementById('editUserPassword').value = '';
+                
+                document.getElementById('editUserModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('Error opening edit modal:', error);
+            }
         }
 
         function closeEditUserModal() {
