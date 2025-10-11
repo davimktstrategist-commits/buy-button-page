@@ -233,8 +233,8 @@ class BRPIXService {
         throw new Error('BRPIX credentials not configured');
       }
 
-      // BRPIX usa Basic Auth
-      const authString = Buffer.from(`${adminCreds.companyId}:${adminCreds.secretKey}`).toString('base64');
+      // BRPIX usa Basic Auth: secretKey:companyId
+      const authString = Buffer.from(`${adminCreds.secretKey}:${adminCreds.companyId}`).toString('base64');
 
       const response = await fetch(`${BRPIX_API_URL}/transactions/${transactionId}`, {
         method: 'GET',
