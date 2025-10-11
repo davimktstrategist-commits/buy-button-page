@@ -4038,17 +4038,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const handlePlay = async () => {
-            console.log('🎮 handlePlay CHAMADO!');
-            console.log('📊 Estado:', { saldo: state.saldo, aposta: state.aposta, isSpinning: state.isSpinning, isLoggedIn: state.isLoggedIn });
-            
             unlockAllAudio();
             // Sistema com sessões anônimas - todos podem jogar
             if (state.isSpinning) {
-                console.log('⚠️ Já está girando, abortando...');
                 return;
             }
             if (state.saldo < state.aposta) {
-                console.log('⚠️ Saldo insuficiente:', state.saldo, '<', state.aposta);
                 // Desativar modo automático se saldo insuficiente
                 if (state.isAuto) {
                     state.isAuto = false;
@@ -4067,25 +4062,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            console.log('🔄 Iniciando giro com aposta:', state.aposta);
             toggleSpinButtons(false);
             
             const sessionId = localStorage.getItem('sessionId');
-            const formData = new FormData();
-            formData.append('sessionId', sessionId);
-            formData.append('betAmount', state.aposta);
-            console.log('📤 FormData criado:', { sessionId, betAmount: state.aposta });
+            const params = new URLSearchParams();
+            params.append('sessionId', sessionId);
+            params.append('betAmount', state.aposta);
 
             try {
-                console.log('🌐 Fazendo fetch para /ajax/start_spin.php...');
-                const response = await fetch('ajax/start_spin.php', { method: 'POST', body: formData });
-                console.log('📥 Response recebido:', response.status, response.statusText);
+                const response = await fetch('ajax/start_spin.php', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: params 
+                });
                 
                 const result = await response.json();
-                console.log('📦 Resultado parseado:', result);
 
                 if (!result.success) {
-                    console.error('❌ Erro do backend:', result.message);
                     showNotification(result.message, true);
                     toggleSpinButtons(true);
                     if (result.message === 'Saldo insuficiente.') {
@@ -4097,18 +4090,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                console.log('✅ Sucesso! Novo saldo:', result.newBalance);
                 state.saldo = result.newBalance;
                 updateDisplay();
 
                 if (result.bonus_multiplier) {
-                    console.log('🎁 Bônus multiplicador:', result.bonus_multiplier);
                     await playBonusAnimation(result.bonus_multiplier);
                 }
-                console.log('🎰 Iniciando animação:', { posicao1: result.posicao1, posicao2: result.posicao2, ganho: result.ganhoFinal });
                 startSpinAnimation(result.posicao1, result.posicao2, result.ganhoFinal);
             } catch (error) {
-                console.error('💥 ERRO CATCH:', error);
                 showNotification('Erro de conexão. Tente novamente.', true);
                 toggleSpinButtons(true);
             }
@@ -4264,9 +4253,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const initEventListeners = () => {
             // Event listener para o botão redondo de giro
             if(DOMElements.spinButton) {
-                console.log('✅ Botão de giro encontrado e listener adicionado');
                 DOMElements.spinButton.addEventListener('click', () => {
-                    console.log('🖱️ BOTÃO DE GIRO CLICADO!');
                     // Adicionar animação de giro ao botão
                     DOMElements.spinButton.classList.add('spinning');
                     setTimeout(() => {
@@ -4276,8 +4263,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Executar o giro
                     handlePlay();
                 });
-            } else {
-                console.error('❌ Botão de giro NÃO encontrado!');
             }
             
             // Event listener para o botão START

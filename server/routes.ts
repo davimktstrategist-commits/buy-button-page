@@ -777,21 +777,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Iniciar giro (start spin)
   app.post('/ajax/start_spin.php', async (req, res) => {
     try {
-      console.log('🎰 START_SPIN - Request body:', req.body);
-      console.log('🎰 START_SPIN - Headers:', { sessionId: req.headers['x-session-id'] });
-      
       const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
       const betAmount = parseFloat(req.body.betAmount || req.body.valor);
 
-      console.log('🎰 START_SPIN - Parsed:', { sessionId, betAmount, betAmountType: typeof betAmount });
-
       if (!sessionId) {
-        console.error('❌ START_SPIN - Session ID faltando');
         return res.status(400).json({ error: "Session ID required" });
       }
 
       if (!betAmount || betAmount <= 0) {
-        console.error('❌ START_SPIN - Bet amount inválido:', betAmount);
         return res.status(400).json({ error: "Valor de aposta inválido" });
       }
 
@@ -908,12 +901,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get updated balance
       const updatedUser = await storage.getUserBalance(sessionId);
 
+      // Calculate positions for the roulette animation (0-11 for 12 segments)
+      const posicao1 = Math.floor(Math.random() * 12);
+      const posicao2 = Math.floor(Math.random() * 12);
+
       res.json({
         success: true,
         multiplier: selectedMultiplier,
         winAmount: winAmount.toFixed(2),
         balance: parseFloat(updatedUser?.balance || '0').toFixed(2),
+        newBalance: parseFloat(updatedUser?.balance || '0').toFixed(2),
         premio: winAmount.toFixed(2),
+        ganhoFinal: winAmount.toFixed(2),
+        posicao1,
+        posicao2,
+        bonus_multiplier: null, // No bonus for now
       });
     } catch (error) {
       console.error("Error starting spin:", error);
