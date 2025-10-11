@@ -343,6 +343,79 @@
       .start-game-button:active {
           transform: translateY(0px) scale(0.98);
       }
+      
+      /* BOTÃO REDONDO DE GIRO */
+      .spin-round-button {
+          width: 90px;
+          height: 90px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+          border: 4px solid #fff;
+          box-shadow: 0 8px 25px rgba(147, 51, 234, 0.6),
+                      inset 0 -2px 8px rgba(0, 0, 0, 0.3);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: visible;
+      }
+      
+      .spin-round-button svg {
+          width: 40px;
+          height: 40px;
+          fill: #fff;
+          filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+          margin-left: 4px;
+      }
+      
+      .spin-round-button:hover {
+          transform: scale(1.05);
+          box-shadow: 0 10px 30px rgba(147, 51, 234, 0.7),
+                      inset 0 -2px 8px rgba(0, 0, 0, 0.3);
+      }
+      
+      .spin-round-button:active {
+          transform: scale(0.95);
+      }
+      
+      .spin-round-button.spinning {
+          animation: spinButton 0.6s ease-out;
+      }
+      
+      .spin-round-button.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          pointer-events: none;
+      }
+      
+      @keyframes spinButton {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+      
+      @media (max-width: 768px) {
+          .spin-round-button {
+              width: 80px;
+              height: 80px;
+          }
+          .spin-round-button svg {
+              width: 35px;
+              height: 35px;
+          }
+      }
+      
+      @media (max-width: 480px) {
+          .spin-round-button {
+              width: 70px;
+              height: 70px;
+          }
+          .spin-round-button svg {
+              width: 30px;
+              height: 30px;
+          }
+      }
 
       /* Controles centralizados */
       .controls-bottom-row {
@@ -1667,7 +1740,11 @@
             <!-- Botão PLAY -->
             <div class="play-button-container">
                 <button id="start-button" class="start-game-button">START</button>
-                <lottie-player id="play-button" src="https://lottie.host/580bbfbc-05ae-4ba9-a829-3208237b9ba3/A4QHqPhCT6.json" background="transparent.html" speed="1" loop="" autoplay="" style="display: none;"></lottie-player>
+                <button id="spin-button" class="spin-round-button" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                </button>
             </div>
 
             <!-- Controles Centralizados -->
@@ -3600,7 +3677,7 @@ document.addEventListener('DOMContentLoaded', () => {
         forceUpdateBalance();
 
         const DOMElements = {
-            playButton: document.getElementById('play-button'),
+            spinButton: document.getElementById('spin-button'),
             plusButton: document.getElementById('plus-button'),
             minusButton: document.getElementById('minus-button'),
             giroValue: document.getElementById('giro-value'),
@@ -3732,28 +3809,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 walletButton.style.display = state.isLoggedIn ? 'flex' : 'none';
             }
             
-            // Alternar entre botão START e botão de ação da roleta
+            // Alternar entre botão START e botão redondo de giro
             const startButton = document.getElementById('start-button');
-            const playButton = document.getElementById('play-button');
+            const spinButton = document.getElementById('spin-button');
             
             if (!state.isLoggedIn) {
-                // Não logado: mostrar botão animado (lottie)
+                // Não logado: mostrar botão redondo de giro
                 if (startButton) startButton.style.display = 'none';
-                if (playButton) playButton.style.display = 'block';
+                if (spinButton) spinButton.style.display = 'flex';
             } else if (state.saldo > 0) {
-                // Logado com qualquer saldo: esconder START, mostrar botão de ação (lottie)
+                // Logado com qualquer saldo: esconder START, mostrar botão redondo de giro
                 if (startButton) startButton.style.display = 'none';
-                if (playButton) playButton.style.display = 'block';
+                if (spinButton) spinButton.style.display = 'flex';
             } else {
                 // Logado sem saldo (R$ 0,00): mostrar botão START
                 if (startButton) startButton.style.display = 'block';
-                if (playButton) playButton.style.display = 'none';
+                if (spinButton) spinButton.style.display = 'none';
             }
         };
 
         const toggleSpinButtons = (enabled) => {
             state.isSpinning = !enabled;
-            DOMElements.playButton.classList.toggle('disabled', !enabled);
+            DOMElements.spinButton.classList.toggle('disabled', !enabled);
             const disableBetControls = !enabled || !state.isLoggedIn;
             DOMElements.plusButton.disabled = disableBetControls;
             DOMElements.minusButton.disabled = disableBetControls;
@@ -4107,7 +4184,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const initEventListeners = () => {
-            if(DOMElements.playButton) DOMElements.playButton.addEventListener('click', handlePlay);
+            // Event listener para o botão redondo de giro
+            if(DOMElements.spinButton) {
+                DOMElements.spinButton.addEventListener('click', () => {
+                    // Adicionar animação de giro ao botão
+                    DOMElements.spinButton.classList.add('spinning');
+                    setTimeout(() => {
+                        DOMElements.spinButton.classList.remove('spinning');
+                    }, 600);
+                    
+                    // Executar o giro
+                    handlePlay();
+                });
+            }
             
             // Event listener para o botão START
             const startButton = document.getElementById('start-button');
