@@ -4002,25 +4002,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        const hideModalAndResume = async () => {
-            try {
-                const response = await fetch('ajax/finish_spin.php', { method: 'POST' });
-                const result = await response.json();
-                if (result.success && typeof result.newBalance !== 'undefined') {
-                    state.saldo = result.newBalance;
-                    updateDisplay();
-                } else {
-                    showNotification(result.message || 'Erro ao finalizar jogada.', true);
-                }
-            } catch (error) {
-                showNotification('Erro de conexão ao finalizar jogada.', true);
-            }
+        const hideModalAndResume = () => {
+            state.isSpinning = false;
             toggleSpinButtons(true);
             DOMElements.roleta1.classList.add('swaying'); 
             DOMElements.roleta1Labels.classList.add('swaying');
             DOMElements.roleta2.classList.add('swaying'); 
             DOMElements.roleta2Labels.classList.add('swaying');
             DOMElements.bonusMultiplierImg.classList.remove('visible');
+            
+            // Modo Automático: continuar girando APÓS liberar isSpinning
+            if (state.isAuto && state.autoSpinsRemaining > 0) {
+                state.autoSpinsRemaining--;
+                if (state.autoSpinsRemaining === 0) {
+                    state.isAuto = false;
+                    const autoButton = document.getElementById('auto-button');
+                    if (autoButton) autoButton.classList.remove('active');
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.success('✅ Modo Automático finalizado!');
+                    }
+                } else {
+                    // Continuar próximo giro
+                    setTimeout(() => handlePlay(), state.isTurbo ? 100 : 200);
+                }
+            }
         };
         
         const fadeOutAudio = (audioElement, duration) => {
@@ -4058,10 +4063,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const speedMultiplier = state.isTurbo ? 0.5 : 1.0;
             const duration1 = 3 * speedMultiplier;
             const duration2 = (duration1 + 2) * speedMultiplier;
-            const easing = 'cubic-bezier(0.25, 1, 0.5, 1)';
+            const easing = 'cubic-bezier(0.33, 1, 0.68, 1)';
 
-            [DOMElements.roleta1, DOMElements.roleta1Labels].forEach(el => el.style.transition = `transform ${duration1}s ${easing}`);
-            [DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.style.transition = `transform ${duration2}s ${easing}`);
+            [DOMElements.roleta1, DOMElements.roleta1Labels].forEach(el => {
+                el.style.transition = `transform ${duration1}s ${easing}`;
+            });
+            [DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => {
+                el.style.transition = `transform ${duration2}s ${easing}`;
+            });
 
             const numSegments1 = state.roleta1Map.length;
             const segmentAngle1 = 360 / numSegments1;
@@ -4099,24 +4108,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         Notiflix.Notify.success(`💰 Ganhou: R$ ${ganhoFinal}`);
                     }
                 }
-                await hideModalAndResume();
-                [DOMElements.roleta1, DOMElements.roleta1Labels, DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.style.transition = '');
                 
-                // Modo Automático: continuar girando
-                if (state.isAuto && state.autoSpinsRemaining > 0) {
-                    state.autoSpinsRemaining--;
-                    if (state.autoSpinsRemaining === 0) {
-                        state.isAuto = false;
-                        const autoButton = document.getElementById('auto-button');
-                        if (autoButton) autoButton.classList.remove('active');
-                        if (typeof Notiflix !== 'undefined') {
-                            Notiflix.Notify.success('✅ Modo Automático finalizado!');
-                        }
-                    } else {
-                        // Continuar próximo giro
-                        setTimeout(() => handlePlay(), state.isTurbo ? 300 : 800);
-                    }
-                }
+                // Remover transition DEPOIS de um pequeno delay para evitar jump visual
+                setTimeout(() => {
+                    [DOMElements.roleta1, DOMElements.roleta1Labels, DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.style.transition = 'none');
+                }, 100);
+                
+                hideModalAndResume();
             }, duration2 * 1000);
         };
 
@@ -4126,6 +4124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (state.isSpinning) {
                 return;
             }
+            state.isSpinning = true;
             if (state.saldo < state.aposta) {
                 // Desativar modo automático se saldo insuficiente
                 if (state.isAuto) {
