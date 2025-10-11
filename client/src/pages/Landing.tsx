@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trophy, Zap, Shield, Coins } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Landing() {
+  const [, setLocation] = useLocation();
+  
   const handleLogin = () => {
-    window.location.href = "/api/login";
+    setLocation("/game");
   };
 
   return (
