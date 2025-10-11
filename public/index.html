@@ -4683,6 +4683,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         .catch(() => showNotification('Falha ao copiar o link.', true));
                 });
             }
+            
+            // Listener global: qualquer clique abre modal de login se não estiver logado
+            document.addEventListener('click', (e) => {
+                // Não abrir se já está logado
+                if (state.isLoggedIn) return;
+                
+                // Não abrir se clicou dentro de um modal que já está aberto
+                if (e.target.closest('.modal-overlay.show')) return;
+                
+                // Não abrir se o modal de login já está visível
+                if (DOMElements.authModalOverlay.classList.contains('show')) return;
+                
+                // Abrir modal de login/cadastro
+                showAuthModal('login');
+            });
         };
 
         const updateUserUI = (user) => {
