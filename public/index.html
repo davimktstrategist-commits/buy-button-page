@@ -3381,10 +3381,8 @@
     }
 
     .winner-item .status-dot {
-        width: 9px;
-        height: 9px;
-        background-color: #28a745;
-        border-radius: 50%;
+        width: 14px;
+        height: 14px;
         margin-right: 10px;
         flex-shrink: 0;
     }
@@ -3448,8 +3446,8 @@
             margin-top: 6px;
         }
         .winner-item .status-dot {
-            width: 7px;
-            height: 7px;
+            width: 11px;
+            height: 11px;
             margin-right: 6px;
         }
     }
@@ -3614,7 +3612,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function addWinnerToList(winner) {
             const winnerHTML = `
                 <li class="winner-item">
-                    <span class="status-dot"></span>
+                    <img src="favicon.png" class="status-dot" alt="">
                     <span class="winner-name">${winner.name}</span>
                     <span class="winner-prize">${winner.prize}</span>
                 </li>
