@@ -274,10 +274,17 @@
       }
 
       .mode-button.active {
-          background: linear-gradient(135deg, var(--theme-text) 0%, var(--theme-text) 100%);
-          color: var(--theme-bg);
-          border-color: #86efac;
-          box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: #fff;
+          border-color: #34d399;
+          box-shadow: 0 0 25px rgba(16, 185, 129, 0.8),
+                      0 0 40px rgba(16, 185, 129, 0.4);
+          animation: pulseGlow 2s infinite;
+      }
+      
+      @keyframes pulseGlow {
+          0%, 100% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.8), 0 0 40px rgba(16, 185, 129, 0.4); }
+          50% { box-shadow: 0 0 30px rgba(16, 185, 129, 1), 0 0 50px rgba(16, 185, 129, 0.6); }
       }
 
       /* BOTTOM CONTROLS */
@@ -349,9 +356,10 @@
           width: 65px;
           height: 65px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #d946ef 0%, #a855f7 50%, #7c3aed 100%);
+          background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
           border: 4px solid #fff;
-          box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6),
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.7),
+                      0 0 30px rgba(16, 185, 129, 0.4),
                       inset 0 2px 4px rgba(255, 255, 255, 0.3),
                       inset 0 -4px 8px rgba(0, 0, 0, 0.25);
           cursor: pointer;
@@ -368,7 +376,7 @@
           position: absolute;
           inset: -2px;
           border-radius: 50%;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), transparent);
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.4), transparent);
           z-index: -1;
       }
       
@@ -381,15 +389,17 @@
       
       .spin-round-button:hover {
           transform: scale(1.1);
-          box-shadow: 0 8px 25px rgba(168, 85, 247, 0.8),
+          box-shadow: 0 8px 25px rgba(16, 185, 129, 0.9),
+                      0 0 40px rgba(16, 185, 129, 0.6),
                       inset 0 2px 4px rgba(255, 255, 255, 0.3),
                       inset 0 -4px 8px rgba(0, 0, 0, 0.25);
-          background: linear-gradient(135deg, #e879f9 0%, #c084fc 50%, #9333ea 100%);
+          background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
       }
       
       .spin-round-button:active {
           transform: scale(0.92);
-          box-shadow: 0 4px 15px rgba(168, 85, 247, 0.5),
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.6),
+                      0 0 25px rgba(16, 185, 129, 0.4),
                       inset 0 4px 8px rgba(0, 0, 0, 0.3);
       }
       
@@ -3660,7 +3670,10 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRotation2: 0,
             roleta1Map: [0, 5, 15, 2, 20, 100, 10, 50],
             roleta2Map: [2, 3, 4, 1],
-            isSoundOn: false
+            isSoundOn: false,
+            isTurbo: false,
+            isAuto: false,
+            autoSpinsRemaining: 0
         };
         
         // FORÇA ATUALIZAÇÃO DO SALDO AO CARREGAR A PÁGINA
@@ -3951,15 +3964,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const startSpinAnimation = async (winningPos1, winningPos2, ganhoFinal) => {
             if(DOMElements.spinSound) {
                 DOMElements.spinSound.currentTime = 0;
-                DOMElements.spinSound.playbackRate = 1.0;
+                DOMElements.spinSound.playbackRate = state.isTurbo ? 2.0 : 1.0;
                 DOMElements.spinSound.play().catch(e => {});
             }
 
             [DOMElements.roleta1, DOMElements.roleta1Labels, DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.classList.remove('swaying'));
             void DOMElements.roleta1.offsetWidth;
             
-            const duration1 = 3;
-            const duration2 = duration1 + 2;
+            // Modo Turbo: giros 2x mais rápidos
+            const speedMultiplier = state.isTurbo ? 0.5 : 1.0;
+            const duration1 = 3 * speedMultiplier;
+            const duration2 = (duration1 + 2) * speedMultiplier;
             const easing = 'cubic-bezier(0.25, 1, 0.5, 1)';
 
             [DOMElements.roleta1, DOMElements.roleta1Labels].forEach(el => el.style.transition = `transform ${duration1}s ${easing}`);
@@ -3991,13 +4006,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             setTimeout(async () => {
-                if (ganhoFinal > 0) {
+                if (ganhoFinal > 0 && !state.isTurbo) {
                     if(DOMElements.winSound) DOMElements.winSound.play().catch(e => {});
                     jsConfetti.addConfetti({ confettiNumber: 100, confettiRadius: 5 });
                     await showAndAwaitPrize(ganhoFinal);
+                } else if (ganhoFinal > 0 && state.isTurbo) {
+                    // No modo turbo, apenas mostra notificação rápida
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.success(`💰 Ganhou: R$ ${ganhoFinal.toFixed(2)}`);
+                    }
                 }
                 await hideModalAndResume();
                 [DOMElements.roleta1, DOMElements.roleta1Labels, DOMElements.roleta2, DOMElements.roleta2Labels].forEach(el => el.style.transition = '');
+                
+                // Modo Automático: continuar girando
+                if (state.isAuto && state.autoSpinsRemaining > 0) {
+                    state.autoSpinsRemaining--;
+                    if (state.autoSpinsRemaining === 0) {
+                        state.isAuto = false;
+                        const autoButton = document.getElementById('auto-button');
+                        if (autoButton) autoButton.classList.remove('active');
+                        if (typeof Notiflix !== 'undefined') {
+                            Notiflix.Notify.success('✅ Modo Automático finalizado!');
+                        }
+                    } else {
+                        // Continuar próximo giro
+                        setTimeout(() => handlePlay(), state.isTurbo ? 300 : 800);
+                    }
+                }
             }, duration2 * 1000);
         };
 
@@ -4009,6 +4045,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (state.isSpinning) return;
             if (state.saldo < state.aposta) {
+                // Desativar modo automático se saldo insuficiente
+                if (state.isAuto) {
+                    state.isAuto = false;
+                    state.autoSpinsRemaining = 0;
+                    const autoButton = document.getElementById('auto-button');
+                    if (autoButton) autoButton.classList.remove('active');
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.warning('⚠️ Auto desativado: Saldo insuficiente');
+                    }
+                }
                 if (typeof openDepositModal === 'function') {
                     openDepositModal();
                 } else {
@@ -4294,6 +4340,44 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+            
+            // Event listeners para botões TURBO e AUTO
+            const turboButton = document.getElementById('turbo-button');
+            const autoButton = document.getElementById('auto-button');
+            
+            if (turboButton) {
+                turboButton.addEventListener('click', () => {
+                    state.isTurbo = !state.isTurbo;
+                    turboButton.classList.toggle('active', state.isTurbo);
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.info(state.isTurbo ? '⚡ Modo Turbo ATIVADO' : '🐢 Modo Turbo DESATIVADO');
+                    }
+                });
+            }
+            
+            if (autoButton) {
+                autoButton.addEventListener('click', () => {
+                    if (state.isAuto) {
+                        // Desativar auto
+                        state.isAuto = false;
+                        state.autoSpinsRemaining = 0;
+                        autoButton.classList.remove('active');
+                        if (typeof Notiflix !== 'undefined') {
+                            Notiflix.Notify.info('🛑 Modo Automático DESATIVADO');
+                        }
+                    } else {
+                        // Ativar auto com 10 giros
+                        state.isAuto = true;
+                        state.autoSpinsRemaining = 10;
+                        autoButton.classList.add('active');
+                        if (typeof Notiflix !== 'undefined') {
+                            Notiflix.Notify.success('🔄 Modo Automático: 10 giros');
+                        }
+                        // Iniciar primeiro giro automático
+                        setTimeout(() => handlePlay(), 500);
+                    }
+                });
+            }
             
             document.querySelectorAll('.password-toggle').forEach(btn => {
                 btn.addEventListener('click', () => {
