@@ -196,7 +196,13 @@ class BRPIXService {
       // Mapear resposta conforme formato da BRPIX Digital
       const pixQrCode = data.pix?.qrcode || data.pix?.qrCode || data.qrCode || '';
       
-      return {
+      console.log('🔍 Mapeamento QR Code:', {
+        'data.pix?.qrcode': data.pix?.qrcode?.substring(0, 50) + '...',
+        'pixQrCode': pixQrCode?.substring(0, 50) + '...',
+        'pixQrCodeLength': pixQrCode?.length || 0
+      });
+      
+      const result = {
         id: data.id || data.transactionId,
         amount: payload.amount, // Retornar em reais (não centavos)
         status: data.status || 'pending',
@@ -205,6 +211,14 @@ class BRPIXService {
         copyPaste: pixQrCode, // Mesmo valor do qrCode
         expiresAt: data.pix?.expirationDate || data.pix?.expiresAt || new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       };
+      
+      console.log('📦 Retornando:', {
+        id: result.id,
+        qrCodeLength: result.qrCode?.length || 0,
+        hasQrCode: !!result.qrCode
+      });
+      
+      return result;
     } catch (error) {
       console.error('❌ BRPIX create transaction error:', error);
       throw error;
