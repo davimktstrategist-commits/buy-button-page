@@ -2193,6 +2193,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ENDPOINT DE TESTE - Simular confirmação de depósito (REMOVER EM PRODUÇÃO)
+  app.post('/api/test/confirm-deposit', async (req, res) => {
+    try {
+      const { transactionId } = req.body;
+      
+      if (!transactionId) {
+        return res.status(400).json({ error: "Transaction ID required" });
+      }
+
+      const transaction = await storage.getTransactionById(transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({ error: "Transação não encontrada" });
+      }
+
+      if (transaction.status === 'completed') {
+        return res.json({ message: 'Transação já confirmada anteriormente' });
+      }
+
+      // Usar UPDATE atômico: só atualiza se status='pending'
+      const result = await db.update(transactions)
+        .set({ 
+          status: 'completed',
+          updatedAt: new Date()
+        })
+        .where(
+          sql`${transactions.id} = ${transactionId} AND ${transactions.status} = 'pending'`
+        )
+        .returning();
+      
+      // Se retornou linha, significa que ERA pending e foi atualizado agora
+      if (result.length > 0) {
+        console.log('💰 [TESTE] Pagamento confirmado ATOMICAMENTE!', {
+          transactionId,
+          userId: transaction.userId,
+          amount: transaction.amount
+        });
+        
+        // Update user balance and total deposited
+        const userId = transaction.userId;
+        await storage.updateUserBalance(userId, parseFloat(transaction.amount));
+        
+        console.log('✅ [TESTE] Saldo creditado!', {
+          userId,
+          creditedAmount: transaction.amount
+        });
+        
+        // Update total deposited via SQL
+        await db.update(users)
+          .set({
+            totalDeposited: sql`${users.totalDeposited} + ${parseFloat(transaction.amount)}`,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userId));
+        
+        const user = await storage.getUser(userId);
+        console.log('📊 [TESTE] Total depositado atualizado!', {
+          userId,
+          newBalance: user?.balance,
+          newTotalDeposited: user?.totalDeposited
+        });
+        
+        // 💰 PROCESSAR COMISSÃO DE AFILIADO (CPA)
+        console.log('🔍 Verificando comissão de afiliado para userId:', userId, 'referredByUserId:', user?.referredByUserId);
+        
+        if (user?.referredByUserId) {
+          try {
+            console.log('✅ Usuário foi referido! Iniciando processo de comissão...');
+            const { systemConfig, affiliateCommissions, affiliateReferrals } = await import('@shared/schema');
+            
+            // Buscar configurações de CPA
+            const configs = await db.select().from(systemConfig).where(
+              sql`${systemConfig.key} IN ('affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+            );
+            
+            console.log('📋 Configurações CPA encontradas:', configs);
+            
+            let cpaPercent = 0;
+            let cpaFixed = 0;
+            configs.forEach(config => {
+              if (config.key === 'affiliate_cpa_percent') cpaPercent = parseFloat(config.value || '0');
+              if (config.key === 'affiliate_cpa_fixed') cpaFixed = parseFloat(config.value || '0');
+            });
+            
+            console.log('💵 Valores CPA:', { cpaPercent, cpaFixed });
+            
+            // Calcular comissão
+            const depositAmount = parseFloat(transaction.amount);
+            const commissionPercent = (depositAmount * cpaPercent) / 100;
+            const totalCommission = commissionPercent + cpaFixed;
+            
+            console.log('🧮 Cálculo da comissão:', {
+              depositAmount,
+              commissionPercent,
+              cpaFixed,
+              totalCommission
+            });
+            
+            if (totalCommission > 0) {
+              console.log('💰 Criando registro de comissão...');
+              
+              // Criar registro de comissão
+              await db.insert(affiliateCommissions).values({
+                affiliateUserId: user.referredByUserId,
+                referredUserId: userId,
+                transactionId: transactionId,
+                commissionAmount: totalCommission.toFixed(2),
+                depositAmount: depositAmount.toFixed(2),
+                commissionType: `${cpaPercent}% + R$ ${cpaFixed.toFixed(2)}`,
+                status: 'paid',
+              });
+              
+              console.log('✅ Registro de comissão criado!');
+              
+              // Creditar comissão no saldo do afiliado
+              await storage.updateUserBalance(user.referredByUserId, totalCommission);
+              console.log('✅ Saldo do afiliado creditado!');
+              
+              // Atualizar total ganho no affiliateReferrals
+              await db.update(affiliateReferrals)
+                .set({
+                  totalCommissionEarned: sql`${affiliateReferrals.totalCommissionEarned} + ${totalCommission}`,
+                  updatedAt: new Date()
+                })
+                .where(
+                  sql`${affiliateReferrals.affiliateUserId} = ${user.referredByUserId} AND ${affiliateReferrals.referredUserId} = ${userId}`
+                );
+              
+              console.log('✅ Total de comissões do afiliado atualizado!');
+              
+              console.log('💰 Comissão CPA creditada COM SUCESSO!', {
+                affiliateUserId: user.referredByUserId,
+                referredUserId: userId,
+                depositAmount,
+                commission: totalCommission,
+                type: `${cpaPercent}% + R$ ${cpaFixed}`
+              });
+            } else {
+              console.log('⚠️ Comissão total é zero, pulando criação de registro');
+            }
+          } catch (commissionError) {
+            console.error('❌ ERRO CRÍTICO ao processar comissão de afiliado:', commissionError);
+            console.error('❌ Stack trace:', (commissionError as Error).stack);
+          }
+        } else {
+          console.log('ℹ️ Usuário não foi referido por ninguém, sem comissão a processar');
+        }
+
+        res.json({ 
+          success: true,
+          message: 'Depósito confirmado e comissão processada (se aplicável)'
+        });
+      } else {
+        res.json({ message: 'Transação já foi creditada anteriormente' });
+      }
+    } catch (error) {
+      console.error("[TESTE] Error confirming deposit:", error);
+      res.status(500).json({ error: "Erro ao confirmar depósito de teste" });
+    }
+  });
+
   // Servir arquivos estáticos da pasta public com cache adequado
   app.use(express.static(path.join(process.cwd(), 'public'), {
     maxAge: 0,
