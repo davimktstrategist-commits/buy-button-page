@@ -4719,35 +4719,21 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const handleLogout = async () => {
-            let newSessionId = null;
+            console.log('🚪 Iniciando logout...');
             
-            try {
-                // Try to get new anonymous sessionId from API
-                const response = await fetch('/api/logout', { method: 'POST' });
-                const data = await response.json();
-                
-                if (data.success && data.sessionId) {
-                    newSessionId = data.sessionId;
-                }
-            } catch (error) {
-                console.error('Erro ao fazer logout:', error);
-            }
+            // FIRST: Clear ALL session data immediately
+            localStorage.clear();
+            sessionStorage.clear();
             
-            // ALWAYS clear session data, even if API failed
-            localStorage.removeItem('sessionId');
-            localStorage.removeItem('tiger_session_id');
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('loggedUser');
-            
-            // Set new session if API succeeded
-            if (newSessionId) {
-                localStorage.setItem('sessionId', newSessionId);
-                window.APP_SESSION_ID = newSessionId;
-            }
-            
+            // Reset global state
             state.isLoggedIn = false;
             state.saldo = 0;
-            window.location.reload();
+            window.APP_SESSION_ID = null;
+            
+            console.log('✅ Dados limpos, recarregando página...');
+            
+            // Force hard reload
+            window.location.href = window.location.href.split('?')[0];
         };
 
         const init = () => {
