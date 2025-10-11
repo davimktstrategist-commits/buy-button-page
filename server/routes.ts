@@ -807,16 +807,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get roulette configuration
       const configs = await storage.getRouletteConfigsByType('main');
       
-      // Calculate result based on probabilities
-      const random = Math.random() * 100;
-      let cumulativeProbability = 0;
       let selectedMultiplier = 0;
 
-      for (const config of configs) {
-        cumulativeProbability += parseFloat(config.probability);
-        if (random <= cumulativeProbability) {
-          selectedMultiplier = config.multiplier;
-          break;
+      // Check if user is in influencer mode (70% win chance)
+      if (user.influencerMode) {
+        const influencerRandom = Math.random() * 100;
+        
+        if (influencerRandom < 70) {
+          // 70% chance: Select a winning multiplier (> 0)
+          const winningConfigs = configs.filter(c => c.multiplier > 0);
+          if (winningConfigs.length > 0) {
+            // Select based on proportional probabilities among winning options
+            const totalWinProb = winningConfigs.reduce((sum, c) => sum + parseFloat(c.probability), 0);
+            const winRandom = Math.random() * totalWinProb;
+            let cumulativeWinProb = 0;
+            
+            for (const config of winningConfigs) {
+              cumulativeWinProb += parseFloat(config.probability);
+              if (winRandom <= cumulativeWinProb) {
+                selectedMultiplier = config.multiplier;
+                break;
+              }
+            }
+          }
+        } else {
+          // 30% chance: Use normal probability distribution
+          const random = Math.random() * 100;
+          let cumulativeProbability = 0;
+
+          for (const config of configs) {
+            cumulativeProbability += parseFloat(config.probability);
+            if (random <= cumulativeProbability) {
+              selectedMultiplier = config.multiplier;
+              break;
+            }
+          }
+        }
+      } else {
+        // Normal mode: Calculate result based on standard probabilities
+        const random = Math.random() * 100;
+        let cumulativeProbability = 0;
+
+        for (const config of configs) {
+          cumulativeProbability += parseFloat(config.probability);
+          if (random <= cumulativeProbability) {
+            selectedMultiplier = config.multiplier;
+            break;
+          }
         }
       }
 
@@ -1467,6 +1504,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error loading affiliates:", error);
       res.status(500).json({ error: "Erro ao carregar afiliados" });
+    }
+  });
+
+  // Editar usuário
+  app.post('/ajax/admin_edit_user.php', async (req, res) => {
+    try {
+      const token = getAdminToken(req);
+      
+      if (!isAdminToken(token)) {
+        return res.status(403).json({ error: "Acesso negado" });
+      }
+
+      const { userId, email, firstName, lastName, balance, influencerMode, isActive, password } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: "ID do usuário é obrigatório" });
+      }
+
+      const updateData: any = {
+        updatedAt: new Date()
+      };
+
+      if (email !== undefined) updateData.email = email;
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (balance !== undefined) updateData.balance = String(balance);
+      if (influencerMode !== undefined) updateData.influencerMode = influencerMode;
+      if (isActive !== undefined) updateData.isActive = isActive;
+      if (password) updateData.password = password; // Em produção, deve ser hash
+
+      await db.update(users).set(updateData).where(eq(users.id, userId));
+      
+      res.json({ success: true, message: "Usuário atualizado com sucesso" });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Erro ao atualizar usuário" });
     }
   });
 

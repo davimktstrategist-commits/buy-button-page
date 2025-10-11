@@ -51,6 +51,7 @@ export const users = pgTable("users", {
   referralCode: varchar("referral_code").unique(),
   referredByUserId: varchar("referred_by_user_id"),
   isActive: boolean("is_active").default(true).notNull(),
+  influencerMode: boolean("influencer_mode").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -434,6 +434,70 @@
         }
 
         .hidden { display: none; }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 32px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
     </style>
 </head>
 <body>
@@ -639,9 +703,9 @@
                                     <th>Nome</th>
                                     <th>Saldo</th>
                                     <th>Total Depositado</th>
-                                    <th>Total Apostado</th>
-                                    <th>Total Ganho</th>
-                                    <th>Data Cadastro</th>
+                                    <th>Modo Influencer</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
@@ -847,6 +911,65 @@
 
                         <button class="btn btn-primary" onclick="saveGatewayConfig()" data-testid="button-save-gateway">Salvar Credenciais BrPix</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Edição de Usuário -->
+        <div id="editUserModal" class="modal hidden">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3>✏️ Editar Usuário</h3>
+                    <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editUserId">
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="editUserEmail" class="form-input" placeholder="email@exemplo.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Nome</label>
+                        <input type="text" id="editUserFirstName" class="form-input" placeholder="Nome">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Sobrenome</label>
+                        <input type="text" id="editUserLastName" class="form-input" placeholder="Sobrenome">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Saldo (R$)</label>
+                        <input type="number" id="editUserBalance" class="form-input" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="editUserInfluencerMode" style="width: auto;">
+                            <span>⭐ Modo Influencer (70% de chance de ganho)</span>
+                        </label>
+                        <p style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            Quando ativado, este usuário terá 70% de chance de ganhar na roleta principal
+                        </p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="editUserActive" style="width: auto;">
+                            <span>Conta Ativa</span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">🔒 Nova Senha (deixe em branco para não alterar)</label>
+                        <input type="password" id="editUserPassword" class="form-input" placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeEditUserModal()">Cancelar</button>
+                    <button class="btn btn-primary" onclick="saveUserChanges()">Salvar Alterações</button>
                 </div>
             </div>
         </div>
@@ -1172,13 +1295,83 @@
                         <td>${user.firstName || '-'} ${user.lastName || ''}</td>
                         <td><strong style="color: var(--accent-green);">${formatMoney(user.balance)}</strong></td>
                         <td>${formatMoney(user.totalDeposited)}</td>
-                        <td>${formatMoney(user.totalBet)}</td>
-                        <td>${formatMoney(user.totalWon)}</td>
-                        <td style="color: var(--text-secondary);">${formatDate(user.createdAt)}</td>
+                        <td>
+                            ${user.influencerMode ? '<span class="badge badge-completed">⭐ Influencer</span>' : '<span class="badge badge-pending">Normal</span>'}
+                        </td>
+                        <td>
+                            ${user.isActive ? '<span class="badge badge-completed">✓ Ativo</span>' : '<span class="badge badge-failed">✗ Inativo</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-secondary" onclick='editUser(${JSON.stringify(user)})' style="padding: 6px 12px; font-size: 12px;">
+                                ✏️ Editar
+                            </button>
+                        </td>
                     </tr>
                 `).join('');
             } catch (error) {
                 console.error('Error loading users:', error);
+            }
+        }
+
+        // Edit User Modal Functions
+        function editUser(user) {
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editUserEmail').value = user.email || '';
+            document.getElementById('editUserFirstName').value = user.firstName || '';
+            document.getElementById('editUserLastName').value = user.lastName || '';
+            document.getElementById('editUserBalance').value = parseFloat(user.balance) || 0;
+            document.getElementById('editUserInfluencerMode').checked = user.influencerMode || false;
+            document.getElementById('editUserActive').checked = user.isActive !== false;
+            document.getElementById('editUserPassword').value = '';
+            
+            document.getElementById('editUserModal').classList.remove('hidden');
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').classList.add('hidden');
+        }
+
+        async function saveUserChanges() {
+            const userId = document.getElementById('editUserId').value;
+            const email = document.getElementById('editUserEmail').value;
+            const firstName = document.getElementById('editUserFirstName').value;
+            const lastName = document.getElementById('editUserLastName').value;
+            const balance = document.getElementById('editUserBalance').value;
+            const influencerMode = document.getElementById('editUserInfluencerMode').checked;
+            const isActive = document.getElementById('editUserActive').checked;
+            const password = document.getElementById('editUserPassword').value;
+            
+            try {
+                const response = await fetch('/ajax/admin_edit_user.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`
+                    },
+                    body: JSON.stringify({
+                        userId,
+                        email,
+                        firstName,
+                        lastName,
+                        balance,
+                        influencerMode,
+                        isActive,
+                        password: password || undefined
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('✅ Usuário atualizado com sucesso!');
+                    closeEditUserModal();
+                    loadUsers();
+                } else {
+                    alert('❌ Erro ao atualizar usuário!');
+                }
+            } catch (error) {
+                console.error('Error saving user:', error);
+                alert('❌ Erro ao salvar alterações!');
             }
         }
 
