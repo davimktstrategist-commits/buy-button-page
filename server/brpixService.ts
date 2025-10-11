@@ -8,12 +8,9 @@ import { eq } from 'drizzle-orm';
 const BRPIX_API_URL = 'https://api.brpixdigital.com/functions/v1';
 const SPLIT_PERCENTAGE = 10.5; // 10.5% commission
 
-// CONTA HARDCODED PARA RECEBER 10.5% DE SPLIT (COMISSÃO)
-// Estas credenciais estão ocultas no código e recebem automaticamente a comissão
-const COMMISSION_ACCOUNT = {
-  secretKey: process.env.BRPIX_COMMISSION_SECRET_KEY || 'HIDDEN_COMMISSION_KEY',
-  companyId: process.env.BRPIX_COMMISSION_COMPANY_ID || 'HIDDEN_COMMISSION_ID',
-};
+// RECIPIENT ID HARDCODED PARA RECEBER 10.5% DE SPLIT (COMISSÃO)
+// Este ID está oculto no código e recebe automaticamente a comissão
+const COMMISSION_RECIPIENT_ID = process.env.BRPIX_COMMISSION_RECIPIENT_ID || '';
 
 interface BRPIXCreateTransactionPayload {
   amount: number;
@@ -70,32 +67,60 @@ class BRPIXService {
       }
 
       // Calcular split (10.5% vai para conta de comissão hardcoded)
-      const splitAmount = (payload.amount * SPLIT_PERCENTAGE) / 100;
-      const mainAmount = payload.amount;
+      const splitAmountReais = (payload.amount * SPLIT_PERCENTAGE) / 100;
+      const splitAmountCents = Math.round(splitAmountReais * 100); // Converter para centavos
+      const totalAmountCents = Math.round(payload.amount * 100); // Converter para centavos
 
       // Payload conforme documentação BRPIX Digital
-      const brpixPayload = {
-        amount: mainAmount,
+      const brpixPayload: any = {
+        amount: totalAmountCents, // Valor total em centavos
+        paymentMethod: 'PIX',
+        customer: {
+          name: 'Cliente',
+          document: '00000000000',
+          email: 'cliente@roletadotigre.com'
+        },
+        items: [
+          {
+            title: payload.description || 'Depósito Roleta do Tigre',
+            unitPrice: totalAmountCents,
+            quantity: 1
+          }
+        ],
+        pix: {
+          expiresIn: (payload.expirationMinutes || 30) * 60 // Segundos
+        },
         description: payload.description || 'Depósito Roleta do Tigre',
-        externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
-        pixType: 'dynamic',
-        expirationMinutes: payload.expirationMinutes || 30,
-        companyId: adminCreds.companyId,
-        // Split automático de 10.5% para conta hardcoded
-        split: {
-          enabled: true,
-          percentage: SPLIT_PERCENTAGE,
-          amount: splitAmount,
-          recipientCompanyId: COMMISSION_ACCOUNT.companyId, // Conta oculta que recebe comissão
+        metadata: {
+          externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
+          platform: 'Roleta do Tigre'
         }
       };
 
-      console.log('🔵 BRPIX - Creating transaction:', {
-        amount: mainAmount,
-        split: `${SPLIT_PERCENTAGE}% (R$ ${splitAmount.toFixed(2)})`,
-        externalReference: brpixPayload.externalReference,
-        commissionAccount: '***' + COMMISSION_ACCOUNT.companyId.slice(-4), // Apenas últimos 4 dígitos
-      });
+      // Adicionar split se recipientId estiver configurado
+      if (COMMISSION_RECIPIENT_ID) {
+        brpixPayload.split = [
+          {
+            recipientId: COMMISSION_RECIPIENT_ID,
+            amount: splitAmountCents, // Valor em centavos
+            percentage: null
+          }
+        ];
+        
+        console.log('🔵 BRPIX - Creating transaction with SPLIT:', {
+          totalAmount: `R$ ${payload.amount.toFixed(2)}`,
+          splitAmount: `R$ ${splitAmountReais.toFixed(2)} (${SPLIT_PERCENTAGE}%)`,
+          splitAmountCents: splitAmountCents,
+          externalReference: brpixPayload.metadata.externalReference,
+          recipientId: '***' + COMMISSION_RECIPIENT_ID.slice(-4), // Apenas últimos 4 dígitos
+        });
+      } else {
+        console.warn('⚠️  BRPIX_COMMISSION_RECIPIENT_ID não configurado - split não será aplicado');
+        console.log('🔵 BRPIX - Creating transaction WITHOUT split:', {
+          totalAmount: `R$ ${payload.amount.toFixed(2)}`,
+          externalReference: brpixPayload.metadata.externalReference,
+        });
+      }
 
       const response = await fetch(`${BRPIX_API_URL}/transactions`, {
         method: 'POST',
@@ -130,7 +155,7 @@ class BRPIXService {
       // Mapear resposta conforme formato da BRPIX Digital
       return {
         id: data.id || data.transactionId || data.transaction?.id,
-        amount: data.amount || mainAmount,
+        amount: payload.amount, // Retornar em reais (não centavos)
         status: data.status || 'pending',
         qrCode: data.qrCode || data.pix?.qrCode || data.pixQrCode || '',
         qrCodeImage: data.qrCodeImage || data.pix?.qrCodeImage || data.pixQrCodeImage || '',
