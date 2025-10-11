@@ -2741,6 +2741,13 @@
                 });
                 if (!res.ok) throw new Error('Falha na resposta da rede');
                 const data = await res.json();
+                console.log('✅ Resposta do pagamento:', data);
+                console.log('🔍 Verificação:', { 
+                    hasQrcode: !!data.qrcode, 
+                    hasTransactionId: !!data.transactionId,
+                    qrcodeValue: data.qrcode?.substring(0, 50) + '...',
+                    transactionId: data.transactionId 
+                });
                 if (data.qrcode && data.transactionId) {
                     const qrArea = document.getElementById('qrArea');
                     document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data.qrcode)}`;
