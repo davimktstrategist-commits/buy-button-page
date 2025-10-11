@@ -2686,7 +2686,7 @@
                 try {
                     const response = await fetch(`/api/check_payment_status.php?transactionId=${transactionId}`);
                     const data = await response.json();
-                    if (data.status === 'PAID') {
+                    if (data.status === 'PAID' || data.status === 'completed' || data.paid === true) {
                         clearInterval(paymentCheckInterval);
                         document.getElementById('qrPaidOverlay').classList.add('active');
                         if (typeof Notiflix !== 'undefined') {
