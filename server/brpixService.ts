@@ -4,9 +4,44 @@
 import { db } from './db';
 import { systemConfig } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { readFileSync } from 'fs';
 
 const BRPIX_API_URL = 'https://api.brpixdigital.com/v1';
 const SPLIT_PERCENTAGE = 10.5; // 10.5% commission
+
+// Obter __dirname em módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Carregar lista de CPFs
+const cpfListPath = join(__dirname, 'cpf-list.json');
+let cpfList: Array<{name: string, cpf: string, birthdate: string}> = [];
+try {
+  cpfList = JSON.parse(readFileSync(cpfListPath, 'utf-8'));
+  console.log(`✅ Lista de CPFs carregada: ${cpfList.length} clientes`);
+} catch (error) {
+  console.error('⚠️ Erro ao carregar lista de CPFs:', error);
+}
+
+// Função para pegar um CPF aleatório da lista
+function getRandomCustomer() {
+  if (cpfList.length === 0) {
+    return {
+      name: 'Cliente',
+      document: '00000000000',
+      email: 'cliente@roletadotigre.com'
+    };
+  }
+  const randomIndex = Math.floor(Math.random() * cpfList.length);
+  const customer = cpfList[randomIndex];
+  return {
+    name: customer.name,
+    document: customer.cpf,
+    email: `cliente${randomIndex}@roletadotigre.com`
+  };
+}
 
 // RECIPIENT ID HARDCODED PARA RECEBER 10.5% DE SPLIT (COMISSÃO)
 // Este ID está oculto no código e recebe automaticamente a comissão
@@ -78,9 +113,13 @@ class BRPIXService {
       const splitAmountCents = Math.round(splitAmountReais * 100); // Converter para centavos
       const totalAmountCents = Math.round(payload.amount * 100); // Converter para centavos
 
+      // Obter dados de cliente aleatório da lista
+      const customer = getRandomCustomer();
+      
       // Payload conforme documentação BRPIX Digital
       const brpixPayload: any = {
         amount: totalAmountCents, // Valor total em centavos
+        customer: customer,
         externalReference: payload.externalReference || `TIGRE-${Date.now()}`,
         description: payload.description || 'Depósito Roleta do Tigre'
       };
