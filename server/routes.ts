@@ -1742,6 +1742,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ success: false, message: 'Usuário não encontrado' });
       }
 
+      // Buscar configuração de CPA do admin
+      const { systemConfig } = await import('@shared/schema');
+      const cpaConfig = await db.select().from(systemConfig)
+        .where(eq(systemConfig.key, 'affiliate_cpa_percent'))
+        .limit(1);
+      
+      let cpaPercent = 25; // Valor padrão
+      if (cpaConfig.length > 0) {
+        const parsed = parseFloat(cpaConfig[0].value || '25');
+        cpaPercent = isNaN(parsed) ? 25 : parsed;
+      }
+
       // Gerar link de afiliado
       const affiliateLink = `${req.protocol}://${req.get('host')}?ref=${user.referralCode}`;
 
@@ -1751,11 +1763,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Contar depositantes ativos (usuários que fizeram depósito)
       const depositantes = referrals.filter(r => parseFloat(r.totalDeposited || '0') > 0).length;
 
-      // Calcular ganhos de comissões (3% dos depósitos dos indicados)
+      // Calcular ganhos de comissões usando a % configurada
       let totalComission = 0;
       for (const referral of referrals) {
         const depositValue = parseFloat(referral.totalDeposited || '0');
-        totalComission += depositValue * 0.03; // 3% de comissão
+        totalComission += depositValue * (cpaPercent / 100);
       }
 
       res.json({
@@ -1769,7 +1781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         comissoes: {
           master: 0,
           agente: 0,
-          blogueiro: 3
+          blogueiro: cpaPercent
         },
         historico: []
       });
