@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   role: roleEnum("role").default('user').notNull(),
   balance: decimal("balance", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  affiliateBalance: decimal("affiliate_balance", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalDeposited: decimal("total_deposited", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalWon: decimal("total_won", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalBet: decimal("total_bet", { precision: 10, scale: 2 }).default('0.00').notNull(),

@@ -2149,6 +2149,16 @@
                     <span id="username-display"></span>
                     <button id="close-profile-button"><img src="favicon.png" style="width: 22px; height: 22px;" alt="Fechar"></button>
                 </div>
+                <div id="profile-balances" style="display: flex; gap: 8px; margin-bottom: 15px;">
+                    <div style="flex: 1; background: linear-gradient(135deg, rgba(1, 38, 6, 0.8), rgba(3, 140, 76, 0.2)); border: 2px solid #038C4C; border-radius: 10px; padding: 10px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: #038C4C; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">Carteira Principal</div>
+                        <div id="balance-main-display" style="font-size: 1.1rem; color: #86efac; font-weight: bold;">R$ 0,00</div>
+                    </div>
+                    <div style="flex: 1; background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.1)); border: 2px solid #8b5cf6; border-radius: 10px; padding: 10px; text-align: center;">
+                        <div style="font-size: 0.7rem; color: #a78bfa; font-weight: bold; text-transform: uppercase; margin-bottom: 4px;">Afiliado</div>
+                        <div id="balance-affiliate-display" style="font-size: 1.1rem; color: #c4b5fd; font-weight: bold;">R$ 0,00</div>
+                    </div>
+                </div>
                 <button id="open-history-button" class="profile-button">Histórico</button>
                 <button id="open-affiliate-button" class="profile-button">Afiliado</button>
                 <button id="open-withdraw-button" class="profile-button">Sacar</button>
@@ -4533,9 +4543,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 } 
             });
             
-            DOMElements.profileButton.addEventListener('click', () => {
+            DOMElements.profileButton.addEventListener('click', async () => {
                 unlockAllAudio();
-                state.isLoggedIn ? DOMElements.profileModalOverlay.classList.add('show') : showAuthModal('login');
+                if (state.isLoggedIn) {
+                    // Atualizar saldos antes de abrir o modal
+                    const sessionId = localStorage.getItem('sessionId');
+                    try {
+                        const response = await fetch(`ajax/get_saldo.php?sessionId=${sessionId}`);
+                        const result = await response.json();
+                        if (result.success) {
+                            // Atualizar display da carteira principal
+                            const mainBalanceDisplay = document.getElementById('balance-main-display');
+                            if (mainBalanceDisplay) {
+                                mainBalanceDisplay.textContent = `R$ ${result.balance.replace('.', ',')}`;
+                            }
+                            // Atualizar display da carteira de afiliado
+                            const affiliateBalanceDisplay = document.getElementById('balance-affiliate-display');
+                            if (affiliateBalanceDisplay) {
+                                affiliateBalanceDisplay.textContent = `R$ ${result.affiliateBalance.replace('.', ',')}`;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erro ao buscar saldos:', error);
+                    }
+                    DOMElements.profileModalOverlay.classList.add('show');
+                } else {
+                    showAuthModal('login');
+                }
             });
 
             if (DOMElements.soundButton) {

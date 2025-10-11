@@ -30,6 +30,7 @@ export interface IStorage {
   // Balance operations
   getUserBalance(userId: string): Promise<User | undefined>;
   updateUserBalance(userId: string, amount: number): Promise<User>;
+  updateAffiliateBalance(userId: string, amount: number): Promise<User>;
   updateUserStats(userId: string, betAmount: number, winAmount: number): Promise<User>;
   
   // Game operations
@@ -131,6 +132,18 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ 
         balance: sql`${users.balance} + ${amount}`,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async updateAffiliateBalance(userId: string, amount: number): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ 
+        affiliateBalance: sql`${users.affiliateBalance} + ${amount}`,
         updatedAt: new Date() 
       })
       .where(eq(users.id, userId))

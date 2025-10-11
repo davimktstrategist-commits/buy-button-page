@@ -1096,7 +1096,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         success: true,
         saldo: parseFloat(user.balance).toFixed(2),
-        balance: parseFloat(user.balance).toFixed(2)
+        balance: parseFloat(user.balance).toFixed(2),
+        affiliateBalance: parseFloat(user.affiliateBalance || '0').toFixed(2)
       });
     } catch (error) {
       console.error("Error getting balance:", error);
@@ -1551,9 +1552,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   console.log('✅ Registro de comissão criado!');
                   
-                  // Creditar comissão no saldo do afiliado
-                  await storage.updateUserBalance(user.referredByUserId, totalCommission);
-                  console.log('✅ Saldo do afiliado creditado!');
+                  // Creditar comissão no saldo de afiliado (separado)
+                  await storage.updateAffiliateBalance(user.referredByUserId, totalCommission);
+                  console.log('✅ Saldo de afiliado creditado!');
                   
                   // Atualizar total ganho no affiliateReferrals
                   await db.update(affiliateReferrals)
@@ -2317,9 +2318,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               console.log('✅ Registro de comissão criado!');
               
-              // Creditar comissão no saldo do afiliado
-              await storage.updateUserBalance(user.referredByUserId, totalCommission);
-              console.log('✅ Saldo do afiliado creditado!');
+              // Creditar comissão no saldo de afiliado (separado)
+              await storage.updateAffiliateBalance(user.referredByUserId, totalCommission);
+              console.log('✅ Saldo de afiliado creditado!');
               
               // Atualizar total ganho no affiliateReferrals
               await db.update(affiliateReferrals)
