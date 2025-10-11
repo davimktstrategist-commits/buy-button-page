@@ -972,7 +972,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Lista de afiliados
   app.get('/api/admin/affiliates/list', requireAdminToken, async (req: any, res) => {
     try {
-      const { users, affiliateReferrals } = await import('@shared/schema');
+      const { users, affiliateReferrals, transactions } = await import('@shared/schema');
       
       // Buscar todos os usuários com código de afiliado
       const allUsers = await db.select().from(users);
@@ -987,6 +987,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const activeReferrals = referrals.filter(r => r.isActive).length;
         const totalCommission = referrals.reduce((sum, r) => sum + parseFloat(r.totalCommissionEarned || '0'), 0);
         
+        // Calcular total de depósitos confirmados dos referidos
+        let totalReferredDeposits = 0;
+        if (referrals.length > 0) {
+          const referredUserIds = referrals.map(r => r.referredUserId);
+          const referredDeposits = await db.select()
+            .from(transactions)
+            .where(
+              and(
+                inArray(transactions.userId, referredUserIds),
+                eq(transactions.type, 'deposit'),
+                eq(transactions.status, 'completed')
+              )
+            );
+          
+          totalReferredDeposits = referredDeposits.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+        }
+        
         return {
           userId: user.id,
           userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
@@ -994,6 +1011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           referralCode: user.referralCode || '',
           totalReferrals: referrals.length,
           totalCommissionEarned: totalCommission.toFixed(2).replace('.', ','),
+          totalReferredDeposits: totalReferredDeposits.toFixed(2).replace('.', ','),
           activeReferrals,
           createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
         };
