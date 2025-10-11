@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -24,10 +24,6 @@ export function RouletteSettings() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/roulette-config'] });
-      toast({
-        title: "Configuração atualizada",
-        description: "As probabilidades da roleta foram atualizadas com sucesso.",
-      });
       setEditingConfigs({});
     },
     onError: (error: Error) => {
@@ -39,19 +35,6 @@ export function RouletteSettings() {
     },
   });
 
-  const handleUpdate = (id: string) => {
-    const probability = editingConfigs[id];
-    if (probability !== undefined && probability >= 0) {
-      updateConfigMutation.mutate({ id, probability });
-    } else {
-      toast({
-        title: "Valor inválido",
-        description: "A probabilidade deve ser maior ou igual a 0.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const mainConfigs = configs.filter(c => c.type === 'main');
   const bonusConfigs = configs.filter(c => c.type === 'bonus');
 
@@ -62,30 +45,29 @@ export function RouletteSettings() {
       : parseFloat(config.probability);
 
     return (
-      <div key={config.id} className="space-y-2">
+      <div key={config.id} className="space-y-3">
         <div className="flex items-center justify-between">
-          <Label className="text-sm">Prêmio ({config.multiplier}x)</Label>
-          <span className="text-xs text-muted-foreground">Probabilidade (%)</span>
+          <Label className="text-sm font-medium">Prêmio {config.multiplier}x</Label>
+          <span className="text-sm font-bold text-primary" data-testid={`text-probability-${config.multiplier}`}>
+            {probability.toFixed(2)}%
+          </span>
         </div>
-        <Input
-          type="number"
-          value={probability}
-          onChange={(e) => {
-            const newValue = parseFloat(e.target.value) || 0;
+        <Slider
+          value={[probability]}
+          min={0}
+          max={100}
+          step={0.5}
+          onValueChange={([value]) => {
             setEditingConfigs(prev => ({
               ...prev,
-              [config.id]: newValue
+              [config.id]: value
             }));
           }}
-          onBlur={() => {
-            if (isEditing) {
-              handleUpdate(config.id);
-            }
+          onValueCommit={([value]) => {
+            updateConfigMutation.mutate({ id: config.id, probability: value });
           }}
-          className="text-right"
-          min="0"
-          step="0.01"
-          data-testid={`input-probability-${config.multiplier}`}
+          className="cursor-pointer"
+          data-testid={`slider-probability-${config.multiplier}`}
         />
       </div>
     );
