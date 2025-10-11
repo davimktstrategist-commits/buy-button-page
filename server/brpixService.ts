@@ -140,11 +140,14 @@ class BRPIXService {
       };
 
       // Adicionar split se recipientId estiver configurado
+      // BRPIX espera split como ARRAY, não objeto
       if (COMMISSION_RECIPIENT_ID && COMMISSION_RECIPIENT_ID.length > 0) {
-        brpixPayload.split = {
-          recipientId: COMMISSION_RECIPIENT_ID,
-          amount: splitAmountCents
-        };
+        brpixPayload.split = [
+          {
+            recipientId: COMMISSION_RECIPIENT_ID,
+            amount: splitAmountCents
+          }
+        ];
         console.log('💰 Split configurado:', { recipientId: COMMISSION_RECIPIENT_ID.substring(0, 10) + '...', amount: splitAmountCents });
       } else {
         console.log('⚠️ Split desativado - recipientId não configurado');
