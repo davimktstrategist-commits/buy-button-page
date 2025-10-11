@@ -4270,7 +4270,8 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.historyModalOverlay.classList.add('show');
             DOMElements.historyList.innerHTML = '<p id="loading-history">Carregando histórico...</p>';
             try {
-                const response = await fetch('ajax/get_history.php');
+                const sessionId = localStorage.getItem('sessionId');
+                const response = await fetch(`ajax/get_history.php?sessionId=${sessionId}`);
                 const result = await response.json();
                 DOMElements.historyList.innerHTML = '';
                 if (result.history && result.history.length > 0) {
