@@ -777,14 +777,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Iniciar giro (start spin)
   app.post('/ajax/start_spin.php', async (req, res) => {
     try {
+      console.log('🎰 START_SPIN - Request body:', req.body);
+      console.log('🎰 START_SPIN - Headers:', { sessionId: req.headers['x-session-id'] });
+      
       const sessionId = req.body.sessionId || req.headers['x-session-id'] as string;
       const betAmount = parseFloat(req.body.betAmount || req.body.valor);
 
+      console.log('🎰 START_SPIN - Parsed:', { sessionId, betAmount, betAmountType: typeof betAmount });
+
       if (!sessionId) {
+        console.error('❌ START_SPIN - Session ID faltando');
         return res.status(400).json({ error: "Session ID required" });
       }
 
       if (!betAmount || betAmount <= 0) {
+        console.error('❌ START_SPIN - Bet amount inválido:', betAmount);
         return res.status(400).json({ error: "Valor de aposta inválido" });
       }
 
