@@ -776,12 +776,17 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; display: flex; align-items: center; gap: 20px;">
+                    <div style="margin-top: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <div style="padding: 16px 24px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;">
                             <span style="color: var(--text-secondary); margin-right: 8px;">Soma Total:</span>
                             <strong id="totalProbability" style="font-size: 18px;">0%</strong>
                         </div>
-                        <button class="btn btn-primary" onclick="saveRouletteConfig()">Salvar Configurações</button>
+                        <button class="btn btn-secondary" onclick="autoAdjustProbabilities()" style="padding: 10px 20px;">
+                            🔧 Ajustar para 100%
+                        </button>
+                        <button class="btn btn-primary" onclick="saveRouletteConfig()" style="padding: 10px 20px;">
+                            💾 Salvar Configurações
+                        </button>
                     </div>
                 </div>
 
@@ -1371,11 +1376,41 @@
             const totalEl = document.getElementById('totalProbability');
             totalEl.textContent = total.toFixed(1) + '%';
             
-            if (Math.abs(total - 100) < 0.1) {
+            const diff = Math.abs(total - 100);
+            if (diff < 0.1) {
                 totalEl.style.color = 'var(--accent-green)';
+            } else if (diff < 1) {
+                totalEl.style.color = 'var(--accent-yellow)';
             } else {
                 totalEl.style.color = 'var(--accent-red)';
             }
+        }
+
+        function autoAdjustProbabilities() {
+            const sliders = document.querySelectorAll('.config-slider');
+            
+            // Calcular total atual
+            let currentTotal = 0;
+            sliders.forEach(slider => {
+                currentTotal += parseFloat(slider.value);
+            });
+            
+            if (currentTotal === 0) {
+                alert('⚠️ Configure pelo menos um valor antes de ajustar automaticamente!');
+                return;
+            }
+            
+            // Ajustar proporcionalmente
+            const factor = 100 / currentTotal;
+            
+            sliders.forEach(slider => {
+                const newValue = parseFloat(slider.value) * factor;
+                slider.value = newValue.toFixed(1);
+                const id = slider.id.replace('prob-', '');
+                updateProbabilityValue(id, newValue);
+            });
+            
+            alert('✅ Probabilidades ajustadas automaticamente para somar 100%!');
         }
 
         async function saveRouletteConfig() {
@@ -1392,14 +1427,24 @@
             
             // Validate total
             const total = configs.reduce((sum, c) => sum + c.probability, 0);
-            if (Math.abs(total - 100) > 0.1) {
-                alert('A soma das probabilidades deve ser 100%!');
+            const diff = Math.abs(total - 100);
+            
+            if (diff > 1) {
+                alert(`❌ A soma das probabilidades está em ${total.toFixed(1)}%\n\nDeve estar entre 99% e 101% para salvar.\n\nDiferença: ${diff.toFixed(1)}%`);
                 return;
             }
             
+            if (diff > 0.1) {
+                const confirmMsg = `⚠️ A soma das probabilidades é ${total.toFixed(1)}%\n\nIdealmente deveria ser exatamente 100%.\n\nDeseja salvar mesmo assim?`;
+                if (!confirm(confirmMsg)) {
+                    return;
+                }
+            }
+            
             try {
+                let successCount = 0;
                 for (const config of configs) {
-                    await fetch('/ajax/admin_update_roulette.php', {
+                    const response = await fetch('/ajax/admin_update_roulette.php', {
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
@@ -1410,12 +1455,17 @@
                             probability: config.probability 
                         })
                     });
+                    
+                    if (response.ok) {
+                        successCount++;
+                    }
                 }
                 
-                alert('Configurações salvas com sucesso!');
+                alert(`✅ Configurações salvas com sucesso!\n\n${successCount} de ${configs.length} probabilidades atualizadas.`);
+                loadRouletteConfig(); // Recarregar para confirmar
             } catch (error) {
                 console.error('Error saving config:', error);
-                alert('Erro ao salvar configurações!');
+                alert('❌ Erro ao salvar configurações!\n\nVerifique o console para mais detalhes.');
             }
         }
 
