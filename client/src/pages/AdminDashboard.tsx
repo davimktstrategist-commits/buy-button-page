@@ -23,6 +23,7 @@ import { RouletteSettings } from "@/components/admin/RouletteSettings";
 import { UsersManagement } from "@/components/admin/UsersManagement";
 import { TransactionsManagement } from "@/components/admin/TransactionsManagement";
 import { WithdrawalsManagement } from "@/components/admin/WithdrawalsManagement";
+import { GeneralSettings } from "@/components/admin/GeneralSettings";
 
 interface DashboardStats {
   totalUsers: number;
@@ -38,7 +39,7 @@ interface DashboardStats {
   paidWithdrawals: string;
 }
 
-type Section = 'dashboard' | 'users' | 'affiliates' | 'deposits' | 'withdrawals' | 'roulette' | 'system';
+type Section = 'dashboard' | 'users' | 'affiliates' | 'deposits' | 'withdrawals' | 'roulette' | 'system' | 'general-settings';
 
 export default function AdminDashboard() {
   const { user, isAdmin, isLoading } = useAuth();
@@ -274,7 +275,12 @@ export default function AdminDashboard() {
             />
             {sistemaOpen && (
               <div className="mt-1 space-y-1">
-                {/* Futuras configurações */}
+                <MenuItem 
+                  icon={SettingsIcon} 
+                  label="Configurações" 
+                  section="general-settings" 
+                  testId="menu-settings"
+                />
               </div>
             )}
           </div>
@@ -446,6 +452,7 @@ export default function AdminDashboard() {
           {activeSection === 'deposits' && <TransactionsManagement />}
           {activeSection === 'withdrawals' && <WithdrawalsManagement />}
           {activeSection === 'roulette' && <RouletteSettings />}
+          {activeSection === 'general-settings' && <GeneralSettings />}
         </div>
       </main>
     </div>

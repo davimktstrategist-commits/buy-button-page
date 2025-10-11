@@ -694,6 +694,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Configurações Gerais
+  app.get('/api/admin/general-config', requireAdminToken, async (req: any, res) => {
+    try {
+      const { systemConfig } = await import('@shared/schema');
+      
+      const configs = await db.select().from(systemConfig).where(
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+      );
+
+      const configMap: any = {
+        depositMin: 20,
+        depositMax: 10000,
+        withdrawalMin: 20,
+        withdrawalMax: 50000,
+        affiliateCpaPercent: 10,
+        affiliateCpaFixed: 0,
+      };
+
+      configs.forEach(config => {
+        const value = parseFloat(config.value || '0');
+        switch(config.key) {
+          case 'deposit_min': configMap.depositMin = value; break;
+          case 'deposit_max': configMap.depositMax = value; break;
+          case 'withdrawal_min': configMap.withdrawalMin = value; break;
+          case 'withdrawal_max': configMap.withdrawalMax = value; break;
+          case 'affiliate_cpa_percent': configMap.affiliateCpaPercent = value; break;
+          case 'affiliate_cpa_fixed': configMap.affiliateCpaFixed = value; break;
+        }
+      });
+
+      res.json(configMap);
+    } catch (error) {
+      console.error("Error fetching general config:", error);
+      res.status(500).json({ error: "Erro ao buscar configurações" });
+    }
+  });
+
+  app.post('/api/admin/general-config', requireAdminToken, async (req: any, res) => {
+    try {
+      const { depositMin, depositMax, withdrawalMin, withdrawalMax, affiliateCpaPercent, affiliateCpaFixed } = req.body;
+      const { systemConfig } = await import('@shared/schema');
+
+      const configsToSave = [
+        { key: 'deposit_min', value: depositMin.toString(), description: 'Depósito mínimo' },
+        { key: 'deposit_max', value: depositMax.toString(), description: 'Depósito máximo' },
+        { key: 'withdrawal_min', value: withdrawalMin.toString(), description: 'Saque mínimo' },
+        { key: 'withdrawal_max', value: withdrawalMax.toString(), description: 'Saque máximo' },
+        { key: 'affiliate_cpa_percent', value: affiliateCpaPercent.toString(), description: 'Percentual CPA afiliados' },
+        { key: 'affiliate_cpa_fixed', value: affiliateCpaFixed.toString(), description: 'Valor fixo CPA afiliados' },
+      ];
+
+      for (const config of configsToSave) {
+        const existing = await db.select().from(systemConfig).where(eq(systemConfig.key, config.key)).limit(1);
+        
+        if (existing.length > 0) {
+          await db.update(systemConfig)
+            .set({ value: config.value, updatedAt: new Date() })
+            .where(eq(systemConfig.key, config.key));
+        } else {
+          await db.insert(systemConfig).values({
+            key: config.key,
+            value: config.value,
+            description: config.description,
+            encrypted: false,
+          });
+        }
+      }
+
+      res.json({ success: true, message: "Configurações salvas com sucesso" });
+    } catch (error) {
+      console.error("Error saving general config:", error);
+      res.status(500).json({ error: "Erro ao salvar configurações" });
+    }
+  });
+
   // ===== ROTAS COMPATÍVEIS COM FRONTEND HTML ORIGINAL =====
   
   // Lista de ganhadores recentes (winners carousel)
