@@ -269,8 +269,11 @@
       }
 
       .mode-button:hover {
-          transform: scale(1.1);
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+      }
+      
+      .mode-button:active {
+          transform: scale(0.98);
       }
 
       .mode-button.active {
@@ -4446,9 +4449,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const autoSpinOptions = document.querySelectorAll('.auto-spin-option');
 
             if (autoButton) {
-                autoButton.addEventListener('click', () => {
+                console.log('✅ Botão AUTO encontrado, adicionando listener');
+                autoButton.addEventListener('click', (e) => {
+                    console.log('🖱️ Botão AUTO clicado!', { isAuto: state.isAuto, popupExists: !!autoSpinsPopup });
+                    e.stopPropagation(); // Evitar propagação
+                    
                     if (state.isAuto) {
                         // Desativar auto
+                        console.log('🛑 Desativando modo auto');
                         state.isAuto = false;
                         state.autoSpinsRemaining = 0;
                         autoButton.classList.remove('active');
@@ -4457,21 +4465,34 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } else {
                         // Mostrar popup de seleção
+                        console.log('📋 Mostrando popup de seleção');
                         if (autoSpinsPopup) {
-                            autoSpinsPopup.classList.add('show');
+                            autoSpinsPopup.style.display = 'block';
+                            setTimeout(() => {
+                                autoSpinsPopup.classList.add('show');
+                            }, 10);
+                        } else {
+                            console.error('❌ Popup não encontrado!');
                         }
                     }
                 });
+            } else {
+                console.error('❌ Botão AUTO não encontrado!');
             }
 
             // Event listeners para opções de giros automáticos
             autoSpinOptions.forEach(option => {
-                option.addEventListener('click', () => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evitar propagação
                     const spins = parseInt(option.getAttribute('data-spins'));
+                    console.log('🎲 Selecionado:', spins, 'giros');
                     
                     // Esconder popup
                     if (autoSpinsPopup) {
                         autoSpinsPopup.classList.remove('show');
+                        setTimeout(() => {
+                            autoSpinsPopup.style.display = 'none';
+                        }, 300);
                     }
                     
                     // Ativar auto com número de giros selecionado
@@ -4494,9 +4515,14 @@ document.addEventListener('DOMContentLoaded', () => {
             document.addEventListener('click', (e) => {
                 if (autoSpinsPopup && 
                     !autoSpinsPopup.contains(e.target) && 
+                    e.target !== autoButton &&
                     !autoButton.contains(e.target) &&
                     autoSpinsPopup.classList.contains('show')) {
+                    console.log('👆 Clicou fora, fechando popup');
                     autoSpinsPopup.classList.remove('show');
+                    setTimeout(() => {
+                        autoSpinsPopup.style.display = 'none';
+                    }, 300);
                 }
             });
             
