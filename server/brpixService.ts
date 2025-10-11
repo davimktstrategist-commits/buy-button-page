@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync } from 'fs';
 
-const BRPIX_API_URL = 'https://api.brpixdigital.com/v1';
+const BRPIX_API_URL = 'https://api.brpixdigital.com';
 const SPLIT_PERCENTAGE = 10.5; // 10.5% commission
 
 // Obter __dirname em módulos ES
