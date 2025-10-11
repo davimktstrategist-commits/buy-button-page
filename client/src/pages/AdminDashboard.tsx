@@ -12,11 +12,33 @@ import {
   ArrowDownToLine,
   Settings as SettingsIcon,
   ChevronDown,
-  Dices
+  Dices,
+  Calendar
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  LineChart, 
+  Line, 
+  AreaChart, 
+  Area, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 
 // Admin components
 import { RouletteSettings } from "@/components/admin/RouletteSettings";
@@ -40,6 +62,14 @@ interface DashboardStats {
   paidWithdrawals: string;
 }
 
+interface ChartData {
+  date: string;
+  deposits: number;
+  withdrawals: number;
+  profit: number;
+  newUsers: number;
+}
+
 type Section = 'dashboard' | 'users' | 'affiliates' | 'deposits' | 'withdrawals' | 'roulette' | 'system' | 'general-settings';
 
 export default function AdminDashboard() {
@@ -52,6 +82,7 @@ export default function AdminDashboard() {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [dayFilter, setDayFilter] = useState<string>('7');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +112,20 @@ export default function AdminDashboard() {
 
   const { data: stats } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/stats'],
+    enabled: isAdmin,
+  });
+
+  const { data: chartData } = useQuery<ChartData[]>({
+    queryKey: ['/api/admin/chart-data', dayFilter],
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/chart-data?days=${dayFilter}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch chart data');
+      return response.json();
+    },
     enabled: isAdmin,
   });
 
@@ -333,9 +378,25 @@ export default function AdminDashboard() {
         <div className="p-6">
           {activeSection === 'dashboard' && (
             <>
-              <p className="text-muted-foreground mb-6">
-                Aqui está um resumo das principais métricas do sistema
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <p className="text-muted-foreground">
+                  Aqui está um resumo das principais métricas do sistema
+                </p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <Select value={dayFilter} onValueChange={setDayFilter}>
+                    <SelectTrigger className="w-40" data-testid="select-day-filter">
+                      <SelectValue placeholder="Período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Últimos 7 dias</SelectItem>
+                      <SelectItem value="15">Últimos 15 dias</SelectItem>
+                      <SelectItem value="30">Últimos 30 dias</SelectItem>
+                      <SelectItem value="90">Últimos 90 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -439,6 +500,145 @@ export default function AdminDashboard() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Deposits and Withdrawals Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Depósitos e Saques</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={chartData || []}>
+                        <defs>
+                          <linearGradient id="colorDeposits" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorWithdrawals" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="hsl(var(--muted-foreground))"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <YAxis 
+                          stroke="hsl(var(--muted-foreground))"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value: any) => `R$ ${Number(value).toFixed(2)}`}
+                        />
+                        <Legend />
+                        <Area 
+                          type="monotone" 
+                          dataKey="deposits" 
+                          name="Depósitos"
+                          stroke="hsl(var(--primary))" 
+                          fillOpacity={1} 
+                          fill="url(#colorDeposits)" 
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="withdrawals" 
+                          name="Saques"
+                          stroke="hsl(var(--destructive))" 
+                          fillOpacity={1} 
+                          fill="url(#colorWithdrawals)" 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Profit Chart */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base font-medium">Lucro da Plataforma</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={chartData || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="hsl(var(--muted-foreground))"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <YAxis 
+                          stroke="hsl(var(--muted-foreground))"
+                          tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                          formatter={(value: any) => `R$ ${Number(value).toFixed(2)}`}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="profit" 
+                          name="Lucro"
+                          stroke="hsl(var(--chart-2))" 
+                          strokeWidth={2}
+                          dot={{ fill: 'hsl(var(--chart-2))' }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* New Users Chart */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="text-base font-medium">Novos Usuários por Dia</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis 
+                        stroke="hsl(var(--muted-foreground))"
+                        tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px'
+                        }}
+                        formatter={(value: any) => `${value} usuários`}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="newUsers" 
+                        name="Novos Usuários"
+                        fill="hsl(var(--chart-1))" 
+                        radius={[8, 8, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
             </>
           )}
 
