@@ -294,7 +294,7 @@ export default function AdminDashboard() {
             size="sm"
             onClick={() => {
               localStorage.removeItem('adminToken');
-              setLocation('/');
+              setLocation('/admin');
             }}
             className="w-full justify-start"
             data-testid="button-logout"
