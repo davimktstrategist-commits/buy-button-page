@@ -4069,9 +4069,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log('🔄 Iniciando giro com aposta:', state.aposta);
             toggleSpinButtons(false);
+            
+            const sessionId = localStorage.getItem('sessionId');
             const formData = new FormData();
+            formData.append('sessionId', sessionId);
             formData.append('betAmount', state.aposta);
-            console.log('📤 FormData criado:', { betAmount: state.aposta });
+            console.log('📤 FormData criado:', { sessionId, betAmount: state.aposta });
 
             try {
                 console.log('🌐 Fazendo fetch para /ajax/start_spin.php...');
