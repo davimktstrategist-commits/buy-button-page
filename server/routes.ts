@@ -755,6 +755,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Histórico completo do usuário (jogos, depósitos, saques)
   app.get('/ajax/get_history.php', async (req, res) => {
     try {
+      console.log('📊 Get history - query:', req.query);
+      console.log('📊 Get history - headers x-session-id:', req.headers['x-session-id']);
+      
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
       console.log('📊 Get history request - sessionId:', sessionId);
@@ -1756,6 +1759,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Rota raiz - servir o jogo
   app.get('/', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
   });
 
