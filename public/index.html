@@ -3306,7 +3306,7 @@
 }
 .stats-grid-affiliate {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 10px;
     text-align: center;
 }
@@ -3389,6 +3389,10 @@
                     <div class="stat-item-affiliate">
                         <p id="stats-depositantes" class="value">0</p>
                         <p class="label">Depositantes</p>
+                    </div>
+                    <div class="stat-item-affiliate">
+                        <p id="stats-total-depositado" class="value">R$ 0,00</p>
+                        <p class="label">Total Depositado</p>
                     </div>
                     <div class="stat-item-affiliate">
                         <p id="stats-ganhos" class="value">R$ 0,00</p>
@@ -4597,6 +4601,7 @@ document.addEventListener('DOMContentLoaded', () => {
             DOMElements.affiliateModalOverlay.classList.add('show');
             document.getElementById('stats-convidados').textContent = '...';
             document.getElementById('stats-depositantes').textContent = '...';
+            document.getElementById('stats-total-depositado').textContent = '...';
             document.getElementById('stats-ganhos').textContent = '...';
             document.getElementById('affiliate-history-list').innerHTML = '<p>Carregando...</p>';
             try {
@@ -4607,6 +4612,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 DOMElements.affiliateLinkInput.value = data.link;
                 document.getElementById('stats-convidados').textContent = data.stats.convidados;
                 document.getElementById('stats-depositantes').textContent = data.stats.depositantes;
+                document.getElementById('stats-total-depositado').textContent = formatCurrency(data.stats.totalDepositado || 0);
                 document.getElementById('stats-ganhos').textContent = formatCurrency(data.stats.ganhos);
                 const commissionSection = document.getElementById('commission-section');
                 const commissionList = document.getElementById('commission-list');

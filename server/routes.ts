@@ -1763,10 +1763,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Contar depositantes ativos (usuários que fizeram depósito)
       const depositantes = referrals.filter(r => parseFloat(r.totalDeposited || '0') > 0).length;
 
-      // Calcular ganhos de comissões usando a % configurada
+      // Calcular total depositado e ganhos de comissões usando a % configurada
       let totalComission = 0;
+      let totalDepositado = 0;
       for (const referral of referrals) {
         const depositValue = parseFloat(referral.totalDeposited || '0');
+        totalDepositado += depositValue;
         totalComission += depositValue * (cpaPercent / 100);
       }
 
@@ -1776,6 +1778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         stats: {
           convidados: referrals.length,
           depositantes: depositantes,
+          totalDepositado: totalDepositado,
           ganhos: totalComission
         },
         comissoes: {
