@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
@@ -64,6 +66,37 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
       toast({
         title: "Erro ao atualizar usuário",
         description: error.message || "Ocorreu um erro ao salvar as alterações.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch(`/api/admin/users/${user?.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+        },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Erro ao deletar usuário');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      toast({
+        title: "Usuário deletado",
+        description: "A conta foi removida com sucesso.",
+      });
+      onOpenChange(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao deletar usuário",
+        description: error.message || "Ocorreu um erro ao deletar a conta.",
         variant: "destructive",
       });
     },
@@ -170,22 +203,57 @@ export function EditUserDialog({ user, open, onOpenChange }: EditUserDialogProps
             />
           </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              data-testid="button-cancel"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={updateUserMutation.isPending}
-              data-testid="button-save"
-            >
-              {updateUserMutation.isPending ? "Salvando..." : "Salvar Alterações"}
-            </Button>
+          <DialogFooter className="flex items-center justify-between">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  data-testid="button-delete-user"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Deletar Conta
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. A conta de {user.firstName || user.email || 'este usuário'} será permanentemente deletada.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => deleteUserMutation.mutate()}
+                    disabled={deleteUserMutation.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    data-testid="button-confirm-delete"
+                  >
+                    {deleteUserMutation.isPending ? "Deletando..." : "Deletar"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                data-testid="button-cancel"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={updateUserMutation.isPending}
+                data-testid="button-save"
+              >
+                {updateUserMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

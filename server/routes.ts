@@ -685,6 +685,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete('/api/admin/users/:id', requireAdminToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+
+      // Deletar usuário
+      await db.delete(users).where(eq(users.id, id));
+
+      res.json({ success: true, message: "Usuário deletado com sucesso" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Erro ao deletar usuário" });
+    }
+  });
+
   app.get('/api/admin/transactions', requireAdminToken, async (req: any, res) => {
     try {
       const transactions = await storage.getAllTransactions();
