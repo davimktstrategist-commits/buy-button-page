@@ -4304,9 +4304,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = Object.fromEntries(formData);
             data.action = action;
             
+            // Remover campos vazios (exceto campos obrigatórios)
+            if (data.referralCode === '' || data.referralCode === undefined) {
+                delete data.referralCode;
+            }
+            
             // Debug: verificar se referralCode está sendo enviado
             if (action === 'register') {
                 console.log('📤 Dados do registro:', data);
+                if (data.referralCode) {
+                    console.log('✅ Código de referral será enviado:', data.referralCode);
+                } else {
+                    console.log('ℹ️ Nenhum código de referral fornecido');
+                }
             }
             
             try {
