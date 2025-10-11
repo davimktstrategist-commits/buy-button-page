@@ -590,21 +590,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       
-      const withdrawal = await storage.getWithdrawalById(id);
-      if (!withdrawal) {
-        return res.status(404).json({ message: "Withdrawal not found" });
-      }
-
-      // Update withdrawal status
-      await storage.updateWithdrawal(id, { 
-        status: 'completed',
-        processedAt: new Date(),
+      console.log('✅ Aprovando saque:', id);
+      
+      const withdrawal = await storage.approveWithdrawal(id);
+      
+      console.log('✅ Saque aprovado com sucesso:', {
+        id: withdrawal.id,
+        amount: withdrawal.amount,
+        status: withdrawal.status
       });
 
-      res.json({ message: "Withdrawal approved" });
+      res.json({ 
+        message: "Withdrawal approved",
+        withdrawal 
+      });
     } catch (error) {
-      console.error("Error approving withdrawal:", error);
-      res.status(500).json({ message: "Failed to approve withdrawal" });
+      console.error("❌ Error approving withdrawal:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to approve withdrawal" 
+      });
     }
   });
 
@@ -613,25 +617,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { reason } = req.body;
       
-      const withdrawal = await storage.getWithdrawalById(id);
-      if (!withdrawal) {
-        return res.status(404).json({ message: "Withdrawal not found" });
-      }
-
-      // Return balance to user
-      await storage.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
-
-      // Update withdrawal status
-      await storage.updateWithdrawal(id, { 
-        status: 'cancelled',
-        rejectionReason: reason,
-        processedAt: new Date(),
+      console.log('❌ Rejeitando saque:', id, 'Motivo:', reason);
+      
+      const withdrawal = await storage.rejectWithdrawal(id, reason || 'Rejeitado pelo administrador');
+      
+      console.log('✅ Saque rejeitado com sucesso:', {
+        id: withdrawal.id,
+        amount: withdrawal.amount,
+        status: withdrawal.status,
+        reason: withdrawal.rejectionReason
       });
 
-      res.json({ message: "Withdrawal rejected" });
+      res.json({ 
+        message: "Withdrawal rejected",
+        withdrawal 
+      });
     } catch (error) {
-      console.error("Error rejecting withdrawal:", error);
-      res.status(500).json({ message: "Failed to reject withdrawal" });
+      console.error("❌ Error rejecting withdrawal:", error);
+      res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to reject withdrawal" 
+      });
     }
   });
 
