@@ -433,7 +433,7 @@
             color: var(--accent-blue);
         }
 
-        .hidden { display: none; }
+        .hidden { display: none !important; }
 
         /* Modal */
         .modal {
@@ -1389,11 +1389,11 @@
                     closeEditUserModal();
                     loadUsers();
                 } else {
-                    alert('❌ Erro ao atualizar usuário!');
+                    alert('❌ Erro ao atualizar usuário: ' + (data.error || 'Erro desconhecido'));
                 }
             } catch (error) {
                 console.error('Error saving user:', error);
-                alert('❌ Erro ao salvar alterações!');
+                alert('❌ Erro ao salvar alterações: ' + error.message);
             }
         }
 
