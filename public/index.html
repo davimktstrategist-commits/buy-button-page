@@ -4719,7 +4719,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const handleLogout = () => {
+            // Remove all session data
             localStorage.removeItem('loggedUser');
+            localStorage.removeItem('sessionId');
+            localStorage.removeItem('tiger_session_id');
+            localStorage.removeItem('adminToken');
             state.isLoggedIn = false;
             state.saldo = 0;
             window.location.reload();
