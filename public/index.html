@@ -4039,10 +4039,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const handlePlay = async () => {
             unlockAllAudio();
-            if (!state.isLoggedIn) {
-                showAuthModal('register');
-                return;
-            }
+            // Sistema com sessões anônimas - todos podem jogar
             if (state.isSpinning) return;
             if (state.saldo < state.aposta) {
                 // Desativar modo automático se saldo insuficiente
@@ -4476,14 +4473,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const init = () => {
             checkUserSession();
+            // Sistema anônimo - sempre ativar como "logado"
+            state.isLoggedIn = true;
             updateDisplay();
             initEventListeners();
             createLabels('roleta1-labels', state.roleta1Map.length, 35);
             createLabels('roleta2-labels', state.roleta2Map.length, 30);
-            if (!state.isLoggedIn) {
-                DOMElements.plusButton.disabled = true;
-                DOMElements.minusButton.disabled = true;
-            }
             
             if (state.isLoggedIn && sessionStorage.getItem('openDepositAfterRegister') === 'true') {
                 sessionStorage.removeItem('openDepositAfterRegister');
