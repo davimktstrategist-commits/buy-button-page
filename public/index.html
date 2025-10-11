@@ -271,10 +271,6 @@
       .mode-button:hover {
           box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
       }
-      
-      .mode-button:active {
-          transform: scale(0.98);
-      }
 
       .mode-button.active {
           background: linear-gradient(135deg, #10b981 0%, #059669 100%);
@@ -283,6 +279,11 @@
           box-shadow: 0 0 25px rgba(16, 185, 129, 0.8),
                       0 0 40px rgba(16, 185, 129, 0.4);
           animation: pulseGlow 2s infinite;
+      }
+      
+      .mode-button.active:hover {
+          box-shadow: 0 0 25px rgba(16, 185, 129, 0.8),
+                      0 0 40px rgba(16, 185, 129, 0.4);
       }
       
       @keyframes pulseGlow {
@@ -4449,14 +4450,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const autoSpinOptions = document.querySelectorAll('.auto-spin-option');
 
             if (autoButton) {
-                console.log('✅ Botão AUTO encontrado, adicionando listener');
                 autoButton.addEventListener('click', (e) => {
-                    console.log('🖱️ Botão AUTO clicado!', { isAuto: state.isAuto, popupExists: !!autoSpinsPopup });
-                    e.stopPropagation(); // Evitar propagação
+                    e.stopPropagation();
                     
                     if (state.isAuto) {
                         // Desativar auto
-                        console.log('🛑 Desativando modo auto');
                         state.isAuto = false;
                         state.autoSpinsRemaining = 0;
                         autoButton.classList.remove('active');
@@ -4465,27 +4463,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     } else {
                         // Mostrar popup de seleção
-                        console.log('📋 Mostrando popup de seleção');
                         if (autoSpinsPopup) {
                             autoSpinsPopup.style.display = 'block';
                             setTimeout(() => {
                                 autoSpinsPopup.classList.add('show');
                             }, 10);
-                        } else {
-                            console.error('❌ Popup não encontrado!');
                         }
                     }
                 });
-            } else {
-                console.error('❌ Botão AUTO não encontrado!');
             }
 
             // Event listeners para opções de giros automáticos
             autoSpinOptions.forEach(option => {
                 option.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Evitar propagação
+                    e.stopPropagation();
                     const spins = parseInt(option.getAttribute('data-spins'));
-                    console.log('🎲 Selecionado:', spins, 'giros');
                     
                     // Esconder popup
                     if (autoSpinsPopup) {
@@ -4518,7 +4510,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.target !== autoButton &&
                     !autoButton.contains(e.target) &&
                     autoSpinsPopup.classList.contains('show')) {
-                    console.log('👆 Clicou fora, fechando popup');
                     autoSpinsPopup.classList.remove('show');
                     setTimeout(() => {
                         autoSpinsPopup.style.display = 'none';
