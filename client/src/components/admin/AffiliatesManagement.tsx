@@ -7,8 +7,18 @@ import {
   TrendingUp,
   Link as LinkIcon,
   Clock,
-  CheckCircle
+  CheckCircle,
+  ArrowDownToLine
 } from "lucide-react";
+
+interface PublicSettings {
+  depositMin: number;
+  depositMax: number;
+  withdrawalMin: number;
+  withdrawalMax: number;
+  affiliateCpaPercent: number;
+  affiliateCpaFixed: number;
+}
 
 interface AffiliateStats {
   totalAffiliates: number;
@@ -25,6 +35,7 @@ interface AffiliateData {
   referralCode: string;
   totalReferrals: number;
   totalCommissionEarned: string;
+  totalReferredDeposits: string;
   activeReferrals: number;
   createdAt: string;
 }
@@ -52,6 +63,12 @@ export function AffiliatesManagement() {
   const { data: commissions, isLoading: commissionsLoading } = useQuery<CommissionHistory[]>({
     queryKey: ['/api/admin/affiliates/commissions'],
   });
+
+  const { data: settings } = useQuery<PublicSettings>({
+    queryKey: ['/api/public-settings'],
+  });
+
+  const cpaPercent = settings?.affiliateCpaPercent ?? 25;
 
   if (statsLoading || affiliatesLoading || commissionsLoading) {
     return (
@@ -177,13 +194,17 @@ export function AffiliatesManagement() {
                           {affiliate.activeReferrals} ativos
                         </Badge>
                       )}
+                      <Badge variant="outline" className="gap-1">
+                        <ArrowDownToLine className="h-3 w-3" />
+                        R$ {affiliate.totalReferredDeposits} depositados
+                      </Badge>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-green-600" data-testid={`text-affiliate-earnings-${affiliate.userId}`}>
                       R$ {affiliate.totalCommissionEarned}
                     </div>
-                    <p className="text-xs text-muted-foreground">Total ganho</p>
+                    <p className="text-xs text-muted-foreground">Comissão ({cpaPercent}% CPA)</p>
                   </div>
                 </div>
               ))

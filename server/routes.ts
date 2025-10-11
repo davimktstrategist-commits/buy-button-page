@@ -7,7 +7,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
 import { db } from "./db";
 import { users, transactions } from "@shared/schema";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, and, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Admin token storage (in-memory)
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { systemConfig } = await import('@shared/schema');
       
       const configs = await db.select().from(systemConfig).where(
-        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max')`
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed')`
       );
 
       const settings = {
@@ -360,6 +360,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         depositMax: 10000,
         withdrawalMin: 20,
         withdrawalMax: 50000,
+        affiliateCpaPercent: 25,
+        affiliateCpaFixed: 0,
       };
 
       configs.forEach(config => {
@@ -368,6 +370,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'deposit_max': settings.depositMax = parseFloat(config.value || '10000'); break;
           case 'withdrawal_min': settings.withdrawalMin = parseFloat(config.value || '20'); break;
           case 'withdrawal_max': settings.withdrawalMax = parseFloat(config.value || '50000'); break;
+          case 'affiliate_cpa_percent': settings.affiliateCpaPercent = parseFloat(config.value || '25'); break;
+          case 'affiliate_cpa_fixed': settings.affiliateCpaFixed = parseFloat(config.value || '0'); break;
         }
       });
 
