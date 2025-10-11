@@ -1314,9 +1314,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get updated balance
       const updatedUser = await storage.getUserBalance(sessionId);
 
-      // Calculate positions for the roulette animation (0-11 for 12 segments)
-      const posicao1 = Math.floor(Math.random() * 12);
-      const posicao2 = Math.floor(Math.random() * 12);
+      // Map multiplier to roulette position
+      const roleta1Map = [0, 5, 15, 2, 20, 100, 10, 50];
+      const roleta2Map = [2, 3, 4, 1];
+      
+      // Find the position of the selected multiplier in roleta1Map
+      let posicao1 = roleta1Map.indexOf(selectedMultiplier);
+      if (posicao1 === -1) {
+        // If not found (shouldn't happen), default to first position
+        posicao1 = 0;
+      }
+      
+      // Random position for bonus wheel (doesn't affect result)
+      const posicao2 = Math.floor(Math.random() * roleta2Map.length);
 
       res.json({
         success: true,
