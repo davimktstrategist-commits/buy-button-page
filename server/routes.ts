@@ -657,6 +657,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/chart-data', requireAdminToken, async (req: any, res) => {
+    try {
+      const days = parseInt(req.query.days as string) || 7;
+      
+      // Calcular data de início (hoje - (days-1) dias) para incluir o dia atual
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const startDate = new Date(today);
+      startDate.setDate(startDate.getDate() - (days - 1));
+
+      // Buscar transações do período
+      const allTransactions = await db.select().from(transactions)
+        .where(sql`${transactions.createdAt} >= ${startDate}`)
+        .orderBy(transactions.createdAt);
+
+      // Buscar novos usuários do período
+      const newUsers = await db.select().from(users)
+        .where(sql`${users.createdAt} >= ${startDate}`)
+        .orderBy(users.createdAt);
+
+      // Agrupar dados por dia
+      const chartData: any[] = [];
+      const dateMap = new Map<string, any>();
+
+      // Função helper para criar chave de data no horário local
+      const getLocalDateKey = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      // Inicializar todos os dias com valores zerados (incluindo hoje)
+      for (let i = 0; i < days; i++) {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + i);
+        
+        // Usar formato ISO (YYYY-MM-DD) baseado no horário local para evitar colisões de ano
+        const dateKey = getLocalDateKey(date);
+        // Formato de exibição (DD/MM)
+        const displayDate = date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+        
+        dateMap.set(dateKey, {
+          date: displayDate,
+          deposits: 0,
+          withdrawals: 0,
+          profit: 0,
+          newUsers: 0,
+        });
+      }
+
+      // Processar transações
+      allTransactions.forEach((tx: any) => {
+        const txDate = new Date(tx.createdAt);
+        const dateKey = getLocalDateKey(txDate);
+        const dayData = dateMap.get(dateKey);
+        
+        if (dayData) {
+          const amount = parseFloat(tx.amount);
+          
+          if (tx.type === 'deposit' && tx.status === 'completed') {
+            dayData.deposits += amount;
+          } else if (tx.type === 'withdrawal' && tx.status === 'completed') {
+            dayData.withdrawals += amount;
+          } else if (tx.type === 'bet') {
+            dayData.profit += amount; // Apostas são lucro
+          } else if (tx.type === 'win') {
+            dayData.profit -= amount; // Ganhos reduzem o lucro
+          }
+        }
+      });
+
+      // Processar novos usuários
+      newUsers.forEach((user: any) => {
+        const userDate = new Date(user.createdAt);
+        const dateKey = getLocalDateKey(userDate);
+        const dayData = dateMap.get(dateKey);
+        
+        if (dayData) {
+          dayData.newUsers += 1;
+        }
+      });
+
+      // Converter map para array mantendo a ordem
+      dateMap.forEach(data => {
+        chartData.push(data);
+      });
+
+      res.json(chartData);
+    } catch (error) {
+      console.error("Error fetching chart data:", error);
+      res.status(500).json({ message: "Failed to fetch chart data" });
+    }
+  });
+
   app.get('/api/admin/users', requireAdminToken, async (req: any, res) => {
     try {
       // Validate and sanitize pagination params
