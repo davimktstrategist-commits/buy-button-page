@@ -1829,8 +1829,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Servir arquivos estáticos da pasta public
-  app.use(express.static(path.join(process.cwd(), 'public')));
+  // Servir arquivos estáticos da pasta public com cache adequado
+  app.use(express.static(path.join(process.cwd(), 'public'), {
+    maxAge: 0,
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filepath) => {
+      if (filepath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else if (filepath.match(/\.(css|js)$/)) {
+        // CSS e JS sem hash - cache curto para permitir atualizações
+        const maxAge = process.env.NODE_ENV === 'production' ? 3600 : 0; // 1 hora em produção
+        res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+      } else if (filepath.match(/\.(jpg|jpeg|png|gif|svg|ico)$/)) {
+        // Imagens - cache médio (1 semana)
+        const maxAge = process.env.NODE_ENV === 'production' ? 604800 : 0;
+        res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+      } else if (filepath.match(/\.(woff|woff2|ttf|eot)$/)) {
+        // Fontes - cache longo (1 ano)
+        const maxAge = process.env.NODE_ENV === 'production' ? 31536000 : 0;
+        res.setHeader('Cache-Control', `public, max-age=${maxAge}, immutable`);
+      } else if (filepath.match(/\.(mp3|wav|ogg)$/)) {
+        // Áudio - cache médio (30 dias)
+        const maxAge = process.env.NODE_ENV === 'production' ? 2592000 : 0;
+        res.setHeader('Cache-Control', `public, max-age=${maxAge}`);
+      }
+    }
+  }));
+
+  // Servir arquivos estáticos de media
+  app.use('/media', express.static(path.join(process.cwd(), 'media'), {
+    maxAge: process.env.NODE_ENV === 'production' ? '30d' : 0,
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filepath) => {
+      if (filepath.match(/\.(mp3|wav|ogg)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=2592000');
+      }
+    }
+  }));
 
   // Rota raiz - servir o jogo
   app.get('/', (req, res) => {
