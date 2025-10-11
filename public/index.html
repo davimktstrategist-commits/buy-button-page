@@ -2705,14 +2705,27 @@
                             Notiflix.Notify.success('💰 Depósito confirmado! Seu saldo foi creditado!');
                         }
                         
-                        setTimeout(() => {
-                            // Recarregar página para atualizar saldo (força clear do cache)
+                        setTimeout(async () => {
+                            // Fechar overlay de QR Code pago
+                            document.getElementById('qrPaidOverlay').classList.remove('active');
+                            
+                            // Fechar área do QR Code
+                            const qrArea = document.getElementById('qrArea');
+                            if (qrArea) qrArea.classList.remove('active');
+                            
+                            // Fechar modal de depósito
+                            closeModal('depositModal');
+                            
+                            // Atualizar saldo diretamente do servidor
+                            await forceUpdateBalance();
+                            
+                            // Rolar para o jogo
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            
+                            // Notificar
                             if (typeof Notiflix !== 'undefined') {
-                                Notiflix.Notify.success('💰 Depósito confirmado! Recarregando...');
+                                Notiflix.Notify.success('🎰 Saldo atualizado! Boa sorte!');
                             }
-                            setTimeout(() => {
-                                window.location.reload(true);
-                            }, 1000);
                         }, 2000);
                     }
                 } catch (error) {
@@ -3250,10 +3263,130 @@
             margin-right: 6px;
         }
     }
+    
+    /* DISPLAY DE SALDO NO TOPO */
+    #top-balance-container {
+        position: absolute;
+        top: 20px;
+        right: 180px;
+        background: linear-gradient(135deg, rgba(var(--theme-bg-rgb), 0.95) 0%, rgba(var(--theme-bg-rgb), 0.85) 100%);
+        border: 2px solid var(--theme-text);
+        border-radius: 15px;
+        padding: 12px 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 100;
+    }
+    
+    #top-balance-container .balance-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    #top-balance-container .balance-label {
+        font-size: 0.65rem;
+        color: var(--theme-text);
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        opacity: 0.8;
+        margin: 0;
+    }
+    
+    #top-balance-container .balance-value {
+        font-size: 1.1rem;
+        color: var(--theme-text);
+        font-weight: bold;
+        text-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+        margin: 0;
+    }
+    
+    #refresh-balance-btn {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 0;
+    }
+    
+    #refresh-balance-btn:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+        transform: scale(1.05);
+    }
+    
+    #refresh-balance-btn:active {
+        transform: scale(0.95) rotate(180deg);
+    }
+    
+    #refresh-balance-btn.spinning {
+        animation: spin 1s linear;
+    }
+    
+    #refresh-balance-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: var(--theme-text);
+        filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.3));
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    @media (max-width: 768px) {
+        #top-balance-container {
+            right: 10px;
+            padding: 8px 12px;
+            gap: 8px;
+        }
+        #top-balance-container .balance-value {
+            font-size: 0.95rem;
+        }
+        #refresh-balance-btn {
+            width: 28px;
+            height: 28px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        #top-balance-container {
+            right: 8px;
+            top: 120px;
+            padding: 6px 10px;
+        }
+        #top-balance-container .balance-label {
+            font-size: 0.55rem;
+        }
+        #top-balance-container .balance-value {
+            font-size: 0.85rem;
+        }
+    }
 </style>
 <div id="recent-winners-container">
     <ul id="winners-list">
         </ul>
+</div>
+<div id="top-balance-container">
+    <div class="balance-info">
+        <p class="balance-label">Saldo</p>
+        <p class="balance-value" id="saldo-value-display-small">R$ 0,00</p>
+    </div>
+    <button id="refresh-balance-btn" title="Atualizar saldo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+        </svg>
+    </button>
 </div>
 <script>
 // Global utility function - accessible from all scripts
@@ -3585,6 +3718,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Executar imediatamente
         forceUpdateBalance();
+        
+        // BOTÃO DE ATUALIZAR SALDO
+        const refreshBalanceBtn = document.getElementById('refresh-balance-btn');
+        if (refreshBalanceBtn) {
+            refreshBalanceBtn.addEventListener('click', async () => {
+                refreshBalanceBtn.classList.add('spinning');
+                await forceUpdateBalance();
+                setTimeout(() => {
+                    refreshBalanceBtn.classList.remove('spinning');
+                }, 1000);
+                if (typeof Notiflix !== 'undefined') {
+                    Notiflix.Notify.success('💰 Saldo atualizado!');
+                }
+            });
+        }
 
         const DOMElements = {
             playButton: document.getElementById('play-button'),
