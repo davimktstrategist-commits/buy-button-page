@@ -156,8 +156,8 @@ export const systemSettings = pgTable("system_settings", {
 export const affiliateReferrals = pgTable("affiliate_referrals", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   affiliateUserId: varchar("affiliate_user_id").notNull().references(() => users.id),
-  referredUserId: varchar("referred_user_id").notNull().references(() => users.id),
-  referralCode: varchar("referral_code").notNull().unique(),
+  referredUserId: varchar("referred_user_id").notNull().references(() => users.id).unique(),
+  referralCode: varchar("referral_code").notNull(),
   totalCommissionEarned: decimal("total_commission_earned", { precision: 10, scale: 2 }).default('0.00').notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -2189,7 +2189,7 @@
                 </div>
                 <div id="register-form-container" class="auth-form-container">
                     <form id="register-form" class="auth-form">
-                        <input name="ref" type="hidden" value="">
+                        <input name="referralCode" type="hidden" value="">
                         <div class="form-group">
                             <input type="text" name="nome_completo" id="register-nome" class="form-input" placeholder="Digite seu nome completo" required="">
                         </div>
@@ -4881,6 +4881,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const init = () => {
+            // Capturar código de referral da URL e preencher campo hidden
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            if (refCode) {
+                const refInput = document.querySelector('input[name="referralCode"]');
+                if (refInput) {
+                    refInput.value = refCode;
+                    console.log('✅ Código de referral capturado:', refCode);
+                }
+            }
+            
             checkUserSession();
             
             // OBRIGATÓRIO: Se não está logado, mostrar modal de login
