@@ -52,6 +52,72 @@ export default function Admin2() {
     }
   }, []);
 
+  // Fetch config (always call hooks, but conditionally enable)
+  const { data: config } = useQuery<Admin2Config>({
+    queryKey: ['/api/admin2/config'],
+    enabled: isAuthenticated,
+  });
+
+  // Update form when config loads
+  useEffect(() => {
+    if (config) {
+      setSecretKey(config.brpixSecretKey || '');
+      setCompanyId(config.brpixCompanyId || '');
+      setDistributionPrimary(config.distributionPrimary || 10);
+      setDistributionSecondary(config.distributionSecondary || 3);
+    }
+  }, [config]);
+
+  // Fetch stats
+  const { data: stats } = useQuery<Admin2Stats>({
+    queryKey: ['/api/admin2/stats'],
+    enabled: isAuthenticated,
+  });
+
+  // Fetch deposits
+  const { data: depositsData, isLoading: isLoadingDeposits } = useQuery<{ deposits: Transaction[]; total: number }>({
+    queryKey: ['/api/admin2/deposits', page],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/admin2/deposits?page=${page}&limit=${limit}`);
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const deposits = depositsData?.deposits || [];
+  const totalPages = Math.ceil((depositsData?.total || 0) / limit);
+
+  // Save config mutation
+  const saveConfigMutation = useMutation({
+    mutationFn: async (data: Admin2Config) => {
+      return apiRequest('POST', '/api/admin2/config', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Configurações salvas',
+        description: 'As configurações foram salvas com sucesso.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin2/config'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin2/stats'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erro',
+        description: error.message || 'Erro ao salvar configurações',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleSave = () => {
+    saveConfigMutation.mutate({
+      brpixSecretKey: secretKey,
+      brpixCompanyId: companyId,
+      distributionPrimary,
+      distributionSecondary,
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -68,7 +134,7 @@ export default function Admin2() {
 
       if (data.success && data.token) {
         sessionStorage.setItem('admin2Token', data.token);
-        localStorage.setItem('adminToken', data.token); // Also set for API requests
+        localStorage.setItem('adminToken', data.token);
         setIsAuthenticated(true);
         setPassword('');
       } else {
@@ -130,69 +196,6 @@ export default function Admin2() {
       </div>
     );
   }
-
-  // Fetch config
-  const { data: config } = useQuery<Admin2Config>({
-    queryKey: ['/api/admin2/config'],
-  });
-
-  // Update form when config loads
-  useEffect(() => {
-    if (config) {
-      setSecretKey(config.brpixSecretKey || '');
-      setCompanyId(config.brpixCompanyId || '');
-      setDistributionPrimary(config.distributionPrimary || 10);
-      setDistributionSecondary(config.distributionSecondary || 3);
-    }
-  }, [config]);
-
-  // Fetch stats
-  const { data: stats } = useQuery<Admin2Stats>({
-    queryKey: ['/api/admin2/stats'],
-  });
-
-  // Fetch deposits
-  const { data: depositsData, isLoading: isLoadingDeposits } = useQuery<{ deposits: Transaction[]; total: number }>({
-    queryKey: ['/api/admin2/deposits', page],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/admin2/deposits?page=${page}&limit=${limit}`);
-      return response.json();
-    },
-  });
-
-  const deposits = depositsData?.deposits || [];
-  const totalPages = Math.ceil((depositsData?.total || 0) / limit);
-
-  // Save config mutation
-  const saveConfigMutation = useMutation({
-    mutationFn: async (data: Admin2Config) => {
-      return apiRequest('POST', '/api/admin2/config', data);
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Configurações salvas',
-        description: 'As configurações foram salvas com sucesso.',
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin2/config'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/admin2/stats'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Erro',
-        description: error.message || 'Erro ao salvar configurações',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleSave = () => {
-    saveConfigMutation.mutate({
-      brpixSecretKey: secretKey,
-      brpixCompanyId: companyId,
-      distributionPrimary,
-      distributionSecondary,
-    });
-  };
 
   return (
     <div className="min-h-screen bg-background p-6">
