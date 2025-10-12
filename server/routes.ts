@@ -595,22 +595,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update transaction status
           await storage.updateTransaction(transactionId, { status: 'completed' });
           
-          // Update user balance and total deposited
-          await storage.updateUserBalance(userId, parseFloat(transaction.amount));
+          // Verificar se depósito dobrado está ativo
+          const { systemConfig } = await import('@shared/schema');
+          const doubleDepositConfig = await db.select().from(systemConfig)
+            .where(sql`${systemConfig.key} IN ('double_deposit_enabled', 'double_deposit_min', 'double_deposit_max')`)
+            .execute();
           
-          // Update total deposited via SQL
+          const doubleDepositEnabled = doubleDepositConfig.find(c => c.key === 'double_deposit_enabled')?.value === 'true';
+          const doubleDepositMin = parseFloat(doubleDepositConfig.find(c => c.key === 'double_deposit_min')?.value || '100');
+          const doubleDepositMax = parseFloat(doubleDepositConfig.find(c => c.key === 'double_deposit_max')?.value || '300');
+          
+          const depositAmount = parseFloat(transaction.amount);
+          let finalAmount = depositAmount;
+          
+          // Dobrar depósito se estiver ativo e dentro do range
+          if (doubleDepositEnabled && depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax) {
+            finalAmount = depositAmount * 2;
+            console.log(`🎁 Depósito dobrado! R$ ${depositAmount.toFixed(2)} → R$ ${finalAmount.toFixed(2)}`);
+          }
+          
+          // Update user balance with final amount (possibly doubled)
+          await storage.updateUserBalance(userId, finalAmount);
+          
+          // Update total deposited via SQL (always use original amount for stats)
           const user = await storage.getUser(userId);
           if (user) {
             await db.update(users)
               .set({
-                totalDeposited: sql`${users.totalDeposited} + ${parseFloat(transaction.amount)}`,
+                totalDeposited: sql`${users.totalDeposited} + ${depositAmount}`,
                 updatedAt: new Date()
               })
               .where(eq(users.id, userId));
           }
 
-          // Adicionar rollover baseado no depósito
-          const { systemConfig } = await import('@shared/schema');
+          // Adicionar rollover baseado no depósito (usar depositAmount original, não o dobrado)
           const rolloverConfig = await db.select().from(systemConfig)
             .where(eq(systemConfig.key, 'rollover_multiplier'))
             .limit(1);
@@ -619,7 +637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? parseFloat(rolloverConfig[0].value || '1')
             : 1;
           
-          const rolloverToAdd = parseFloat(transaction.amount) * rolloverMultiplier;
+          const rolloverToAdd = depositAmount * rolloverMultiplier;
           
           await db.update(users)
             .set({
