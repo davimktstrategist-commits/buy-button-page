@@ -2056,13 +2056,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
               amount: transaction.amount
             });
             
+            // Check double deposit settings
+            const { systemConfig } = await import('@shared/schema');
+            const configs = await db.select().from(systemConfig).where(
+              sql`${systemConfig.key} IN ('double_deposit_enabled', 'double_deposit_min', 'double_deposit_max')`
+            );
+            
+            const doubleDepositEnabled = configs.find(c => c.key === 'double_deposit_enabled')?.value === 'true';
+            const doubleDepositMin = parseFloat(configs.find(c => c.key === 'double_deposit_min')?.value || '100');
+            const doubleDepositMax = parseFloat(configs.find(c => c.key === 'double_deposit_max')?.value || '300');
+            const depositAmount = parseFloat(transaction.amount);
+            
+            console.log('🔍 DOUBLE DEPOSIT CHECK:', {
+              enabled: doubleDepositEnabled,
+              min: doubleDepositMin,
+              max: doubleDepositMax,
+              depositAmount: depositAmount,
+              inRange: depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax
+            });
+            
+            // Calculate amount to credit (double if eligible)
+            let amountToCredit = depositAmount;
+            if (doubleDepositEnabled && depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax) {
+              amountToCredit = depositAmount * 2;
+              console.log('✨ DEPÓSITO DOBRADO! Creditando 2x o valor:', {
+                originalAmount: depositAmount,
+                doubledAmount: amountToCredit
+              });
+            }
+            
             // Update user balance and total deposited
             const userId = transaction.userId;
-            await storage.updateUserBalance(userId, parseFloat(transaction.amount));
+            await storage.updateUserBalance(userId, amountToCredit);
             
             console.log('✅ Saldo creditado com sucesso!', {
               userId,
-              creditedAmount: transaction.amount
+              creditedAmount: amountToCredit,
+              wasDoubled: amountToCredit > depositAmount
             });
             
             // Update total deposited via SQL
@@ -3087,13 +3117,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: transaction.amount
         });
         
+        // Check double deposit settings
+        const { systemConfig } = await import('@shared/schema');
+        const configs = await db.select().from(systemConfig).where(
+          sql`${systemConfig.key} IN ('double_deposit_enabled', 'double_deposit_min', 'double_deposit_max')`
+        );
+        
+        const doubleDepositEnabled = configs.find(c => c.key === 'double_deposit_enabled')?.value === 'true';
+        const doubleDepositMin = parseFloat(configs.find(c => c.key === 'double_deposit_min')?.value || '100');
+        const doubleDepositMax = parseFloat(configs.find(c => c.key === 'double_deposit_max')?.value || '300');
+        const depositAmount = parseFloat(transaction.amount);
+        
+        console.log('🔍 [TESTE] DOUBLE DEPOSIT CHECK:', {
+          enabled: doubleDepositEnabled,
+          min: doubleDepositMin,
+          max: doubleDepositMax,
+          depositAmount: depositAmount,
+          inRange: depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax
+        });
+        
+        // Calculate amount to credit (double if eligible)
+        let amountToCredit = depositAmount;
+        if (doubleDepositEnabled && depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax) {
+          amountToCredit = depositAmount * 2;
+          console.log('✨ [TESTE] DEPÓSITO DOBRADO! Creditando 2x o valor:', {
+            originalAmount: depositAmount,
+            doubledAmount: amountToCredit
+          });
+        }
+        
         // Update user balance and total deposited
         const userId = transaction.userId;
-        await storage.updateUserBalance(userId, parseFloat(transaction.amount));
+        await storage.updateUserBalance(userId, amountToCredit);
         
         console.log('✅ [TESTE] Saldo creditado!', {
           userId,
-          creditedAmount: transaction.amount
+          creditedAmount: amountToCredit,
+          wasDoubled: amountToCredit > depositAmount
         });
         
         // Update total deposited via SQL
