@@ -8,13 +8,18 @@ import { useToast } from "@/hooks/use-toast";
 import type { Withdrawal } from "@shared/schema";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Check, X } from "lucide-react";
+import { Check, X, Wallet, TrendingUp } from "lucide-react";
+
+interface WithdrawalWithUser extends Withdrawal {
+  userName?: string;
+  userEmail?: string;
+}
 
 export function WithdrawalsManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: withdrawals = [] } = useQuery<Withdrawal[]>({
+  const { data: withdrawals = [] } = useQuery<WithdrawalWithUser[]>({
     queryKey: ['/api/admin/withdrawals'],
   });
 
@@ -91,10 +96,12 @@ export function WithdrawalsManagement() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Usuário</TableHead>
               <TableHead>Data</TableHead>
               <TableHead>Valor</TableHead>
               <TableHead>Chave PIX</TableHead>
-              <TableHead>Tipo</TableHead>
+              <TableHead>Tipo PIX</TableHead>
+              <TableHead>Carteira</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
@@ -102,6 +109,16 @@ export function WithdrawalsManagement() {
           <TableBody>
             {withdrawals.map((withdrawal) => (
               <TableRow key={withdrawal.id} data-testid={`row-withdrawal-${withdrawal.id}`}>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <span className="font-semibold text-sm" data-testid={`text-user-name-${withdrawal.id}`}>
+                      {withdrawal.userName || 'Sem nome'}
+                    </span>
+                    <span className="text-xs text-muted-foreground" data-testid={`text-user-email-${withdrawal.id}`}>
+                      {withdrawal.userEmail}
+                    </span>
+                  </div>
+                </TableCell>
                 <TableCell className="text-sm">
                   {format(new Date(withdrawal.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}
                 </TableCell>
@@ -113,6 +130,25 @@ export function WithdrawalsManagement() {
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">{withdrawal.pixKeyType}</Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={withdrawal.walletType === 'affiliateBalance' ? 'default' : 'secondary'}
+                    className="gap-1"
+                    data-testid={`badge-wallet-type-${withdrawal.id}`}
+                  >
+                    {withdrawal.walletType === 'affiliateBalance' ? (
+                      <>
+                        <TrendingUp className="h-3 w-3" />
+                        Afiliado
+                      </>
+                    ) : (
+                      <>
+                        <Wallet className="h-3 w-3" />
+                        Principal
+                      </>
+                    )}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(withdrawal.status)}
@@ -148,7 +184,7 @@ export function WithdrawalsManagement() {
             ))}
             {withdrawals.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhum saque pendente
                 </TableCell>
               </TableRow>

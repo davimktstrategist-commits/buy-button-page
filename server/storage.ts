@@ -387,8 +387,20 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Only pending withdrawals can be rejected');
     }
     
-    // Return balance to user
-    await this.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
+    // Return balance to the correct wallet
+    const walletType = withdrawal.walletType || 'balance';
+    if (walletType === 'affiliateBalance') {
+      // Devolver para carteira de afiliado
+      await db.update(users)
+        .set({ 
+          affiliateBalance: sql`${users.affiliateBalance} + ${parseFloat(withdrawal.amount)}`,
+          updatedAt: new Date()
+        })
+        .where(eq(users.id, withdrawal.userId));
+    } else {
+      // Devolver para carteira principal
+      await this.updateUserBalance(withdrawal.userId, parseFloat(withdrawal.amount));
+    }
     
     const [rejectedWithdrawal] = await db
       .update(withdrawals)
