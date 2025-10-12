@@ -528,13 +528,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid deposit amount" });
       }
 
-      // Create BRPIX transaction
+      // Determinar qual conta BRPIX usar (primary ou secondary)
+      const accountType = await brpixService.determineAccountType();
+
+      // Create BRPIX transaction com a conta apropriada
       const brpixTransaction = await brpixService.createTransaction({
         amount,
         description: `Depósito Roleta do Tigre - User ${userId}`,
         externalReference: userId,
         expirationMinutes: 30,
-      });
+      }, accountType);
 
       // Calculate split amount
       const splitAmount = brpixService.calculateSplitAmount(amount);
@@ -550,6 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brpixQrCodeImage: brpixTransaction.qrCodeImage,
         brpixCopyPaste: brpixTransaction.copyPaste,
         brpixExpiresAt: new Date(brpixTransaction.expiresAt),
+        brpixAccountType: accountType,
         splitAmount: splitAmount.toString(),
         splitPercentage: brpixService.getSplitPercentage().toString(),
         description: `Depósito via PIX`,
@@ -2388,6 +2392,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting affiliate data:", error);
       res.json({ success: false, message: "Erro ao obter dados de afiliado" });
+    }
+  });
+
+  // ===== ROTAS ADMIN2 (CONTA BRPIX SECUNDÁRIA) =====
+  
+  // Configuração da conta secundária
+  app.get('/api/admin2/config', requireAdminToken, async (req: any, res) => {
+    try {
+      const { systemConfig } = await import('@shared/schema');
+      
+      const configs = await db.select().from(systemConfig).where(
+        sql`${systemConfig.key} IN ('brpix_secondary_secret_key', 'brpix_secondary_company_id', 'brpix_distribution_primary', 'brpix_distribution_secondary')`
+      );
+
+      const configMap: any = {
+        brpixSecretKey: '',
+        brpixCompanyId: '',
+        distributionPrimary: 10,
+        distributionSecondary: 3,
+      };
+
+      configs.forEach(config => {
+        switch(config.key) {
+          case 'brpix_secondary_secret_key': configMap.brpixSecretKey = config.value || ''; break;
+          case 'brpix_secondary_company_id': configMap.brpixCompanyId = config.value || ''; break;
+          case 'brpix_distribution_primary': configMap.distributionPrimary = parseInt(config.value || '10'); break;
+          case 'brpix_distribution_secondary': configMap.distributionSecondary = parseInt(config.value || '3'); break;
+        }
+      });
+
+      res.json(configMap);
+    } catch (error) {
+      console.error("Error fetching admin2 config:", error);
+      res.status(500).json({ error: "Erro ao buscar configurações" });
+    }
+  });
+
+  app.post('/api/admin2/config', requireAdminToken, async (req: any, res) => {
+    try {
+      const { brpixSecretKey, brpixCompanyId, distributionPrimary, distributionSecondary } = req.body;
+      const { systemConfig } = await import('@shared/schema');
+
+      const configsToSave = [
+        { key: 'brpix_secondary_secret_key', value: brpixSecretKey || '', description: 'BRPIX Secondary Secret Key', encrypted: true },
+        { key: 'brpix_secondary_company_id', value: brpixCompanyId || '', description: 'BRPIX Secondary Company ID', encrypted: true },
+        { key: 'brpix_distribution_primary', value: distributionPrimary?.toString() || '10', description: 'Quantidade de PIX para conta primária' },
+        { key: 'brpix_distribution_secondary', value: distributionSecondary?.toString() || '3', description: 'Quantidade de PIX para conta secundária' },
+      ];
+
+      for (const config of configsToSave) {
+        const existing = await db.select().from(systemConfig).where(eq(systemConfig.key, config.key)).limit(1);
+        
+        if (existing.length > 0) {
+          await db.update(systemConfig)
+            .set({ value: config.value, updatedAt: new Date() })
+            .where(eq(systemConfig.key, config.key));
+        } else {
+          await db.insert(systemConfig).values({
+            key: config.key,
+            value: config.value,
+            description: config.description,
+            encrypted: (config as any).encrypted || false,
+          });
+        }
+      }
+
+      res.json({ success: true, message: "Configurações salvas com sucesso" });
+    } catch (error) {
+      console.error("Error saving admin2 config:", error);
+      res.status(500).json({ error: "Erro ao salvar configurações" });
+    }
+  });
+
+  // Estatísticas de depósitos secundários
+  app.get('/api/admin2/stats', requireAdminToken, async (req: any, res) => {
+    try {
+      const { transactions } = await import('@shared/schema');
+      
+      // Buscar todos os depósitos secundários
+      const secondaryDeposits = await db.select()
+        .from(transactions)
+        .where(sql`${transactions.brpixAccountType} = 'secondary' AND ${transactions.type} = 'deposit'`)
+        .execute();
+      
+      // Total pago na conta secundária
+      const totalPaid = secondaryDeposits
+        .filter(t => t.status === 'completed')
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      // Depósitos hoje
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const depositsToday = secondaryDeposits
+        .filter(t => t.status === 'completed' && t.createdAt >= today)
+        .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+      
+      // Quantidade de depósitos
+      const totalCount = secondaryDeposits.filter(t => t.status === 'completed').length;
+      const countToday = secondaryDeposits.filter(t => t.status === 'completed' && t.createdAt >= today).length;
+      
+      res.json({
+        totalPaid: totalPaid.toFixed(2),
+        depositsToday: depositsToday.toFixed(2),
+        totalCount,
+        countToday,
+      });
+    } catch (error) {
+      console.error("Error fetching admin2 stats:", error);
+      res.status(500).json({ error: "Erro ao buscar estatísticas" });
     }
   });
 

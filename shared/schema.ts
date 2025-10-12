@@ -22,6 +22,7 @@ export const transactionStatusEnum = pgEnum('transaction_status', ['pending', 'p
 export const transactionTypeEnum = pgEnum('transaction_type', ['deposit', 'withdrawal', 'win', 'bet']);
 export const gameStatusEnum = pgEnum('game_status', ['pending', 'spinning', 'completed']);
 export const rouletteTypeEnum = pgEnum('roulette_type', ['main', 'bonus']);
+export const brpixAccountTypeEnum = pgEnum('brpix_account_type', ['primary', 'secondary']);
 
 // Session storage table (required for Replit Auth)
 export const sessions = pgTable(
@@ -100,6 +101,7 @@ export const transactions = pgTable("transactions", {
   brpixQrCodeImage: text("brpix_qr_code_image"),
   brpixCopyPaste: text("brpix_copy_paste"),
   brpixExpiresAt: timestamp("brpix_expires_at"),
+  brpixAccountType: brpixAccountTypeEnum("brpix_account_type").default('primary').notNull(),
   // Split information
   splitAmount: decimal("split_amount", { precision: 10, scale: 2 }),
   splitPercentage: decimal("split_percentage", { precision: 5, scale: 2 }).default('10.50'),

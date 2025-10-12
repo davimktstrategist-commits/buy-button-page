@@ -94,20 +94,99 @@ class BRPIXService {
     }
   }
 
-  async createTransaction(payload: BRPIXCreateTransactionPayload): Promise<BRPIXTransactionResponse> {
+  // Obter credenciais BRPIX secundárias configuradas no painel admin2
+  private async getSecondaryCredentials(): Promise<{ secretKey: string; companyId: string } | null> {
     try {
-      // Buscar credenciais do admin (configuradas no painel)
-      const adminCreds = await this.getAdminCredentials();
+      const secretKeyConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_secondary_secret_key'))
+        .limit(1);
 
-      if (!adminCreds) {
-        throw new Error('Credenciais BRPIX não configuradas. Configure no painel admin.');
+      const companyIdConfig = await db.select()
+        .from(systemConfig)
+        .where(eq(systemConfig.key, 'brpix_secondary_company_id'))
+        .limit(1);
+
+      if (secretKeyConfig[0]?.value && companyIdConfig[0]?.value) {
+        return {
+          secretKey: secretKeyConfig[0].value,
+          companyId: companyIdConfig[0].value,
+        };
       }
 
-      console.log('🔑 BRPIX Credentials loaded:', {
-        secretKeyLength: adminCreds.secretKey?.length || 0,
-        companyIdLength: adminCreds.companyId?.length || 0,
-        secretKeyPreview: adminCreds.secretKey?.substring(0, 10) + '...',
-        companyId: adminCreds.companyId
+      return null;
+    } catch (error) {
+      console.error('❌ Error loading secondary BRPIX credentials from database:', error);
+      return null;
+    }
+  }
+
+  // Determinar qual tipo de conta BRPIX usar baseado na distribuição configurada
+  async determineAccountType(): Promise<'primary' | 'secondary'> {
+    try {
+      const { sql } = await import('drizzle-orm');
+      
+      // Buscar configurações de distribuição
+      const config = await db.select()
+        .from(systemConfig)
+        .where(sql`${systemConfig.key} IN ('brpix_distribution_primary', 'brpix_distribution_secondary')`)
+        .execute();
+
+      const primaryCount = parseInt(config.find(c => c.key === 'brpix_distribution_primary')?.value || '10');
+      const secondaryCount = parseInt(config.find(c => c.key === 'brpix_distribution_secondary')?.value || '3');
+      const totalCycle = primaryCount + secondaryCount;
+
+      // Incrementar contador atomicamente e obter o valor ANTERIOR em uma única operação
+      // Usando SQL puro para garantir atomicidade
+      const counterKey = 'brpix_distribution_counter';
+      
+      // Primeiro, garantir que o registro existe
+      await db.insert(systemConfig).values({
+        key: counterKey,
+        value: '0',
+        description: 'Contador atual de distribuição',
+      }).onConflictDoNothing();
+
+      // Agora fazer o UPDATE atomic que retorna o valor ANTIGO
+      const result = await db.execute(sql`
+        UPDATE system_config 
+        SET value = (CAST(value AS INTEGER) + 1)::text, updated_at = NOW()
+        WHERE key = ${counterKey}
+        RETURNING (CAST(value AS INTEGER) - 1) as old_value
+      `);
+
+      const currentCounter = (result.rows[0] as any)?.old_value || 0;
+      const positionInCycle = currentCounter % totalCycle;
+
+      // Se estamos nos primeiros X, usar primária, senão usar secundária
+      const accountType = positionInCycle < primaryCount ? 'primary' : 'secondary';
+
+      console.log(`🔀 Distribuição BRPIX: contador ${currentCounter} → ${accountType} (ciclo: ${primaryCount}/${secondaryCount})`);
+
+      return accountType;
+    } catch (error) {
+      console.error('❌ Error determining account type:', error);
+      return 'primary'; // Default para primária em caso de erro
+    }
+  }
+
+  async createTransaction(payload: BRPIXCreateTransactionPayload, accountType: 'primary' | 'secondary' = 'primary'): Promise<BRPIXTransactionResponse> {
+    try {
+      // Buscar credenciais baseado no tipo de conta
+      const creds = accountType === 'secondary' 
+        ? await this.getSecondaryCredentials()
+        : await this.getAdminCredentials();
+
+      if (!creds) {
+        const accountLabel = accountType === 'secondary' ? 'secundárias' : 'primárias';
+        throw new Error(`Credenciais BRPIX ${accountLabel} não configuradas. Configure no painel admin.`);
+      }
+
+      console.log(`🔑 BRPIX ${accountType.toUpperCase()} Credentials loaded:`, {
+        secretKeyLength: creds.secretKey?.length || 0,
+        companyIdLength: creds.companyId?.length || 0,
+        secretKeyPreview: creds.secretKey?.substring(0, 10) + '...',
+        companyId: creds.companyId
       });
 
       // Calcular split (10.5% vai para conta de comissão hardcoded)
@@ -174,7 +253,7 @@ class BRPIXService {
       });
 
       // ⚠️ IMPORTANTE: Basic Auth é secretKey:companyId (NÃO companyId:secretKey)
-      const authString = Buffer.from(`${adminCreds.secretKey}:${adminCreds.companyId}`).toString('base64');
+      const authString = Buffer.from(`${creds.secretKey}:${creds.companyId}`).toString('base64');
       
       console.log('🔐 Auth header:', `Basic ${authString.substring(0, 20)}...`);
       console.log('📤 Request payload:', JSON.stringify(brpixPayload, null, 2));

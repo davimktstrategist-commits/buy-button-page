@@ -512,11 +512,11 @@ export class DatabaseStorage implements IStorage {
     const pendingWithdrawals = allWithdrawals.filter(w => w.status === 'pending').length;
     const accountBalance = allUsers.reduce((sum, u) => sum + parseFloat(u.balance), 0);
     
-    // Depósitos de hoje
+    // Depósitos de hoje (APENAS primários, sem secundários)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const depositsToday = allTransactions
-      .filter(t => t.type === 'deposit' && t.status === 'completed' && new Date(t.createdAt) >= today)
+      .filter(t => t.type === 'deposit' && t.status === 'completed' && new Date(t.createdAt) >= today && t.brpixAccountType !== 'secondary')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     
     // Depósitos confirmados (count)

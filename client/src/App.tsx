@@ -7,6 +7,7 @@ import { SoundProvider } from "@/contexts/SoundContext";
 import Landing from "@/pages/Landing";
 import Game from "@/pages/Game";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Admin2 from "@/pages/Admin2";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -15,6 +16,7 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/game" component={Game} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin2" component={Admin2} />
       <Route component={NotFound} />
     </Switch>
   );
