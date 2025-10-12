@@ -1805,6 +1805,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Atualizar rollover cumprido (apenas o valor apostado conta para rollover)
+      const currentUser = await storage.getUser(sessionId);
+      if (currentUser) {
+        const rolloverRequired = parseFloat(currentUser.rolloverRequired || '0');
+        const rolloverCompleted = parseFloat(currentUser.rolloverCompleted || '0');
+        const rolloverRemaining = rolloverRequired - rolloverCompleted;
+        
+        // Só adiciona ao rollover cumprido se ainda houver rollover pendente
+        if (rolloverRemaining > 0) {
+          const rolloverToAdd = Math.min(betAmount, rolloverRemaining);
+          
+          await db.update(users)
+            .set({
+              rolloverCompleted: sql`${users.rolloverCompleted} + ${rolloverToAdd}`,
+              updatedAt: new Date()
+            })
+            .where(eq(users.id, sessionId));
+          
+          console.log(`📊 Rollover cumprido: R$ ${rolloverToAdd.toFixed(2)} (Pendente: R$ ${(rolloverRemaining - rolloverToAdd).toFixed(2)})`);
+        }
+      }
+
       // Update user balance and stats
       await storage.updateUserBalance(sessionId, netChange);
       await storage.updateUserStats(sessionId, betAmount, winAmount);
