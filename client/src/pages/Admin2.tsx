@@ -46,7 +46,7 @@ export default function Admin2() {
 
   // Check admin2 authentication on mount
   useEffect(() => {
-    const admin2Token = sessionStorage.getItem('admin2Token');
+    const admin2Token = localStorage.getItem('admin2Token');
     if (admin2Token) {
       setIsAuthenticated(true);
     }
@@ -133,8 +133,7 @@ export default function Admin2() {
       const data = await response.json();
 
       if (data.success && data.token) {
-        sessionStorage.setItem('admin2Token', data.token);
-        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('admin2Token', data.token);
         setIsAuthenticated(true);
         setPassword('');
       } else {

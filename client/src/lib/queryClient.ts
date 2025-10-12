@@ -14,8 +14,8 @@ export async function apiRequest(
 ): Promise<Response> {
   const headers: Record<string, string> = data ? { "Content-Type": "application/json" } : {};
   
-  // Add admin token if available
-  const adminToken = localStorage.getItem('adminToken');
+  // Add admin token if available (check admin2Token first, then adminToken)
+  const adminToken = localStorage.getItem('admin2Token') || localStorage.getItem('adminToken');
   if (adminToken) {
     headers['Authorization'] = `Bearer ${adminToken}`;
   }
@@ -39,8 +39,8 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const headers: Record<string, string> = {};
     
-    // Add admin token if available
-    const adminToken = localStorage.getItem('adminToken');
+    // Add admin token if available (check admin2Token first, then adminToken)
+    const adminToken = localStorage.getItem('admin2Token') || localStorage.getItem('adminToken');
     if (adminToken) {
       headers['Authorization'] = `Bearer ${adminToken}`;
     }
