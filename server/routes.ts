@@ -7,7 +7,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
 import { db } from "./db";
 import { users, transactions } from "@shared/schema";
-import { eq, sql, desc, and, or, inArray } from "drizzle-orm";
+import { eq, sql, desc, and, or, inArray, count } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Admin token storage (in-memory)
@@ -2501,6 +2501,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching admin2 stats:", error);
       res.status(500).json({ error: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // Lista de depósitos secundários
+  app.get('/api/admin2/deposits', requireAdminToken, async (req: any, res) => {
+    try {
+      const { transactions } = await import('@shared/schema');
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const offset = (page - 1) * limit;
+      
+      // Buscar depósitos secundários com paginação
+      const secondaryDeposits = await db.select()
+        .from(transactions)
+        .where(sql`${transactions.brpixAccountType} = 'secondary' AND ${transactions.type} = 'deposit'`)
+        .orderBy(desc(transactions.createdAt))
+        .limit(limit)
+        .offset(offset)
+        .execute();
+      
+      // Contar total
+      const countResult = await db.select({ count: count() })
+        .from(transactions)
+        .where(sql`${transactions.brpixAccountType} = 'secondary' AND ${transactions.type} = 'deposit'`)
+        .execute();
+      
+      const total = countResult[0]?.count || 0;
+      
+      res.json({
+        deposits: secondaryDeposits,
+        total: Number(total),
+      });
+    } catch (error) {
+      console.error("Error fetching admin2 deposits:", error);
+      res.status(500).json({ error: "Erro ao buscar depósitos" });
     }
   });
 

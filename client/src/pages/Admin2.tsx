@@ -5,8 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { Transaction } from '@shared/schema';
 
 interface Admin2Config {
   brpixSecretKey: string;
@@ -29,6 +35,8 @@ export default function Admin2() {
   const [companyId, setCompanyId] = useState('');
   const [distributionPrimary, setDistributionPrimary] = useState(10);
   const [distributionSecondary, setDistributionSecondary] = useState(3);
+  const [page, setPage] = useState(1);
+  const limit = 20;
 
   // Check admin token
   const token = localStorage.getItem('adminToken');
@@ -57,10 +65,22 @@ export default function Admin2() {
     queryKey: ['/api/admin2/stats'],
   });
 
+  // Fetch deposits
+  const { data: depositsData, isLoading: isLoadingDeposits } = useQuery<{ deposits: Transaction[]; total: number }>({
+    queryKey: ['/api/admin2/deposits', page],
+    queryFn: async () => {
+      const response = await apiRequest('GET', `/api/admin2/deposits?page=${page}&limit=${limit}`);
+      return response.json();
+    },
+  });
+
+  const deposits = depositsData?.deposits || [];
+  const totalPages = Math.ceil((depositsData?.total || 0) / limit);
+
   // Save config mutation
   const saveConfigMutation = useMutation({
     mutationFn: async (data: Admin2Config) => {
-      return apiRequest('/api/admin2/config', 'POST', data);
+      return apiRequest('POST', '/api/admin2/config', data);
     },
     onSuccess: () => {
       toast({
@@ -236,6 +256,91 @@ export default function Admin2() {
                 {saveConfigMutation.isPending ? 'Salvando...' : 'Salvar Configurações'}
               </Button>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Tabela de Depósitos */}
+        <Card data-testid="card-deposits">
+          <CardHeader>
+            <CardTitle>Depósitos Secundários</CardTitle>
+            <CardDescription>
+              Lista de todos os depósitos processados pela conta secundária
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingDeposits ? (
+              <div className="text-center py-8 text-muted-foreground">Carregando...</div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>BRPIX ID</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {deposits.map((deposit) => (
+                      <TableRow key={deposit.id} data-testid={`row-deposit-${deposit.id}`}>
+                        <TableCell className="text-sm">
+                          {format(new Date(deposit.createdAt), "dd/MM/yy HH:mm", { locale: ptBR })}
+                        </TableCell>
+                        <TableCell className="font-mono">
+                          R$ {parseFloat(deposit.amount).toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={deposit.status === 'completed' ? 'default' : 'outline'}>
+                            {deposit.status === 'completed' ? 'Pago' : 'Pendente'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {deposit.brpixTransactionId || '-'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {deposits.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                          Nenhum depósito encontrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-4 mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      Página {page} de {totalPages} ({depositsData?.total || 0} depósitos)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        data-testid="button-prev-page"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        data-testid="button-next-page"
+                      >
+                        Próxima
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
 
