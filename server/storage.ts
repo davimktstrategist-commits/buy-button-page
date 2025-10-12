@@ -254,6 +254,14 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${transactions.status} = ${status}`);
     }
     
+    // SEMPRE excluir transações da conta secundária (Admin2) do painel Admin principal
+    conditions.push(
+      or(
+        sql`${transactions.brpixAccountType} IS NULL`,
+        sql`${transactions.brpixAccountType} != 'secondary'`
+      )
+    );
+    
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
     // Get total count with join
@@ -495,8 +503,9 @@ export class DatabaseStorage implements IStorage {
     const allWithdrawals = await this.getAllWithdrawals();
 
     const totalUsers = allUsers.length;
+    // Total de depósitos (APENAS primários, excluindo secundários do Admin2)
     const totalDeposits = allTransactions
-      .filter(t => t.type === 'deposit' && t.status === 'completed')
+      .filter(t => t.type === 'deposit' && t.status === 'completed' && t.brpixAccountType !== 'secondary')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     
     const totalBets = allTransactions
@@ -519,9 +528,9 @@ export class DatabaseStorage implements IStorage {
       .filter(t => t.type === 'deposit' && t.status === 'completed' && new Date(t.createdAt) >= today && t.brpixAccountType !== 'secondary')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     
-    // Depósitos confirmados (count)
+    // Depósitos confirmados (count) - APENAS primários
     const confirmedDepositsCount = allTransactions
-      .filter(t => t.type === 'deposit' && t.status === 'completed').length;
+      .filter(t => t.type === 'deposit' && t.status === 'completed' && t.brpixAccountType !== 'secondary').length;
     
     // Saques pagos
     const withdrawalsPaid = allWithdrawals
@@ -545,7 +554,8 @@ export class DatabaseStorage implements IStorage {
 
   async getDeposits7Days(): Promise<any> {
     const allTransactions = await this.getAllTransactions();
-    const deposits = allTransactions.filter(t => t.type === 'deposit' && t.status === 'completed');
+    // Filtrar apenas depósitos primários (excluir secundários do Admin2)
+    const deposits = allTransactions.filter(t => t.type === 'deposit' && t.status === 'completed' && t.brpixAccountType !== 'secondary');
     
     const labels = [];
     const values = [];
