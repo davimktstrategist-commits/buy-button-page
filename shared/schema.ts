@@ -132,6 +132,7 @@ export const withdrawals = pgTable("withdrawals", {
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   pixKey: varchar("pix_key").notNull(),
   pixKeyType: varchar("pix_key_type").notNull(), // cpf, cnpj, email, phone, random
+  walletType: varchar("wallet_type").default('balance').notNull(), // balance, affiliateBalance
   status: transactionStatusEnum("status").default('pending').notNull(),
   transactionId: varchar("transaction_id").references(() => transactions.id),
   rejectionReason: text("rejection_reason"),

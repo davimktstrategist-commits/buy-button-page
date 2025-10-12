@@ -604,7 +604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/withdrawals', async (req: any, res) => {
     try {
       const userId = req.body.sessionId || req.user?.claims?.sub;
-      const { amount, pixKeyType, pixKey } = req.body;
+      const { amount, pixKeyType, pixKey, walletType = 'balance' } = req.body;
 
       if (!userId) {
         return res.status(400).json({ message: "Session ID required" });
@@ -618,14 +618,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Chave PIX obrigatória" });
       }
 
+      // Validar walletType
+      if (walletType !== 'balance' && walletType !== 'affiliateBalance') {
+        return res.status(400).json({ message: "Tipo de carteira inválido" });
+      }
+
       // Check user balance
       const user = await storage.getUser(userId);
-      if (!user || parseFloat(user.balance) < amount) {
+      if (!user) {
+        return res.status(400).json({ message: "Usuário não encontrado" });
+      }
+
+      const currentBalance = walletType === 'affiliateBalance' 
+        ? parseFloat(user.affiliateBalance || '0')
+        : parseFloat(user.balance);
+
+      if (currentBalance < amount) {
         return res.status(400).json({ message: "Saldo insuficiente" });
       }
 
-      // Deduct amount from balance immediately
-      await storage.updateUserBalance(userId, -amount);
+      // Deduct amount from the correct balance
+      if (walletType === 'affiliateBalance') {
+        await db.update(users)
+          .set({ 
+            affiliateBalance: sql`${users.affiliateBalance} - ${amount}`,
+            updatedAt: new Date()
+          })
+          .where(eq(users.id, userId));
+      } else {
+        await storage.updateUserBalance(userId, -amount);
+      }
 
       // Create withdrawal request
       const withdrawal = await storage.createWithdrawal({
@@ -633,6 +655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: amount.toString(),
         pixKeyType,
         pixKey,
+        walletType,
         status: 'pending',
       });
 
@@ -1049,8 +1072,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/withdrawals', requireAdminToken, async (req: any, res) => {
     try {
-      const withdrawals = await storage.getAllWithdrawals();
-      res.json(withdrawals);
+      // Buscar saques com informações do usuário
+      const withdrawalsWithUser = await db.execute(sql`
+        SELECT 
+          w.*,
+          u.first_name as "userName",
+          u.email as "userEmail"
+        FROM withdrawals w
+        LEFT JOIN users u ON u.id = w.user_id
+        ORDER BY w.created_at DESC
+      `);
+
+      res.json(withdrawalsWithUser.rows);
     } catch (error) {
       console.error("Error fetching withdrawals:", error);
       res.status(500).json({ message: "Failed to fetch withdrawals" });
