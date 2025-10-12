@@ -1337,7 +1337,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { systemConfig } = await import('@shared/schema');
       
       const configs = await db.select().from(systemConfig).where(
-        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed', 'rollover_multiplier', 'brpix_secret_key', 'brpix_company_id')`
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed', 'rollover_multiplier', 'double_deposit_enabled', 'double_deposit_min', 'double_deposit_max', 'brpix_secret_key', 'brpix_company_id')`
       );
 
       const configMap: any = {
@@ -1348,6 +1348,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         affiliateCpaPercent: 10,
         affiliateCpaFixed: 0,
         rolloverMultiplier: 1,
+        doubleDepositEnabled: false,
+        doubleDepositMin: 100,
+        doubleDepositMax: 300,
         brpixSecretKey: '',
         brpixCompanyId: '',
       };
@@ -1361,6 +1364,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'affiliate_cpa_percent': configMap.affiliateCpaPercent = parseFloat(config.value || '0'); break;
           case 'affiliate_cpa_fixed': configMap.affiliateCpaFixed = parseFloat(config.value || '0'); break;
           case 'rollover_multiplier': configMap.rolloverMultiplier = parseFloat(config.value || '1'); break;
+          case 'double_deposit_enabled': configMap.doubleDepositEnabled = config.value === 'true'; break;
+          case 'double_deposit_min': configMap.doubleDepositMin = parseFloat(config.value || '100'); break;
+          case 'double_deposit_max': configMap.doubleDepositMax = parseFloat(config.value || '300'); break;
           case 'brpix_secret_key': configMap.brpixSecretKey = config.value || ''; break;
           case 'brpix_company_id': configMap.brpixCompanyId = config.value || ''; break;
         }
@@ -1375,7 +1381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/admin/general-config', requireAdminToken, async (req: any, res) => {
     try {
-      const { depositMin, depositMax, withdrawalMin, withdrawalMax, affiliateCpaPercent, affiliateCpaFixed, rolloverMultiplier, brpixSecretKey, brpixCompanyId } = req.body;
+      const { depositMin, depositMax, withdrawalMin, withdrawalMax, affiliateCpaPercent, affiliateCpaFixed, rolloverMultiplier, doubleDepositEnabled, doubleDepositMin, doubleDepositMax, brpixSecretKey, brpixCompanyId } = req.body;
       const { systemConfig } = await import('@shared/schema');
 
       const configsToSave = [
@@ -1386,6 +1392,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { key: 'affiliate_cpa_percent', value: affiliateCpaPercent.toString(), description: 'Percentual CPA afiliados' },
         { key: 'affiliate_cpa_fixed', value: affiliateCpaFixed.toString(), description: 'Valor fixo CPA afiliados' },
         { key: 'rollover_multiplier', value: rolloverMultiplier?.toString() || '1', description: 'Multiplicador de rollover' },
+        { key: 'double_deposit_enabled', value: doubleDepositEnabled ? 'true' : 'false', description: 'Ativar depósito dobrado' },
+        { key: 'double_deposit_min', value: doubleDepositMin?.toString() || '100', description: 'Valor mínimo para dobrar depósito' },
+        { key: 'double_deposit_max', value: doubleDepositMax?.toString() || '300', description: 'Valor máximo para dobrar depósito' },
         { key: 'brpix_secret_key', value: brpixSecretKey || '', description: 'BRPIX Secret Key', encrypted: true },
         { key: 'brpix_company_id', value: brpixCompanyId || '', description: 'BRPIX Company ID', encrypted: true },
       ];
