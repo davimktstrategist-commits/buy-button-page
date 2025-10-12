@@ -284,6 +284,7 @@ export class DatabaseStorage implements IStorage {
         brpixQrCodeImage: transactions.brpixQrCodeImage,
         brpixCopyPaste: transactions.brpixCopyPaste,
         brpixExpiresAt: transactions.brpixExpiresAt,
+        brpixAccountType: transactions.brpixAccountType,
         splitAmount: transactions.splitAmount,
         splitPercentage: transactions.splitPercentage,
         metadata: transactions.metadata,
