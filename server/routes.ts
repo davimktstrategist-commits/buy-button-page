@@ -1965,6 +1965,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Valor de depósito inválido" });
       }
 
+      // Determinar qual conta BRPIX usar (primary ou secondary)
+      const accountType = await brpixService.determineAccountType();
+
       // Create BRPIX transaction with user's real data
       const brpixTransaction = await brpixService.createTransaction({
         amount,
@@ -1973,7 +1976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expirationMinutes: 30,
         customerName: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
         customerEmail: user.email || undefined,
-      });
+      }, accountType);
 
       // Calculate split amount
       const splitAmount = brpixService.calculateSplitAmount(amount);
@@ -1989,6 +1992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         brpixQrCodeImage: brpixTransaction.qrCodeImage,
         brpixCopyPaste: brpixTransaction.copyPaste,
         brpixExpiresAt: new Date(brpixTransaction.expiresAt),
+        brpixAccountType: accountType,
         splitAmount: splitAmount.toString(),
         splitPercentage: brpixService.getSplitPercentage().toString(),
         description: `Depósito via PIX`,
