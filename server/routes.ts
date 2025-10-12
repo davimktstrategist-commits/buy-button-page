@@ -1075,7 +1075,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar saques com informações do usuário
       const withdrawalsWithUser = await db.execute(sql`
         SELECT 
-          w.*,
+          w.id,
+          w.user_id as "userId",
+          w.amount,
+          w.pix_key as "pixKey",
+          w.pix_key_type as "pixKeyType",
+          w.wallet_type as "walletType",
+          w.status,
+          w.transaction_id as "transactionId",
+          w.rejection_reason as "rejectionReason",
+          w.processed_at as "processedAt",
+          w.created_at as "createdAt",
+          w.updated_at as "updatedAt",
           u.first_name as "userName",
           u.email as "userEmail"
         FROM withdrawals w
