@@ -333,16 +333,20 @@ class BRPIXService {
     }
   }
 
-  async getTransactionStatus(transactionId: string): Promise<string> {
+  async getTransactionStatus(transactionId: string, accountType: 'primary' | 'secondary' = 'primary'): Promise<string> {
     try {
-      const adminCreds = await this.getAdminCredentials();
+      // Buscar credenciais baseado no tipo de conta
+      const creds = accountType === 'secondary' 
+        ? await this.getSecondaryCredentials()
+        : await this.getAdminCredentials();
       
-      if (!adminCreds) {
-        throw new Error('BRPIX credentials not configured');
+      if (!creds) {
+        const accountLabel = accountType === 'secondary' ? 'secundárias' : 'primárias';
+        throw new Error(`Credenciais BRPIX ${accountLabel} não configuradas`);
       }
 
       // BRPIX usa Basic Auth: secretKey:companyId
-      const authString = Buffer.from(`${adminCreds.secretKey}:${adminCreds.companyId}`).toString('base64');
+      const authString = Buffer.from(`${creds.secretKey}:${creds.companyId}`).toString('base64');
 
       const response = await fetch(`${BRPIX_API_URL}/transactions/${transactionId}`, {
         method: 'GET',
@@ -353,14 +357,15 @@ class BRPIXService {
       });
 
       if (!response.ok) {
-        console.error('BRPIX Get Status Error:', response.status);
+        console.error(`BRPIX Get Status Error (${accountType}):`, response.status);
         throw new Error(`BRPIX API Error: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log(`✅ Status BRPIX ${accountType}: ${data.status || 'pending'} (ID: ${transactionId})`);
       return data.status || 'pending';
     } catch (error) {
-      console.error('BRPIX get transaction status error:', error);
+      console.error(`BRPIX get transaction status error (${accountType}):`, error);
       throw error;
     }
   }

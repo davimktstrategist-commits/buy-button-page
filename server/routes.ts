@@ -599,7 +599,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check BRPIX status
       if (transaction.brpixTransactionId) {
-        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
+        const accountType = transaction.brpixAccountType || 'primary';
+        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId, accountType as 'primary' | 'secondary');
         
         if (brpixStatus === 'paid' || brpixStatus === 'completed') {
           // Update transaction status
@@ -1081,8 +1082,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           // Consultar status na BRPIX
-          const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
-          console.log(`🔍 Transação ${transaction.id} (BRPIX: ${transaction.brpixTransactionId}): status na BRPIX = ${brpixStatus}`);
+          const accountType = transaction.brpixAccountType || 'primary';
+          const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId, accountType as 'primary' | 'secondary');
+          console.log(`🔍 Transação ${transaction.id} (BRPIX: ${transaction.brpixTransactionId}) [${accountType}]: status na BRPIX = ${brpixStatus}`);
 
           // Se está paga na BRPIX mas pendente no sistema, creditar
           if (brpixStatus === 'paid' || brpixStatus === 'approved') {
@@ -2038,7 +2040,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check BRPIX status
       if (transaction.brpixTransactionId) {
-        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
+        const accountType = transaction.brpixAccountType || 'primary';
+        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId, accountType as 'primary' | 'secondary');
         
         if (brpixStatus === 'paid' || brpixStatus === 'completed') {
           // Usar UPDATE atômico: só atualiza se status='pending'

@@ -128,7 +128,8 @@ async function runAutoSync() {
       if (!transaction.brpixTransactionId) continue;
 
       try {
-        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId);
+        const accountType = transaction.brpixAccountType || 'primary';
+        const brpixStatus = await brpixService.getTransactionStatus(transaction.brpixTransactionId, accountType as 'primary' | 'secondary');
 
         if (brpixStatus === 'paid' || brpixStatus === 'approved') {
           await db.transaction(async (tx) => {
