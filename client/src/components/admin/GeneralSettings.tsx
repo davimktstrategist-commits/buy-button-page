@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Settings, Save } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface GeneralConfig {
   depositMin: number;
@@ -16,6 +17,9 @@ interface GeneralConfig {
   affiliateCpaPercent: number;
   affiliateCpaFixed: number;
   rolloverMultiplier: number;
+  doubleDepositEnabled: boolean;
+  doubleDepositMin: number;
+  doubleDepositMax: number;
   brpixSecretKey?: string;
   brpixCompanyId?: string;
 }
@@ -30,6 +34,9 @@ export function GeneralSettings() {
   const [affiliateCpaPercent, setAffiliateCpaPercent] = useState("10");
   const [affiliateCpaFixed, setAffiliateCpaFixed] = useState("0");
   const [rolloverMultiplier, setRolloverMultiplier] = useState("1");
+  const [doubleDepositEnabled, setDoubleDepositEnabled] = useState(false);
+  const [doubleDepositMin, setDoubleDepositMin] = useState("100");
+  const [doubleDepositMax, setDoubleDepositMax] = useState("300");
   const [brpixSecretKey, setBrpixSecretKey] = useState("");
   const [brpixCompanyId, setBrpixCompanyId] = useState("");
 
@@ -46,6 +53,9 @@ export function GeneralSettings() {
       setAffiliateCpaPercent(config.affiliateCpaPercent.toString());
       setAffiliateCpaFixed(config.affiliateCpaFixed.toString());
       setRolloverMultiplier(config.rolloverMultiplier?.toString() || "1");
+      setDoubleDepositEnabled(config.doubleDepositEnabled || false);
+      setDoubleDepositMin(config.doubleDepositMin?.toString() || "100");
+      setDoubleDepositMax(config.doubleDepositMax?.toString() || "300");
       setBrpixSecretKey(config.brpixSecretKey || "");
       setBrpixCompanyId(config.brpixCompanyId || "");
     }
@@ -143,6 +153,29 @@ export function GeneralSettings() {
       return;
     }
 
+    const doubleDepositMinNum = parseFloat(doubleDepositMin);
+    const doubleDepositMaxNum = parseFloat(doubleDepositMax);
+
+    if (doubleDepositEnabled) {
+      if (isNaN(doubleDepositMinNum) || doubleDepositMinNum < 0) {
+        toast({
+          title: "❌ Valor inválido",
+          description: "Valor mínimo de depósito dobrado deve ser válido.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (isNaN(doubleDepositMaxNum) || doubleDepositMaxNum < doubleDepositMinNum) {
+        toast({
+          title: "❌ Valor inválido",
+          description: "Valor máximo de depósito dobrado deve ser maior que o mínimo.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     saveConfigMutation.mutate({
       depositMin: depositMinNum,
       depositMax: depositMaxNum,
@@ -151,6 +184,9 @@ export function GeneralSettings() {
       affiliateCpaPercent: affiliateCpaPercentNum,
       affiliateCpaFixed: affiliateCpaFixedNum,
       rolloverMultiplier: rolloverMultiplierNum,
+      doubleDepositEnabled,
+      doubleDepositMin: doubleDepositMinNum,
+      doubleDepositMax: doubleDepositMaxNum,
       brpixSecretKey: brpixSecretKey.trim(),
       brpixCompanyId: brpixCompanyId.trim(),
     });
@@ -258,6 +294,58 @@ export function GeneralSettings() {
               Valor que o usuário deve apostar antes de sacar (ex: 1x = valor depositado, 3x = 3 vezes o valor depositado)
             </p>
           </div>
+        </div>
+
+        {/* Depósito Dobrado */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <h3 className="text-sm font-semibold text-foreground">Depósito Dobrado</h3>
+              <p className="text-xs text-muted-foreground">
+                Dobra automaticamente o valor do depósito dentro do range configurado
+              </p>
+            </div>
+            <Switch
+              checked={doubleDepositEnabled}
+              onCheckedChange={setDoubleDepositEnabled}
+              data-testid="switch-double-deposit"
+            />
+          </div>
+          
+          {doubleDepositEnabled && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="doubleDepositMin">Valor Mínimo (R$)</Label>
+                <Input
+                  id="doubleDepositMin"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={doubleDepositMin}
+                  onChange={(e) => setDoubleDepositMin(e.target.value)}
+                  data-testid="input-double-deposit-min"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Depósitos acima deste valor serão dobrados
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="doubleDepositMax">Valor Máximo (R$)</Label>
+                <Input
+                  id="doubleDepositMax"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={doubleDepositMax}
+                  onChange={(e) => setDoubleDepositMax(e.target.value)}
+                  data-testid="input-double-deposit-max"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Depósitos até este valor serão dobrados
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Afiliados CPA */}
