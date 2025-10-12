@@ -657,6 +657,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Valor inválido" });
       }
 
+      // Buscar limites de saque
+      const { systemConfig } = await import('@shared/schema');
+      const configResults = await db.select().from(systemConfig)
+        .where(sql`${systemConfig.key} IN ('withdrawal_min', 'withdrawal_max')`)
+        .execute();
+      
+      const withdrawalMin = parseFloat(configResults.find(c => c.key === 'withdrawal_min')?.value || '50');
+      const withdrawalMax = parseFloat(configResults.find(c => c.key === 'withdrawal_max')?.value || '50000');
+
+      // Validar valor mínimo e máximo
+      if (amount < withdrawalMin) {
+        return res.status(400).json({ 
+          message: `Valor mínimo para saque é R$ ${withdrawalMin.toFixed(2)}`,
+          withdrawalMin 
+        });
+      }
+
+      if (amount > withdrawalMax) {
+        return res.status(400).json({ 
+          message: `Valor máximo para saque é R$ ${withdrawalMax.toFixed(2)}`,
+          withdrawalMax 
+        });
+      }
+
       if (!pixKeyType || !pixKey) {
         return res.status(400).json({ message: "Chave PIX obrigatória" });
       }
@@ -2141,6 +2165,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Valor inválido" });
       }
 
+      // Buscar limites de saque
+      const { systemConfig } = await import('@shared/schema');
+      const configResults = await db.select().from(systemConfig)
+        .where(sql`${systemConfig.key} IN ('withdrawal_min', 'withdrawal_max')`)
+        .execute();
+      
+      const withdrawalMin = parseFloat(configResults.find(c => c.key === 'withdrawal_min')?.value || '50');
+      const withdrawalMax = parseFloat(configResults.find(c => c.key === 'withdrawal_max')?.value || '50000');
+
+      // Validar valor mínimo e máximo
+      if (amount < withdrawalMin) {
+        return res.status(400).json({ 
+          error: `Valor mínimo para saque é R$ ${withdrawalMin.toFixed(2)}`,
+          withdrawalMin 
+        });
+      }
+
+      if (amount > withdrawalMax) {
+        return res.status(400).json({ 
+          error: `Valor máximo para saque é R$ ${withdrawalMax.toFixed(2)}`,
+          withdrawalMax 
+        });
+      }
+
       if (!pixKeyType || !pixKey) {
         return res.status(400).json({ error: "Chave PIX obrigatória" });
       }
@@ -2158,6 +2206,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (currentBalance < amount) {
         return res.status(400).json({ error: "Saldo insuficiente" });
+      }
+
+      // Verificar rollover apenas para saque da carteira principal
+      if (walletType !== 'affiliate') {
+        const rolloverRequired = parseFloat(user.rolloverRequired || '0');
+        const rolloverCompleted = parseFloat(user.rolloverCompleted || '0');
+        const rolloverRemaining = rolloverRequired - rolloverCompleted;
+        
+        if (rolloverRemaining > 0) {
+          return res.status(400).json({ 
+            error: `Você precisa cumprir o rollover antes de sacar. Faltam R$ ${rolloverRemaining.toFixed(2)} em apostas.`,
+            rolloverRemaining: rolloverRemaining.toFixed(2),
+            rolloverRequired: rolloverRequired.toFixed(2),
+            rolloverCompleted: rolloverCompleted.toFixed(2)
+          });
+        }
       }
 
       // Deduzir do saldo correto
@@ -2192,15 +2256,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = req.query.sessionId as string || req.headers['x-session-id'] as string;
       
-      // Por enquanto, sempre retorna rollover completo
+      if (!sessionId) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Session ID required" 
+        });
+      }
+
+      const user = await storage.getUser(sessionId);
+      if (!user) {
+        return res.status(400).json({ 
+          success: false,
+          error: "Usuário não encontrado" 
+        });
+      }
+
+      const rolloverRequired = parseFloat(user.rolloverRequired || '0');
+      const rolloverCompleted = parseFloat(user.rolloverCompleted || '0');
+      const rolloverRemaining = Math.max(0, rolloverRequired - rolloverCompleted);
+      const rolloverCompleto = rolloverRemaining === 0;
+      
       res.json({ 
         success: true,
-        rolloverCompleto: true,
-        rollover_completo: true, // compatibilidade
-        rolloverRestante: 0,
-        rollover_restante: 0, // compatibilidade
-        rolloverTotal: 0,
-        rollover_total: 0 // compatibilidade
+        rolloverCompleto: rolloverCompleto,
+        rollover_completo: rolloverCompleto, // compatibilidade
+        rolloverRestante: rolloverRemaining,
+        rollover_restante: rolloverRemaining, // compatibilidade
+        rolloverTotal: rolloverRequired,
+        rollover_total: rolloverRequired, // compatibilidade
+        rolloverCumprido: rolloverCompleted,
+        rollover_cumprido: rolloverCompleted // compatibilidade
       });
     } catch (error) {
       console.error("Error checking rollover:", error);
