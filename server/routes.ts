@@ -1072,6 +1072,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/withdrawals', requireAdminToken, async (req: any, res) => {
     try {
+      const searchParam = req.query.search;
+      const statusParam = req.query.status;
+      const daysParam = req.query.days;
+      
+      const search = typeof searchParam === 'string' ? searchParam : '';
+      const status = typeof statusParam === 'string' ? statusParam : '';
+      const days = daysParam ? parseInt(daysParam as string) : null;
+
+      // Construir condições de filtro
+      const conditions: any[] = [];
+
+      // Filtro de busca
+      if (search) {
+        conditions.push(sql`(
+          LOWER(u.first_name) LIKE ${`%${search.toLowerCase()}%`} OR
+          LOWER(u.email) LIKE ${`%${search.toLowerCase()}%`} OR
+          LOWER(w.pix_key) LIKE ${`%${search.toLowerCase()}%`}
+        )`);
+      }
+
+      // Filtro de status
+      if (status) {
+        conditions.push(sql`w.status = ${status}`);
+      }
+
+      // Filtro de data
+      if (days) {
+        const startDate = new Date();
+        // Para "Hoje" (days=1), queremos hoje 00:00. Para 7 dias, queremos 6 dias atrás + hoje
+        startDate.setDate(startDate.getDate() - (days - 1));
+        startDate.setHours(0, 0, 0, 0);
+        conditions.push(sql`w.created_at >= ${startDate}`);
+      }
+
+      const whereClause = conditions.length > 0
+        ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
+        : sql``;
+
       // Buscar saques com informações do usuário
       const withdrawalsWithUser = await db.execute(sql`
         SELECT 
@@ -1091,6 +1129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           u.email as "userEmail"
         FROM withdrawals w
         LEFT JOIN users u ON u.id = w.user_id
+        ${whereClause}
         ORDER BY w.created_at DESC
       `);
 
