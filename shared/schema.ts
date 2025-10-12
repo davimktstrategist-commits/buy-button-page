@@ -49,6 +49,8 @@ export const users = pgTable("users", {
   totalDeposited: decimal("total_deposited", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalWon: decimal("total_won", { precision: 10, scale: 2 }).default('0.00').notNull(),
   totalBet: decimal("total_bet", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  rolloverRequired: decimal("rollover_required", { precision: 10, scale: 2 }).default('0.00').notNull(),
+  rolloverCompleted: decimal("rollover_completed", { precision: 10, scale: 2 }).default('0.00').notNull(),
   referralCode: varchar("referral_code").unique(),
   referredByUserId: varchar("referred_by_user_id"),
   isActive: boolean("is_active").default(true).notNull(),

@@ -15,6 +15,7 @@ interface GeneralConfig {
   withdrawalMax: number;
   affiliateCpaPercent: number;
   affiliateCpaFixed: number;
+  rolloverMultiplier: number;
   brpixSecretKey?: string;
   brpixCompanyId?: string;
 }
@@ -28,6 +29,7 @@ export function GeneralSettings() {
   const [withdrawalMax, setWithdrawalMax] = useState("50000");
   const [affiliateCpaPercent, setAffiliateCpaPercent] = useState("10");
   const [affiliateCpaFixed, setAffiliateCpaFixed] = useState("0");
+  const [rolloverMultiplier, setRolloverMultiplier] = useState("1");
   const [brpixSecretKey, setBrpixSecretKey] = useState("");
   const [brpixCompanyId, setBrpixCompanyId] = useState("");
 
@@ -43,6 +45,7 @@ export function GeneralSettings() {
       setWithdrawalMax(config.withdrawalMax.toString());
       setAffiliateCpaPercent(config.affiliateCpaPercent.toString());
       setAffiliateCpaFixed(config.affiliateCpaFixed.toString());
+      setRolloverMultiplier(config.rolloverMultiplier?.toString() || "1");
       setBrpixSecretKey(config.brpixSecretKey || "");
       setBrpixCompanyId(config.brpixCompanyId || "");
     }
@@ -75,6 +78,7 @@ export function GeneralSettings() {
     const withdrawalMaxNum = parseFloat(withdrawalMax);
     const affiliateCpaPercentNum = parseFloat(affiliateCpaPercent);
     const affiliateCpaFixedNum = parseFloat(affiliateCpaFixed);
+    const rolloverMultiplierNum = parseFloat(rolloverMultiplier);
 
     if (isNaN(depositMinNum) || depositMinNum < 0) {
       toast({
@@ -130,6 +134,15 @@ export function GeneralSettings() {
       return;
     }
 
+    if (isNaN(rolloverMultiplierNum) || rolloverMultiplierNum < 1) {
+      toast({
+        title: "❌ Valor inválido",
+        description: "Multiplicador de rollover deve ser no mínimo 1.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     saveConfigMutation.mutate({
       depositMin: depositMinNum,
       depositMax: depositMaxNum,
@@ -137,6 +150,7 @@ export function GeneralSettings() {
       withdrawalMax: withdrawalMaxNum,
       affiliateCpaPercent: affiliateCpaPercentNum,
       affiliateCpaFixed: affiliateCpaFixedNum,
+      rolloverMultiplier: rolloverMultiplierNum,
       brpixSecretKey: brpixSecretKey.trim(),
       brpixCompanyId: brpixCompanyId.trim(),
     });
@@ -223,6 +237,26 @@ export function GeneralSettings() {
                 data-testid="input-withdrawal-max"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Rollover */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Rollover</h3>
+          <div className="space-y-2">
+            <Label htmlFor="rolloverMultiplier">Multiplicador de Rollover</Label>
+            <Input
+              id="rolloverMultiplier"
+              type="number"
+              step="0.1"
+              min="1"
+              value={rolloverMultiplier}
+              onChange={(e) => setRolloverMultiplier(e.target.value)}
+              data-testid="input-rollover-multiplier"
+            />
+            <p className="text-xs text-muted-foreground">
+              Valor que o usuário deve apostar antes de sacar (ex: 1x = valor depositado, 3x = 3 vezes o valor depositado)
+            </p>
           </div>
         </div>
 
