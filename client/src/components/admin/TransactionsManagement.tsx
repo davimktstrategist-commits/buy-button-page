@@ -98,7 +98,12 @@ export function TransactionsManagement() {
     return labels[type] || type;
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (transaction: Transaction) => {
+    const { status, brpixAccountType, type } = transaction;
+    
+    // Depósitos secundários sempre aparecem como "Pendente" no admin principal
+    const displayStatus = (type === 'deposit' && brpixAccountType === 'secondary') ? 'pending' : status;
+    
     const variants: Record<string, any> = {
       completed: 'default',
       pending: 'outline',
@@ -116,8 +121,8 @@ export function TransactionsManagement() {
     };
 
     return (
-      <Badge variant={variants[status] || 'outline'}>
-        {labels[status] || status}
+      <Badge variant={variants[displayStatus] || 'outline'}>
+        {labels[displayStatus] || displayStatus}
       </Badge>
     );
   };
@@ -210,7 +215,7 @@ export function TransactionsManagement() {
                       R$ {parseFloat(transaction.amount).toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(transaction.status)}
+                      {getStatusBadge(transaction)}
                     </TableCell>
                     <TableCell className="font-mono text-xs">
                       {transaction.brpixTransactionId || '-'}
