@@ -4,7 +4,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Loader2, Copy, QrCode as QrCodeIcon, X, CheckCircle } from "lucide-react";
 
@@ -12,6 +12,14 @@ interface DepositModalProps {
   open: boolean;
   onClose: () => void;
   sessionId: string;
+}
+
+interface PublicSettings {
+  depositMin: number;
+  depositMax: number;
+  doubleDepositEnabled: boolean;
+  doubleDepositMin: number;
+  doubleDepositMax: number;
 }
 
 const SUGGESTED_AMOUNTS = [20, 30, 50, 100];
@@ -29,6 +37,17 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch public settings to check double deposit config
+  const { data: settings } = useQuery<PublicSettings>({
+    queryKey: ['/api/public-settings'],
+    enabled: open,
+  });
+
+  const isDoubleDeposit = (value: number) => {
+    if (!settings?.doubleDepositEnabled) return false;
+    return value >= settings.doubleDepositMin && value <= settings.doubleDepositMax;
+  };
 
   const createDepositMutation = useMutation({
     mutationFn: async (depositAmount: number) => {
@@ -179,21 +198,29 @@ export function DepositModal({ open, onClose, sessionId }: DepositModalProps) {
 
                 {/* Valores Sugeridos */}
                 <div className="grid grid-cols-4 gap-2">
-                  {SUGGESTED_AMOUNTS.map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => handleSuggestedAmount(value)}
-                      className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                        selectedAmount === value
-                          ? 'bg-[#fd8303] text-white'
-                          : 'bg-[#2a2a2a] text-white hover:bg-[#333333]'
-                      }`}
-                      data-testid={`button-suggested-${value}`}
-                    >
-                      R$ {value.toFixed(2).replace('.', ',')}
-                    </button>
-                  ))}
+                  {SUGGESTED_AMOUNTS.map((value) => {
+                    const willDouble = isDoubleDeposit(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => handleSuggestedAmount(value)}
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all relative ${
+                          selectedAmount === value
+                            ? 'bg-[#fd8303] text-white'
+                            : 'bg-[#2a2a2a] text-white hover:bg-[#333333]'
+                        }`}
+                        data-testid={`button-suggested-${value}`}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <span>R$ {value.toFixed(2).replace('.', ',')}</span>
+                          {willDouble && (
+                            <span className="text-[#22c55e] font-bold text-xs">x2</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button

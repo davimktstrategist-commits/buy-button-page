@@ -352,16 +352,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { systemConfig } = await import('@shared/schema');
       
       const configs = await db.select().from(systemConfig).where(
-        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+        sql`${systemConfig.key} IN ('deposit_min', 'deposit_max', 'withdrawal_min', 'withdrawal_max', 'affiliate_cpa_percent', 'affiliate_cpa_fixed', 'double_deposit_enabled', 'double_deposit_min', 'double_deposit_max')`
       );
 
-      const settings = {
+      const settings: any = {
         depositMin: 20,
         depositMax: 10000,
         withdrawalMin: 20,
         withdrawalMax: 50000,
         affiliateCpaPercent: 25,
         affiliateCpaFixed: 0,
+        doubleDepositEnabled: false,
+        doubleDepositMin: 100,
+        doubleDepositMax: 300,
       };
 
       configs.forEach(config => {
@@ -372,6 +375,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           case 'withdrawal_max': settings.withdrawalMax = parseFloat(config.value || '50000'); break;
           case 'affiliate_cpa_percent': settings.affiliateCpaPercent = parseFloat(config.value || '25'); break;
           case 'affiliate_cpa_fixed': settings.affiliateCpaFixed = parseFloat(config.value || '0'); break;
+          case 'double_deposit_enabled': settings.doubleDepositEnabled = config.value === 'true'; break;
+          case 'double_deposit_min': settings.doubleDepositMin = parseFloat(config.value || '100'); break;
+          case 'double_deposit_max': settings.doubleDepositMax = parseFloat(config.value || '300'); break;
         }
       });
 
@@ -612,10 +618,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const depositAmount = parseFloat(transaction.amount);
           let finalAmount = depositAmount;
           
+          console.log(`📊 Depósito Dobrado - Config:`, {
+            enabled: doubleDepositEnabled,
+            min: doubleDepositMin,
+            max: doubleDepositMax,
+            depositAmount,
+            inRange: depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax
+          });
+          
           // Dobrar depósito se estiver ativo e dentro do range
           if (doubleDepositEnabled && depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax) {
             finalAmount = depositAmount * 2;
             console.log(`🎁 Depósito dobrado! R$ ${depositAmount.toFixed(2)} → R$ ${finalAmount.toFixed(2)}`);
+          } else {
+            console.log(`❌ Depósito NÃO dobrado - Enabled: ${doubleDepositEnabled}, InRange: ${depositAmount >= doubleDepositMin && depositAmount <= doubleDepositMax}`);
           }
           
           // Update user balance with final amount (possibly doubled)
@@ -2396,6 +2412,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== ROTAS ADMIN2 (CONTA BRPIX SECUNDÁRIA) =====
+  
+  // Admin2 login (separate password)
+  app.post('/api/admin2/login', async (req, res) => {
+    try {
+      const { password } = req.body;
+      const admin2Password = process.env.ADMIN2_PASSWORD;
+      
+      if (!admin2Password) {
+        console.error("CRITICAL: ADMIN2_PASSWORD environment variable not set!");
+        return res.status(500).json({ message: "Configuração de segurança inválida" });
+      }
+      
+      if (password === admin2Password) {
+        const token = generateAdminToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+        
+        adminTokens.set(token, { token, expiresAt });
+        
+        res.json({ 
+          success: true, 
+          token,
+          expiresAt: expiresAt.toISOString()
+        });
+      } else {
+        res.status(401).json({ success: false, message: "Senha incorreta" });
+      }
+    } catch (error) {
+      console.error("Error in admin2 login:", error);
+      res.status(500).json({ success: false, message: "Erro ao fazer login" });
+    }
+  });
   
   // Configuração da conta secundária
   app.get('/api/admin2/config', requireAdminToken, async (req: any, res) => {

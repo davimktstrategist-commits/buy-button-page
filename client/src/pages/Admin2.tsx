@@ -37,12 +37,98 @@ export default function Admin2() {
   const [distributionSecondary, setDistributionSecondary] = useState(3);
   const [page, setPage] = useState(1);
   const limit = 20;
+  
+  // Admin2 separate authentication
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
-  // Check admin token
-  const token = localStorage.getItem('adminToken');
-  if (!token) {
-    navigate('/admin');
-    return null;
+  // Check admin2 authentication on mount
+  useEffect(() => {
+    const admin2Token = sessionStorage.getItem('admin2Token');
+    if (admin2Token) {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    try {
+      const response = await fetch('/api/admin2/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.token) {
+        sessionStorage.setItem('admin2Token', data.token);
+        localStorage.setItem('adminToken', data.token); // Also set for API requests
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setLoginError(data.message || 'Senha incorreta');
+      }
+    } catch (error) {
+      setLoginError('Erro ao fazer login');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Admin 2 - Autenticação</CardTitle>
+            <CardDescription>
+              Digite a senha do Admin 2 para acessar
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="admin2-password">Senha</Label>
+                <Input
+                  id="admin2-password"
+                  type="password"
+                  placeholder="Digite a senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  data-testid="input-admin2-password"
+                />
+              </div>
+              {loginError && (
+                <p className="text-sm text-destructive">{loginError}</p>
+              )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoggingIn}
+                data-testid="button-admin2-login"
+              >
+                {isLoggingIn ? 'Entrando...' : 'Entrar'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => navigate('/admin')}
+                data-testid="button-back-to-admin"
+              >
+                Voltar para Admin Principal
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   // Fetch config
