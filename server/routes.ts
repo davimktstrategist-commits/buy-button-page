@@ -7,7 +7,7 @@ import { setupAuth, isAuthenticated, isAdmin } from "./replitAuth";
 import { brpixService } from "./brpixService";
 import { db } from "./db";
 import { users, transactions } from "@shared/schema";
-import { eq, sql, desc, and, inArray } from "drizzle-orm";
+import { eq, sql, desc, and, or, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 // Admin token storage (in-memory)
@@ -750,6 +750,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching chart data:", error);
       res.status(500).json({ message: "Failed to fetch chart data" });
+    }
+  });
+
+  app.get('/api/admin/affiliates', requireAdminToken, async (req: any, res) => {
+    try {
+      const searchParam = req.query.search;
+      const search = typeof searchParam === 'string' ? searchParam : '';
+      
+      // Query otimizada com agregação - evita N+1 queries
+      const searchCondition = search 
+        ? sql`AND (
+            LOWER(u.first_name) LIKE ${`%${search.toLowerCase()}%`} OR
+            LOWER(u.email) LIKE ${`%${search.toLowerCase()}%`} OR
+            LOWER(u.referral_code) LIKE ${`%${search.toLowerCase()}%`}
+          )`
+        : sql``;
+      
+      const affiliatesWithStats = await db.execute(sql`
+        SELECT 
+          u.id,
+          u.first_name as "firstName",
+          u.email,
+          u.referral_code as "referralCode",
+          COALESCE(u.affiliate_balance, '0')::decimal as "affiliateBalance",
+          COUNT(DISTINCT ref.id) as "totalReferrals",
+          COALESCE(SUM(CASE 
+            WHEN t.type = 'deposit' AND t.status = 'completed' 
+            THEN t.amount::decimal 
+            ELSE 0 
+          END), 0) as "totalDeposited",
+          u.created_at as "createdAt"
+        FROM users u
+        LEFT JOIN users ref ON ref.referred_by_user_id = u.id
+        LEFT JOIN transactions t ON t.user_id = ref.id 
+          AND t.type = 'deposit' 
+          AND t.status = 'completed'
+        WHERE u.referral_code IS NOT NULL
+        ${searchCondition}
+        GROUP BY u.id, u.first_name, u.email, u.referral_code, u.affiliate_balance, u.created_at
+        ORDER BY "totalDeposited" DESC
+      `);
+      
+      // Converter tipos para o formato esperado pelo frontend
+      const results = affiliatesWithStats.rows.map((row: any) => ({
+        id: row.id,
+        firstName: row.firstName || 'Sem nome',
+        email: row.email,
+        referralCode: row.referralCode,
+        affiliateBalance: parseFloat(row.affiliateBalance || '0'),
+        totalReferrals: parseInt(row.totalReferrals || '0'),
+        totalDeposited: parseFloat(row.totalDeposited || '0'),
+        createdAt: row.createdAt,
+      }));
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error fetching affiliates:", error);
+      res.status(500).json({ message: "Failed to fetch affiliates" });
     }
   });
 
