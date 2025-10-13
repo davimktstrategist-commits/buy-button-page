@@ -1130,14 +1130,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (user?.referredByUserId) {
                 const { affiliateReferrals, systemConfig: systemConfigTable } = await import('@shared/schema');
                 
-                // Buscar CPA percentage
-                const cpaConfigResult = await tx.select()
-                  .from(systemConfigTable)
-                  .where(eq(systemConfigTable.key, 'affiliate_cpa_percent'))
+                // Buscar o afiliado para verificar CPA customizado
+                const [affiliate] = await tx.select()
+                  .from(users)
+                  .where(eq(users.id, user.referredByUserId))
                   .limit(1);
                 
-                const cpaPercent = cpaConfigResult[0]?.value ? parseFloat(cpaConfigResult[0].value) : 25;
-                const commissionAmount = (depositAmount * cpaPercent) / 100;
+                // Buscar CPA global (percent e fixed)
+                const cpaConfigResult = await tx.select()
+                  .from(systemConfigTable)
+                  .where(
+                    sql`${systemConfigTable.key} IN ('affiliate_cpa_percent', 'affiliate_cpa_fixed')`
+                  );
+                
+                let globalCpaPercent = 25;
+                let globalCpaFixed = 0;
+                cpaConfigResult.forEach(config => {
+                  if (config.key === 'affiliate_cpa_percent') globalCpaPercent = parseFloat(config.value || '25');
+                  if (config.key === 'affiliate_cpa_fixed') globalCpaFixed = parseFloat(config.value || '0');
+                });
+                
+                // Usar CPA customizado se existir, senão usar global
+                const cpaPercent = affiliate?.customAffiliateCpaPercent 
+                  ? parseFloat(affiliate.customAffiliateCpaPercent) 
+                  : globalCpaPercent;
+                
+                const cpaFixed = affiliate?.customAffiliateCpaFixed 
+                  ? parseFloat(affiliate.customAffiliateCpaFixed) 
+                  : globalCpaFixed;
+                
+                const commissionPercent = (depositAmount * cpaPercent) / 100;
+                const commissionAmount = commissionPercent + cpaFixed;
 
                 // Verificar se já existe referral
                 const existingReferral = await tx.select()
@@ -1165,7 +1188,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     })
                     .where(eq(users.id, user.referredByUserId));
 
-                  console.log(`💸 Comissão CPA creditada: R$ ${commissionAmount.toFixed(2)} para afiliado ${user.referredByUserId}`);
+                  const isCustomCpa = !!(affiliate?.customAffiliateCpaPercent || affiliate?.customAffiliateCpaFixed);
+                  console.log(`💸 Comissão CPA creditada: R$ ${commissionAmount.toFixed(2)} para afiliado ${user.referredByUserId} (${isCustomCpa ? 'CPA CUSTOMIZADO' : 'CPA GLOBAL'}: ${cpaPercent}% + R$ ${cpaFixed.toFixed(2)})`);
                 }
               }
 
@@ -3186,21 +3210,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log('✅ Usuário foi referido! Iniciando processo de comissão...');
             const { systemConfig, affiliateCommissions, affiliateReferrals } = await import('@shared/schema');
             
-            // Buscar configurações de CPA
+            // Buscar o afiliado para verificar CPA customizado
+            const affiliate = await storage.getUser(user.referredByUserId);
+            
+            // Buscar configurações de CPA global
             const configs = await db.select().from(systemConfig).where(
               sql`${systemConfig.key} IN ('affiliate_cpa_percent', 'affiliate_cpa_fixed')`
             );
             
             console.log('📋 Configurações CPA encontradas:', configs);
             
-            let cpaPercent = 0;
-            let cpaFixed = 0;
+            let globalCpaPercent = 0;
+            let globalCpaFixed = 0;
             configs.forEach(config => {
-              if (config.key === 'affiliate_cpa_percent') cpaPercent = parseFloat(config.value || '0');
-              if (config.key === 'affiliate_cpa_fixed') cpaFixed = parseFloat(config.value || '0');
+              if (config.key === 'affiliate_cpa_percent') globalCpaPercent = parseFloat(config.value || '0');
+              if (config.key === 'affiliate_cpa_fixed') globalCpaFixed = parseFloat(config.value || '0');
             });
             
-            console.log('💵 Valores CPA:', { cpaPercent, cpaFixed });
+            // Usar CPA customizado se existir, senão usar global
+            const cpaPercent = affiliate?.customAffiliateCpaPercent 
+              ? parseFloat(affiliate.customAffiliateCpaPercent) 
+              : globalCpaPercent;
+            
+            const cpaFixed = affiliate?.customAffiliateCpaFixed 
+              ? parseFloat(affiliate.customAffiliateCpaFixed) 
+              : globalCpaFixed;
+            
+            console.log('💵 Valores CPA (customizado ou global):', { 
+              cpaPercent, 
+              cpaFixed,
+              isCustom: !!(affiliate?.customAffiliateCpaPercent || affiliate?.customAffiliateCpaFixed)
+            });
             
             // Calcular comissão
             const depositAmount = parseFloat(transaction.amount);
