@@ -30,7 +30,7 @@ The frontend employs a dual architecture: a static HTML/CSS/JS game interface an
     - **Management:** Users (balance, history), Deposits (history, BRPIX IDs, status), Withdrawals (approval/rejection, PIX keys, auto-refund on rejection).
     - **Roulette Configuration:** Adjustable probabilities per multiplier for main and bonus roulettes, with auto-save.
 - **Authentication & Security:** Anonymous `sessionId` for game users. Admin panel uses password-based login with JWT-like tokens (24-hour expiry). BRPIX credentials are secured in environment variables.
-- **Affiliate System:** Complete referral tracking system with visible referral code input field in registration form. Users can enter codes manually or arrive via `?ref=CODE` URL parameter which auto-fills the field. Commissions are credited to separate `affiliateBalance` wallet upon referred user deposits.
+- **Affiliate System:** Complete referral tracking system with visible referral code input field in registration form. Users can enter codes manually or arrive via `?ref=CODE` URL parameter which auto-fills the field. Commissions are credited to separate `affiliateBalance` wallet upon referred user deposits. **CPA Configuration:** Admin can set global CPA (percent + fixed) in General Settings, or customize individual affiliate CPA via user edit dialog. Custom CPA takes priority over global when calculating commissions.
 
 ### System Design Choices
 - **Public Access:** The game is fully public, relying on `localStorage` for anonymous user sessions, eliminating the need for traditional user registration.
