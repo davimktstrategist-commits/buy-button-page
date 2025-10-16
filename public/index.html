@@ -358,6 +358,105 @@
           transform: translateY(0);
       }
 
+      /* QUICK BET BUTTON */
+      .quick-bet-trigger {
+          position: absolute;
+          top: 50%;
+          right: -25px;
+          transform: translateY(-50%);
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          border: 2px solid #fbbf24;
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
+          color: #fff;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+      }
+
+      .quick-bet-trigger:hover {
+          background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+          transform: translateY(-50%) scale(1.1);
+          box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+      }
+
+      .quick-bet-trigger:active {
+          transform: translateY(-50%) scale(0.95);
+      }
+
+      /* QUICK BET POPUP */
+      .quick-bet-popup {
+          position: fixed;
+          bottom: 120px;
+          left: 50%;
+          transform: translateX(-50%) translateY(20px) scale(0.9);
+          z-index: 999;
+          opacity: 0;
+          transition: all 0.3s ease;
+          pointer-events: none;
+      }
+
+      .quick-bet-popup.show {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0) scale(1);
+          pointer-events: all;
+      }
+
+      .quick-bet-content {
+          background: linear-gradient(135deg, rgba(20, 30, 50, 0.98) 0%, rgba(10, 15, 30, 0.98) 100%);
+          border: 2px solid #f59e0b;
+          border-radius: 15px;
+          padding: 20px;
+          box-shadow: 0 10px 40px rgba(245, 158, 11, 0.4),
+                      0 0 60px rgba(245, 158, 11, 0.2);
+          backdrop-filter: blur(10px);
+          min-width: 280px;
+      }
+
+      .quick-bet-content h3 {
+          color: #fbbf24;
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0 0 15px 0;
+          text-align: center;
+          text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+      }
+
+      .quick-bet-options {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 10px;
+      }
+
+      .quick-bet-option {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%);
+          border: 2px solid #f59e0b;
+          border-radius: 10px;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 600;
+          padding: 12px 16px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      .quick-bet-option:hover {
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+      }
+
+      .quick-bet-option:active {
+          transform: translateY(0);
+      }
+
       /* BOTTOM CONTROLS */
       .bottom-game-controls {
           position: absolute;
@@ -1837,6 +1936,20 @@
             </div>
         </div>
 
+        <!-- QUICK BET SELECTOR POPUP -->
+        <div id="quick-bet-popup" class="quick-bet-popup" style="display: none;">
+            <div class="quick-bet-content">
+                <h3>⚡ Apostas Rápidas</h3>
+                <div class="quick-bet-options">
+                    <button class="quick-bet-option" data-bet="10">R$ 10</button>
+                    <button class="quick-bet-option" data-bet="20">R$ 20</button>
+                    <button class="quick-bet-option" data-bet="30">R$ 30</button>
+                    <button class="quick-bet-option" data-bet="50">R$ 50</button>
+                    <button class="quick-bet-option" data-bet="100">R$ 100</button>
+                </div>
+            </div>
+        </div>
+
         <!-- ROLETAS -->
         <img id="roulette-indicator" src="images/cima_img_68e47ebc1886d7.67745424.png" alt="Indicador da roleta">
         <img id="roulette-wheel" class="swaying" src="images/roleta1_img_68e47ebc1895f8.89556212.png" alt="Roleta 1">
@@ -1865,9 +1978,10 @@
                     <button class="game-btn minus-btn" id="minus-button">-</button>
                     
                     <div class="giro-saldo-wrapper">
-                        <div class="giro-display">
+                        <div class="giro-display" style="position: relative;">
                             <p class="label">Giro</p>
                             <p class="value" id="giro-value">R$ 0,50</p>
+                            <button id="quick-bet-button" class="quick-bet-trigger" title="Apostas Rápidas">⚡</button>
                         </div>
                         
                         <div class="giro-display" id="saldo-display-bottom" style="display: none;">
@@ -5097,6 +5211,61 @@ document.addEventListener('DOMContentLoaded', () => {
                     autoSpinsPopup.classList.remove('show');
                     setTimeout(() => {
                         autoSpinsPopup.style.display = 'none';
+                    }, 300);
+                }
+            });
+
+            // POPUP DE APOSTAS RÁPIDAS
+            const quickBetButton = document.getElementById('quick-bet-button');
+            const quickBetPopup = document.getElementById('quick-bet-popup');
+            const quickBetOptions = document.querySelectorAll('.quick-bet-option');
+
+            if (quickBetButton) {
+                quickBetButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (quickBetPopup) {
+                        quickBetPopup.style.display = 'block';
+                        setTimeout(() => {
+                            quickBetPopup.classList.add('show');
+                        }, 10);
+                    }
+                });
+            }
+
+            // Event listeners para opções de apostas rápidas
+            quickBetOptions.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const betValue = parseFloat(option.getAttribute('data-bet'));
+                    
+                    // Esconder popup
+                    if (quickBetPopup) {
+                        quickBetPopup.classList.remove('show');
+                        setTimeout(() => {
+                            quickBetPopup.style.display = 'none';
+                        }, 300);
+                    }
+                    
+                    // Definir aposta
+                    state.aposta = betValue;
+                    updateDisplay();
+                    
+                    if (typeof Notiflix !== 'undefined') {
+                        Notiflix.Notify.success(`⚡ Aposta definida: R$ ${betValue.toFixed(2)}`);
+                    }
+                });
+            });
+
+            // Fechar popup de apostas rápidas ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (quickBetPopup && 
+                    !quickBetPopup.contains(e.target) && 
+                    e.target !== quickBetButton &&
+                    !quickBetButton.contains(e.target) &&
+                    quickBetPopup.classList.contains('show')) {
+                    quickBetPopup.classList.remove('show');
+                    setTimeout(() => {
+                        quickBetPopup.style.display = 'none';
                     }, 300);
                 }
             });
