@@ -1677,7 +1677,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         saldo: parseFloat(user.balance).toFixed(2),
         balance: parseFloat(user.balance).toFixed(2),
-        affiliateBalance: parseFloat(user.affiliateBalance || '0').toFixed(2)
+        affiliateBalance: parseFloat(user.affiliateBalance || '0').toFixed(2),
+        influencerMode: user.influencerMode || false
       });
     } catch (error) {
       console.error("Error getting balance:", error);
@@ -1814,22 +1815,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const influencerRandom = Math.random() * 100;
         
         if (influencerRandom < 70) {
-          // 70% chance: Select a winning multiplier (> 0)
+          // 70% chance: Distribuição EQUILIBRADA entre multiplicadores de ganho
           const winningConfigs = configs.filter(c => c.multiplier > 0);
           if (winningConfigs.length > 0) {
-            const totalWinProb = winningConfigs.reduce((sum, c) => sum + parseFloat(c.probability), 0);
-            const winRandom = Math.random() * totalWinProb;
-            let cumulativeWinProb = 0;
-            
-            for (const config of winningConfigs) {
-              cumulativeWinProb += parseFloat(config.probability);
-              if (winRandom <= cumulativeWinProb) {
-                mult1 = config.multiplier;
-                break;
-              }
-            }
+            // Selecionar aleatoriamente UNIFORME (todos com mesma chance)
+            const randomIndex = Math.floor(Math.random() * winningConfigs.length);
+            mult1 = winningConfigs[randomIndex].multiplier;
           }
         } else {
+          // 30% chance: pode cair no 0x ou seguir probabilidades normais
           const random = Math.random() * 100;
           let cumulativeProbability = 0;
 

@@ -4028,7 +4028,8 @@ document.addEventListener('DOMContentLoaded', () => {
             isSoundOn: false,
             isTurbo: false,
             isAuto: false,
-            autoSpinsRemaining: 0
+            autoSpinsRemaining: 0,
+            influencerMode: false
         };
         
         // FORÇA ATUALIZAÇÃO DO SALDO AO CARREGAR A PÁGINA
@@ -4042,7 +4043,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (data && data.saldo !== undefined) {
                     state.saldo = parseFloat(data.saldo);
+                    state.influencerMode = data.influencerMode || false;
                     console.log('💰 Saldo carregado do servidor:', state.saldo);
+                    console.log('🎬 Modo Influencer:', state.influencerMode);
                     // Aguardar DOM estar pronto antes de atualizar display
                     setTimeout(() => {
                         if (typeof updateDisplay === 'function') {
@@ -4465,7 +4468,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const multiplicadorTotal = mult1 * mult2;
                     
                     // Sons e animações diferentes baseados no multiplicador
-                    if (multiplicadorTotal >= 5) {
+                    // NO MODO INFLUENCER: Sempre mostrar baú quando ganhar (mult > 0)
+                    if (state.influencerMode && multiplicadorTotal > 0) {
+                        playChestSound();
+                        jsConfetti.addConfetti({ confettiNumber: 150, confettiRadius: 6, emojis: ['💎', '💰', '🏆', '✨'] });
+                        await showAndAwaitPrize(ganhoFinal);
+                    } else if (multiplicadorTotal >= 5) {
                         // PRÊMIO GRANDE (5x ou mais) - Mostrar baú
                         playChestSound();
                         jsConfetti.addConfetti({ confettiNumber: 150, confettiRadius: 6, emojis: ['💎', '💰', '🏆', '✨'] });
